@@ -1,21 +1,30 @@
 import random
+#sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-
+#TODO make UTG act first if it is pre flop else sb also check why position starts on Cutoff (should be UTG) works
 class Player:
+    pos_names = {1: "Small blind", 2: "Big blind", 3: "UTG", 4: "Hijack", 5: "Cutoff", 6: "Button"}
     def __init__(self, position) -> None:
         self.chips = 1000
         self.position = position
-    
+
     def new_hand(self, deck, blinds):
-        self.position += 1
         self.fold = False
+
+        self.position = (self.position + 1) #TODO important change this to be dynamic
+        self.position = 1 if self.position == 7 else self.position #TODO important change this to be dynamic
+
         i = self.position - 1
+        self.positionName = Player.pos_names[self.position]
         self.holeCards = deck[i : i + 2]
 
         if self.position <= 2: #One of the blinds
             self.bet = blinds[i]
         else:
             self.bet = 0
+
+    def set_bet(self, val = 0):
+        self.bet = val
 
     def move(self):
         if self.fold:
@@ -29,17 +38,27 @@ class Human(Player):
 
     def move(self, to_call):
         super().move() #check if return in the parent function actually ends it
-
+        
         if self.fold:
             return
-        action = int(input(
-            f"""Enter your move:
+        
+        if to_call > self.bet:
+            valid = [1, 2, 3]
+            message = f"""[Name] Enter your move you are {self.positionName} you have bet {self.bet} in this round so far:
                 1 Fold
                 2 Check
                 3 Bet
-                Current table bet {to_call} \n"""))
+                Current table bet {to_call} \n"""
+        else:
+            valid = [1, 3]
+            message = f"""[Name] Enter your move you are {self.positionName} you have bet {self.bet} in this round so far:
+                1 Fold
+                3 Bet
+                Current table bet {to_call} \n"""
+
+        action = int(input(message))
         
-        while action not in [1, 2, 3]:
+        while action not in valid:
             action = int(input("Re-enter move"))
 
         if action == 1:
@@ -66,7 +85,7 @@ class Table:
 
     def hand(self, sb_i):
         self.noPlayers = len(self.players)
-        deck = random.shuffle(self.deck)
+        random.shuffle(self.deck)
 
         for i, p in enumerate(self.players):
             p.new_hand(self.deck, self.blinds)
@@ -74,6 +93,9 @@ class Table:
         self.nextCard_i = self.noPlayers * 2 #the index of the next card to be drawn
         for r in range(0, 4):
             self.s_round(r, sb_i) 
+
+            for p in self.players:
+                p.set_bet()
 
         
     def s_round(self, r, sb_i):
@@ -91,6 +113,7 @@ class Table:
 
             print(self.nextCard_i, self.nextCard_i + n)
             print(f"{name[r]} Cards revealed {revealed}")
+
         self.to_call = 0 if r else self.blinds[1]
 
         c = sb_i + 2
