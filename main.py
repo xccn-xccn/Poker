@@ -1,7 +1,9 @@
 import random
 #sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#TODO make UTG act first if it is pre flop else sb also check why position starts on Cutoff (should be UTG) works
+#TODO line 139: TODO aggressor gets his turn twice also change for bb on first round
+#TODO if the big blind folds, because the aggressor is set to bb as default the round never ends
+#Make call an option , show pot, calling counts as an aggresive action
 class Player:
     pos_names = {1: "Small blind", 2: "Big blind", 3: "UTG", 4: "Hijack", 5: "Cutoff", 6: "Button"}
     def __init__(self, position) -> None:
@@ -37,12 +39,14 @@ class Human(Player):
         super().__init__(position)
 
     def move(self, to_call):
-        super().move() #check if return in the parent function actually ends it
+        super().move() #check if return in the parent function actually ends it (it doesnt)
         
         if self.fold:
             return
         
-        if to_call > self.bet:
+        print(f"Your cards are {self.holeCards}")
+        
+        if to_call == self.bet: #should not be possible to be less
             valid = [1, 2, 3]
             message = f"""[Name] Enter your move you are {self.positionName} you have bet {self.bet} in this round so far:
                 1 Fold
@@ -59,14 +63,20 @@ class Human(Player):
         action = int(input(message))
         
         while action not in valid:
-            action = int(input("Re-enter move"))
+            action = int(input("Re-enter move "))
 
         if action == 1:
             self.fold = True
         elif action == 2:
-            self.bet = 0
+            # self.bet = 0
+            pass
         else:
-            self.bet = int(input("How much is your bet"))
+            extra = int(input("How much is your bet "))
+
+            while self.bet + extra < to_call:
+                extra = int(input("Bet is too small "))
+
+            self.bet += extra
             return True, self.bet
         
 
@@ -85,12 +95,14 @@ class Table:
 
     def hand(self, sb_i):
         self.noPlayers = len(self.players)
+        self.pot = sum(self.blinds)
+
         random.shuffle(self.deck)
 
-        for i, p in enumerate(self.players):
+        for p in self.players:
             p.new_hand(self.deck, self.blinds)
 
-        self.nextCard_i = self.noPlayers * 2 #the index of the next card to be drawn
+        self.communityCard_i = self.noPlayers * 2 #the index of the next card to be drawn
         for r in range(0, 4):
             self.s_round(r, sb_i) 
 
@@ -103,20 +115,17 @@ class Table:
 
         if r == 0:
             print("Pre Flop")
+            c = (sb_i + 2) % self.noPlayers
         else:
-            n = 1
-            if r == 1:
-                n = 3
+            c = sb_i
+            n = r + 2
+            
+            community = self.deck[self.communityCard_i: self.communityCard_i + n]
 
-            revealed = self.deck[self.nextCard_i: self.nextCard_i + n]
-            self.nextCard_i += n
+            print(f"{name[r]} Cards {community}")
 
-            print(self.nextCard_i, self.nextCard_i + n)
-            print(f"{name[r]} Cards revealed {revealed}")
+        self.to_call = 0 if r != 0 else self.blinds[1]
 
-        self.to_call = 0 if r else self.blinds[1]
-
-        c = sb_i + 2
         cont = True
         last_agg = sb_i + 1
         while cont:
@@ -127,7 +136,7 @@ class Table:
                 agg = False
             c = (c+1) % self.noPlayers
 
-            if agg: #if the player just made an aggresive move (any bet / raise)
+            if agg: #if the player just made an aggresive move (any bet / raise) TODO aggressor gets his turn twice also change for bb on first round
                 last_agg = c
             else: #if the player was also the last person to make an aggresive move
                 if last_agg == c:
@@ -146,10 +155,10 @@ def start():
 def main():
     table1 = start()
     running = True
-    sb_i = 0
+    sb_i = 5
     while running:
-        sb_i = (sb_i + 1) % 6
         table1.hand(sb_i)
+        sb_i = (sb_i + 1) % 6
 
 
 if __name__ == "__main__":
