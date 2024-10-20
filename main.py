@@ -2,7 +2,7 @@ import random
 from deck import deck
 #sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#Make money 
+#TODO Work out the winner if there is only one player make them win, add pot to winners chips
 class Player:
     pos_names = {1: "Small blind", 2: "Big blind", 3: "UTG", 4: "Hijack", 5: "Cutoff", 6: "Button"}
     def __init__(self, position) -> None:
