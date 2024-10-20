@@ -23,6 +23,8 @@ class Player:
         else:
             self.bet = 0
 
+        self.chips -= self.bet
+
     def set_bet(self, val = 0):
         self.bet = val
 
@@ -48,7 +50,7 @@ class Human(Player):
             option2 = "2 Check"
         else:
             option2 = f"2 Call {to_call - self.bet}"
-        message = f"""[Name] Enter your move you are {self.positionName} you have invested {self.bet} in this round so far pot {pot}:
+        message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.bet} in this round so far - pot {pot}:
             1 Fold
             {option2}
             3 Bet
@@ -59,21 +61,38 @@ class Human(Player):
         while action not in [1, 2, 3]:
             action = int(input("Re-enter move "))
 
-        if action == 1:
+
+        if action == 1: #change maybe
             self.fold = True
-            return False, self.bet, 0 #TODO Change
+            agg = False
+            extra = 0
+
         elif action == 2:
+            agg = False
             extra = to_call - self.bet
             self.bet = to_call
-            return False, self.bet, extra
         else:
             extra = int(input("How much is your bet "))
 
-            while self.bet + extra < to_call:
-                extra = int(input("Bet is too small "))
+            while True:
+            
+                if self.bet + extra < to_call:
+                    extra = int(input("Bet is too small "))
+                    continue
+
+                if extra > self.chips:
+                    extra = int(input("Bet is too large "))
+                    continue
+
+                break
+
 
             self.bet += extra
-            return True, self.bet, extra
+            agg = True
+
+        self.chips -= extra
+
+        return agg, self.bet, extra
         
 
 
