@@ -1,7 +1,7 @@
 import random
 #sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#Make  show pot, 
+#Make money 
 class Player:
     pos_names = {1: "Small blind", 2: "Big blind", 3: "UTG", 4: "Hijack", 5: "Cutoff", 6: "Button"}
     def __init__(self, position) -> None:
@@ -36,7 +36,7 @@ class Human(Player):
     def __init__(self, position):
         super().__init__(position)
 
-    def move(self, to_call):
+    def move(self, to_call, pot):
         super().move() #check if return in the parent function actually ends it (it doesnt)
         
         if self.fold:
@@ -48,7 +48,7 @@ class Human(Player):
             option2 = "2 Check"
         else:
             option2 = f"2 Call {to_call - self.bet}"
-        message = f"""[Name] Enter your move you are {self.positionName} you have invested {self.bet} in this round so far:
+        message = f"""[Name] Enter your move you are {self.positionName} you have invested {self.bet} in this round so far pot {pot}:
             1 Fold
             {option2}
             3 Bet
@@ -61,10 +61,11 @@ class Human(Player):
 
         if action == 1:
             self.fold = True
-            return False, 0
+            return False, self.bet, 0 #TODO Change
         elif action == 2:
+            extra = to_call - self.bet
             self.bet = to_call
-            return False, self.bet
+            return False, self.bet, extra
         else:
             extra = int(input("How much is your bet "))
 
@@ -72,7 +73,7 @@ class Human(Player):
                 extra = int(input("Bet is too small "))
 
             self.bet += extra
-            return True, self.bet
+            return True, self.bet, extra
         
 
 
@@ -126,7 +127,7 @@ class Table:
             last_agg = (sb_i + 2) % self.noPlayers #last aggressor index
         else:
             last_agg = (sb_i) % self.noPlayers #last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
-        agg = False
+        # agg = False
         while cont:
             
             currentPlayer = self.players[cPI] 
@@ -134,17 +135,19 @@ class Table:
             print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
             if currentPlayer.fold != True:
 
-                agg, invested = currentPlayer.move(self.to_call)
-
+                agg, invested, bet = currentPlayer.move(self.to_call, self.pot)
+                self.pot += bet
+            else:
+                agg = False
             
-            
+            print(agg, last_agg)
             if agg: #if the player just made an aggresive move (any bet / raise) 
                 last_agg = cPI
                 self.to_call = invested
             else: #if the player was also the last person to make an aggresive move
                 if last_agg == (cPI + 1) % self.noPlayers:
                     break
-
+            print(agg, last_agg, "!!!!")
             cPI = (cPI+1) % self.noPlayers #current player index
             
 
