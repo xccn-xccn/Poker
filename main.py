@@ -1,9 +1,7 @@
 import random
 #sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#TODO line 139: TODO aggressor gets his turn twice also change for bb on first round
-#TODO if the big blind folds, because the aggressor is set to bb as default the round never ends
-#Make call an option , show pot, calling counts as an aggresive action
+#Make  show pot, 
 class Player:
     pos_names = {1: "Small blind", 2: "Big blind", 3: "UTG", 4: "Hijack", 5: "Cutoff", 6: "Button"}
     def __init__(self, position) -> None:
@@ -18,7 +16,7 @@ class Player:
 
         i = self.position - 1
         self.positionName = Player.pos_names[self.position]
-        self.holeCards = deck[i : i + 2]
+        self.holeCards = deck[i * 2 : i * 2 + 2]
 
         if self.position <= 2: #One of the blinds
             self.bet = blinds[i]
@@ -47,29 +45,26 @@ class Human(Player):
         print(f"Your cards are {self.holeCards}")
         
         if to_call == self.bet: #should not be possible to be less
-            valid = [1, 2, 3]
-            message = f"""[Name] Enter your move you are {self.positionName} you have bet {self.bet} in this round so far:
-                1 Fold
-                2 Check
-                3 Bet
-                Current table bet {to_call} \n"""
+            option2 = "2 Check"
         else:
-            valid = [1, 3]
-            message = f"""[Name] Enter your move you are {self.positionName} you have bet {self.bet} in this round so far:
-                1 Fold
-                3 Bet
-                Current table bet {to_call} \n"""
+            option2 = f"2 Call {to_call - self.bet}"
+        message = f"""[Name] Enter your move you are {self.positionName} you have invested {self.bet} in this round so far:
+            1 Fold
+            {option2}
+            3 Bet
+            Current table bet {to_call} \n"""
 
         action = int(input(message))
         
-        while action not in valid:
+        while action not in [1, 2, 3]:
             action = int(input("Re-enter move "))
 
         if action == 1:
             self.fold = True
+            return False, 0
         elif action == 2:
-            # self.bet = 0
-            pass
+            self.bet = to_call
+            return False, self.bet
         else:
             extra = int(input("How much is your bet "))
 
@@ -115,9 +110,9 @@ class Table:
 
         if r == 0:
             print("Pre Flop")
-            c = (sb_i + 2) % self.noPlayers
+            cPI = (sb_i + 2) % self.noPlayers
         else:
-            c = sb_i
+            cPI = sb_i 
             n = r + 2
             
             community = self.deck[self.communityCard_i: self.communityCard_i + n]
@@ -127,20 +122,30 @@ class Table:
         self.to_call = 0 if r != 0 else self.blinds[1]
 
         cont = True
-        last_agg = sb_i + 1
+        if r == 0:
+            last_agg = (sb_i + 2) % self.noPlayers #last aggressor index
+        else:
+            last_agg = (sb_i) % self.noPlayers #last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
+        agg = False
         while cont:
-            info = self.players[c].move(self.to_call)
-            if info:
-                agg, self.to_call = info
-            else:
-                agg = False
-            c = (c+1) % self.noPlayers
+            
+            currentPlayer = self.players[cPI] 
 
-            if agg: #if the player just made an aggresive move (any bet / raise) TODO aggressor gets his turn twice also change for bb on first round
-                last_agg = c
+            print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
+            if currentPlayer.fold != True:
+
+                agg, invested = currentPlayer.move(self.to_call)
+
+            
+            
+            if agg: #if the player just made an aggresive move (any bet / raise) 
+                last_agg = cPI
+                self.to_call = invested
             else: #if the player was also the last person to make an aggresive move
-                if last_agg == c:
+                if last_agg == (cPI + 1) % self.noPlayers:
                     break
+
+            cPI = (cPI+1) % self.noPlayers #current player index
             
 
 
