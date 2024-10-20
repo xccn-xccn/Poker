@@ -1,10 +1,20 @@
 import random
 from deck import deck
-#sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#TODO Work out the winner if there is only one player make them win, add pot to winners chips
+# sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
+
+
+# TODO Work out the winner if there is only one player make them win, add pot to winners chips
 class Player:
-    pos_names = {1: "Small blind", 2: "Big blind", 3: "UTG", 4: "Hijack", 5: "Cutoff", 6: "Button"}
+    pos_names = {
+        1: "Small blind",
+        2: "Big blind",
+        3: "UTG",
+        4: "Hijack",
+        5: "Cutoff",
+        6: "Button",
+    }
+
     def __init__(self, position) -> None:
         self.chips = 1000
         self.position = position
@@ -12,42 +22,43 @@ class Player:
     def new_hand(self, deck, blinds):
         self.fold = False
 
-        self.position = (self.position + 1) #TODO important change this to be dynamic
-        self.position = 1 if self.position == 7 else self.position #TODO important change this to be dynamic
+        self.position = self.position + 1  # TODO important change this to be dynamic
+        self.position = (
+            1 if self.position == 7 else self.position
+        )  # TODO important change this to be dynamic
 
         i = self.position - 1
         self.positionName = Player.pos_names[self.position]
         self.holeCards = deck[i * 2 : i * 2 + 2]
 
-        if self.position <= 2: #One of the blinds
+        if self.position <= 2:  # One of the blinds
             self.bet = blinds[i]
         else:
             self.bet = 0
 
         self.chips -= self.bet
 
-    def set_bet(self, val = 0):
+    def set_bet(self, val=0):
         self.bet = val
 
     def move(self):
-        if self.fold:
-            return
+        pass
 
-    
+
 class Human(Player):
 
     def __init__(self, position):
         super().__init__(position)
 
     def move(self, to_call, pot):
-        super().move() #check if return in the parent function actually ends it (it doesnt)
-        
+        # super().move()  # check if return in the parent function actually ends it (it doesnt)
+
         if self.fold:
             return
-        
+
         print(f"Your cards are {self.holeCards}")
-        
-        if to_call == self.bet: #should not be possible to be less
+
+        if to_call == self.bet:  # should not be possible to be less
             option2 = "2 Check"
         else:
             option2 = f"2 Call {to_call - self.bet}"
@@ -58,12 +69,11 @@ class Human(Player):
             Current table bet {to_call} \n"""
 
         action = int(input(message))
-        
+
         while action not in [1, 2, 3]:
             action = int(input("Re-enter move "))
 
-
-        if action == 1: #change maybe
+        if action == 1:  # change maybe
             self.fold = True
             agg = False
             extra = 0
@@ -76,7 +86,7 @@ class Human(Player):
             extra = int(input("How much is your bet "))
 
             while True:
-            
+
                 if self.bet + extra < to_call:
                     extra = int(input("Bet is too small "))
                     continue
@@ -87,23 +97,20 @@ class Human(Player):
 
                 break
 
-
             self.bet += extra
             agg = True
 
         self.chips -= extra
 
         return agg, self.bet, extra
-        
-
 
 
 class Table:
     # deck = ['🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂡', '🂢', '��', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍','🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃜', '🃝', '🃞']
-    
+
     def __init__(self) -> None:
         self.players = []
-        self.deck = deck 
+        self.deck = deck
         self.blinds = [20, 40]
 
     def add_player(self, newPlayer):
@@ -118,14 +125,15 @@ class Table:
         for p in self.players:
             p.new_hand(self.deck, self.blinds)
 
-        self.communityCard_i = self.noPlayers * 2 #the index of the next card to be drawn
+        self.communityCard_i = (
+            self.noPlayers * 2
+        )  # the index of the next card to be drawn
         for r in range(0, 4):
-            self.s_round(r, sb_i) 
+            self.s_round(r, sb_i)
 
             for p in self.players:
                 p.set_bet()
 
-        
     def s_round(self, r, sb_i):
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
@@ -133,10 +141,10 @@ class Table:
             print("Pre Flop")
             cPI = (sb_i + 2) % self.noPlayers
         else:
-            cPI = sb_i 
+            cPI = sb_i
             n = r + 2
-            
-            community = self.deck[self.communityCard_i: self.communityCard_i + n]
+
+            community = self.deck[self.communityCard_i : self.communityCard_i + n]
 
             print(f"{name[r]} Cards {community}")
 
@@ -144,13 +152,15 @@ class Table:
 
         cont = True
         if r == 0:
-            last_agg = (sb_i + 2) % self.noPlayers #last aggressor index
+            last_agg = (sb_i + 2) % self.noPlayers  # last aggressor index
         else:
-            last_agg = (sb_i) % self.noPlayers #last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
+            last_agg = (
+                sb_i
+            ) % self.noPlayers  # last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
         # agg = False
         while cont:
-            
-            currentPlayer = self.players[cPI] 
+
+            currentPlayer = self.players[cPI]
 
             print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
             if currentPlayer.fold != True:
@@ -159,17 +169,16 @@ class Table:
                 self.pot += bet
             else:
                 agg = False
-            
+
             print(agg, last_agg)
-            if agg: #if the player just made an aggresive move (any bet / raise) 
+            if agg:  # if the player just made an aggresive move (any bet / raise)
                 last_agg = cPI
                 self.to_call = invested
-            else: #if the player was also the last person to make an aggresive move
+            else:  # if the player was also the last person to make an aggresive move
                 if last_agg == (cPI + 1) % self.noPlayers:
                     break
             print(agg, last_agg, "!!!!")
-            cPI = (cPI+1) % self.noPlayers #current player index
-            
+            cPI = (cPI + 1) % self.noPlayers  # current player index
 
 
 def start():
