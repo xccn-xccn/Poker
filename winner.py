@@ -22,22 +22,21 @@ def get_winner(hands, community):
     ]
 
     cards = [list(h) + community for h in hands]
-    best = []
+    best = [[]]
     for f in order:
         for i, player in enumerate(cards):
             finalHand = get_hand(player, f)
-
             if finalHand:
-                if not best:
-                    best = [finalHand, i + 1]
+                if best == [[]]:
+                    best = [[finalHand, i + 1]]
                 else:
-                    best_player = compare_hand(finalHand, best[0])
+                    best_player = compare_hand(finalHand, best[0][0])
                     if best_player == 1:
-                        best = [finalHand, i + 1]
-                    if best_player == 3:
-                        pass  # TODO draws
+                        best = [[finalHand, i + 1]]
+                    if best_player == 3:  # draw
+                        best.append([finalHand, i + 1])
 
-        if best:
+        if best != [[]]:
             break
 
     return best
@@ -52,26 +51,6 @@ def compare_hand(hand1, hand2):
             return 2
 
     return 3
-
-
-def get_best_hand(cards):
-    order = [
-        get_straight_flush,
-        get_four,
-        get_house,
-        get_flush,
-        get_straight,
-        get_three,
-        get_2pair,
-        get_pair,
-        lambda cards: sorted(
-            list(set(cards)), key=lambda x: cardValues[x[0]], reverse=True
-        ),
-    ]
-
-    for f in order:
-        if get_hand(cards, f):
-            return get_hand(cards, f)
 
 
 def get_hand(cards, f):
@@ -195,6 +174,26 @@ def get_straight_flush(cards):
     return s_f_cards
 
 
+def get_best_hand(cards):  # not really used
+    order = [
+        get_straight_flush,
+        get_four,
+        get_house,
+        get_flush,
+        get_straight,
+        get_three,
+        get_2pair,
+        get_pair,
+        lambda cards: sorted(
+            list(set(cards)), key=lambda x: cardValues[x[0]], reverse=True
+        ),
+    ]
+
+    for f in order:
+        if get_hand(cards, f):
+            return get_hand(cards, f)
+
+
 if __name__ == "__main__":
     # print(get_flush(["AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "KD"]))
     # print(get_straight(["AC", "2C", "4C", "5C", "6C", "7C", "8D", "9C", "3D"]))
@@ -205,4 +204,4 @@ if __name__ == "__main__":
 
     print(get_winner([("AD", "AH"), ("2D", "3H")], ["AC", "2S", "2C", "3S", "9D"]))
 
-    print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
+    # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
