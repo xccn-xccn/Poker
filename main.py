@@ -1,10 +1,11 @@
 import random
 from deck import deck
+from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
 
-# TODO Work out the winner if there is only one player make them win, add pot to winners chips
+# TODO If all players
 class Player:
     pos_names = {
         1: "Small blind",
@@ -50,13 +51,18 @@ class Human(Player):
     def __init__(self, position):
         super().__init__(position)
 
-    def move(self, to_call, pot):
+    def move(self, to_call, pot, community):
         # super().move()  # check if return in the parent function actually ends it (it doesnt)
 
         if self.fold:
             return
+        
+        if community:
+            end = f", Community Cards {community}"
+        else:
+            end = ""
 
-        print(f"Your cards are {self.holeCards}")
+        print(f"Your cards are {self.holeCards}{end}")
 
         if to_call == self.bet:  # should not be possible to be less
             option2 = "2 Check"
@@ -127,12 +133,23 @@ class Table:
 
         self.communityCard_i = (
             self.noPlayers * 2
-        )  # the index of the next card to be drawn
+        )  # the index of the first card to be drawn in the flop
         for r in range(0, 4):
             self.s_round(r, sb_i)
 
             for p in self.players:
                 p.set_bet()
+
+        c_players = [p for p in self.players if not p.fold]
+
+        wInfo = get_winner([p.holeCards for p in c_players], self.community)
+        if len(wInfo) == 1:
+            wHand, wPI = wInfo[0]
+
+            wPlayer = c_players[wPI]
+            print(f"Winner {wPlayer.position} wins {self.pot} chips with {wHand}")
+
+            wPlayer.chips += self.pot
 
     def s_round(self, r, sb_i):
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
@@ -140,13 +157,14 @@ class Table:
         if r == 0:
             print("Pre Flop")
             cPI = (sb_i + 2) % self.noPlayers
+            self.community = None
         else:
             cPI = sb_i
             n = r + 2
 
-            community = self.deck[self.communityCard_i : self.communityCard_i + n]
+            self.community = self.deck[self.communityCard_i : self.communityCard_i + n]
 
-            print(f"{name[r]} Cards {community}")
+            print(f"{name[r]} Cards {self.community}")
 
         self.to_call = 0 if r != 0 else self.blinds[1]
 
@@ -162,22 +180,20 @@ class Table:
 
             currentPlayer = self.players[cPI]
 
-            print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
+            # print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
             if currentPlayer.fold != True:
 
-                agg, invested, bet = currentPlayer.move(self.to_call, self.pot)
+                agg, invested, bet = currentPlayer.move(self.to_call, self.pot, self.community)
                 self.pot += bet
             else:
                 agg = False
 
-            print(agg, last_agg)
             if agg:  # if the player just made an aggresive move (any bet / raise)
                 last_agg = cPI
                 self.to_call = invested
             else:  # if the player was also the last person to make an aggresive move
                 if last_agg == (cPI + 1) % self.noPlayers:
                     break
-            print(agg, last_agg, "!!!!")
             cPI = (cPI + 1) % self.noPlayers  # current player index
 
 
