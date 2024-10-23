@@ -4,7 +4,8 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#TODO Min bet, Cant bet more than current chips
+#TODO Make GUI
+#TODO Min bet, 
 #Main pot and side pots
 class Player:
     pos_names = {
