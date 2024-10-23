@@ -4,8 +4,8 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-
-# TODO If all players
+#TODO Min bet, Cant bet more than current chips
+#Main pot and side pots
 class Player:
     pos_names = {
         1: "Small blind",
@@ -124,6 +124,7 @@ class Table:
 
     def hand(self, sb_i):
         self.noPlayers = len(self.players)
+        self.playerRemaining = self.noPlayers
         self.pot = sum(self.blinds)
 
         random.shuffle(self.deck)
@@ -137,17 +138,28 @@ class Table:
         for r in range(0, 4):
             self.s_round(r, sb_i)
 
+            if self.playerRemaining == 1:
+                break
             for p in self.players:
                 p.set_bet()
 
         c_players = [p for p in self.players if not p.fold]
+        if self.playerRemaining > 1:
+            
 
-        wInfo = get_winner([p.holeCards for p in c_players], self.community)
+            wInfo = get_winner([p.holeCards for p in c_players], self.community)
+        else:
+            wInfo = [[None, 1]]
         if len(wInfo) == 1:
             wHand, wPI = wInfo[0]
-
+            wPI -= 1
             wPlayer = c_players[wPI]
-            print(f"Winner {wPlayer.position} wins {self.pot} chips with {wHand}")
+
+            if wHand:
+                end = f"with {wHand}"
+            else:
+                end = ""
+            print(f"Winner {wPlayer.positionName} wins {self.pot} chips {end}")
 
             wPlayer.chips += self.pot
 
@@ -177,7 +189,8 @@ class Table:
             ) % self.noPlayers  # last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
         # agg = False
         while cont:
-
+            if self.playerRemaining == 1:
+                return
             currentPlayer = self.players[cPI]
 
             # print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
@@ -185,6 +198,9 @@ class Table:
 
                 agg, invested, bet = currentPlayer.move(self.to_call, self.pot, self.community)
                 self.pot += bet
+
+                if currentPlayer.fold == True:
+                    self.playerRemaining -= 1
             else:
                 agg = False
 
@@ -211,7 +227,7 @@ def main():
     sb_i = 5
     while running:
         table1.hand(sb_i)
-        sb_i = (sb_i + 1) % 6
+        sb_i = (sb_i - 1) % 6
 
 
 if __name__ == "__main__":
