@@ -4,9 +4,13 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-#TODO Make GUI
-#TODO Min bet, 
-#Main pot and side pots
+# BUG Players continue to play when chips = 0 line 30?
+# BUG chips appear to reset for bots
+# BUG Bots fold when there is only 1 player in the hand resulting in a crash because there are unexcectedly 0 players
+# TODO Make small functions for Player.move to reduce repetition between Bot and Human, make all in attribute
+# TODO Make GUI
+# TODO Min bet, Implement all in
+# Main pot and side pots
 class Player:
     pos_names = {
         1: "Small blind",
@@ -22,7 +26,12 @@ class Player:
         self.position = position
 
     def new_hand(self, deck, blinds):
+
         self.fold = False
+
+        if self.chips <= 0:
+            print("Player is Broke")
+            self.fold = True
 
         self.position = self.position + 1  # TODO important change this to be dynamic
         self.position = (
@@ -34,17 +43,74 @@ class Player:
         self.holeCards = deck[i * 2 : i * 2 + 2]
 
         if self.position <= 2:  # One of the blinds
-            self.bet = blinds[i]
+            self.invested = blinds[i]
         else:
-            self.bet = 0
+            self.invested = 0
 
-        self.chips -= self.bet
+        self.chips -= self.invested
 
     def set_bet(self, val=0):
-        self.bet = val
+        self.invested = val
 
     def move(self):
         pass
+
+
+class Bot(Player):
+    def move(self, roundTotal, pot, community):
+
+        if self.fold:
+            return
+
+        l = 1
+        h = 3
+        if roundTotal == 0: 
+            l = 2
+        if roundTotal >= self.invested + self.chips: #all in
+            h = 2
+            l = 2
+        
+        action = random.randint(l, h)
+        if action == 1:  # change maybe
+            actionText = "folds"
+            self.fold = True
+            agg = False
+            extra = 0
+
+        elif action == 2:
+
+            agg = False
+            extra = roundTotal - self.invested #TODO Make side and main pots
+
+            actionText = "calls" if extra else "checks"
+            # self.invested = roundTotal #TODO Make side and main pots
+
+            if roundTotal >= self.invested + self.chips: #all in
+                extra = self.chips
+
+        else:
+            extra = random.randint(roundTotal-self.invested, self.chips) # BUG Int rounding not trustworthy TODO make max bet half chips
+
+
+            if self.invested + extra < roundTotal:
+                raise Exception
+
+            if extra > self.chips:
+                raise Exception
+
+
+
+            
+            actionText = f"bets {extra}"
+
+            
+            agg = True
+
+        self.invested += extra
+        self.chips -= extra
+
+        print(f"{self.positionName} {actionText} with {self.chips} chips behind")
+        return agg, self.invested, extra
 
 
 class Human(Player):
@@ -52,12 +118,12 @@ class Human(Player):
     def __init__(self, position):
         super().__init__(position)
 
-    def move(self, to_call, pot, community):
+    def move(self, roundTotal, pot, community):
         # super().move()  # check if return in the parent function actually ends it (it doesnt)
 
         if self.fold:
             return
-        
+
         if community:
             end = f", Community Cards {community}"
         else:
@@ -65,15 +131,15 @@ class Human(Player):
 
         print(f"Your cards are {self.holeCards}{end}")
 
-        if to_call == self.bet:  # should not be possible to be less
+        if roundTotal == self.invested:  # should not be possible to be less
             option2 = "2 Check"
         else:
-            option2 = f"2 Call {to_call - self.bet}"
-        message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.bet} in this round so far - pot {pot}:
+            option2 = f"2 Call {roundTotal - self.invested}"
+        message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.invested} in this round so far - pot {pot}:
             1 Fold
             {option2}
             3 Bet
-            Current table bet {to_call} \n"""
+            Current table bet {roundTotal} \n"""
 
         action = int(input(message))
 
@@ -87,14 +153,17 @@ class Human(Player):
 
         elif action == 2:
             agg = False
-            extra = to_call - self.bet
-            self.bet = to_call
+            extra = roundTotal - self.invested
+            self.invested = roundTotal
+
+            if roundTotal > self.invested + self.chips: #all in
+                extra = self.chips
         else:
             extra = int(input("How much is your bet "))
 
             while True:
 
-                if self.bet + extra < to_call:
+                if self.invested + extra < roundTotal:
                     extra = int(input("Bet is too small "))
                     continue
 
@@ -104,12 +173,13 @@ class Human(Player):
 
                 break
 
-            self.bet += extra
+            
             agg = True
 
+        self.invested += extra
         self.chips -= extra
 
-        return agg, self.bet, extra
+        return agg, self.invested, extra
 
 
 class Table:
@@ -125,7 +195,6 @@ class Table:
 
     def hand(self, sb_i):
         self.noPlayers = len(self.players)
-        self.playerRemaining = self.noPlayers
         self.pot = sum(self.blinds)
 
         random.shuffle(self.deck)
@@ -133,6 +202,8 @@ class Table:
         for p in self.players:
             p.new_hand(self.deck, self.blinds)
 
+        
+        self.playerRemaining = sum([1 for p in self.players if p.fold]) #Check
         self.communityCard_i = (
             self.noPlayers * 2
         )  # the index of the first card to be drawn in the flop
@@ -146,7 +217,6 @@ class Table:
 
         c_players = [p for p in self.players if not p.fold]
         if self.playerRemaining > 1:
-            
 
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
         else:
@@ -197,7 +267,9 @@ class Table:
             # print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
             if currentPlayer.fold != True:
 
-                agg, invested, bet = currentPlayer.move(self.to_call, self.pot, self.community)
+                agg, invested, bet = currentPlayer.move(
+                    self.to_call, self.pot, self.community
+                )
                 self.pot += bet
 
                 if currentPlayer.fold == True:
@@ -217,8 +289,10 @@ class Table:
 def start():
     table1 = Table()
 
-    for r in range(6):
-        table1.add_player(Human(r + 1))
+    for r in range(5):
+        table1.add_player(Bot(r + 1))
+
+    table1.add_player(Human(6))
     return table1
 
 
