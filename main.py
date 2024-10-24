@@ -4,9 +4,8 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-# BUG Players continue to play when chips = 0 line 30?
-# BUG chips appear to reset for bots
 # BUG Bots fold when there is only 1 player in the hand resulting in a crash because there are unexcectedly 0 players
+# BUG cards not shown (so self,playerRemaining == 1) when bots go all in
 # TODO Make small functions for Player.move to reduce repetition between Bot and Human, make all in attribute
 # TODO Make GUI
 # TODO Min bet, Implement all in
