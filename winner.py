@@ -59,7 +59,7 @@ def get_hand(cards, f):
         return False
     remaining = [c for c in cards if c not in used]
 
-    return used + remaining[: 5 - len(used)]
+    return used[:5] + remaining[: 5 - len(used)]
 
 
 def get_same(cards, n):

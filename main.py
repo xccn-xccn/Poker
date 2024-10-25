@@ -8,7 +8,7 @@ from winner import get_winner
 # BUG cards not shown (so self,playerRemaining == 1) when bots go all in
 # TODO Make small functions for Player.move to reduce repetition between Bot and Human, make all in attribute
 # TODO Make GUI
-# TODO Min bet, Implement all in
+# TODO Min bet, Skip positions when players have ran out of money Implement all in
 # Main pot and side pots
 class Player:
     pos_names = {
