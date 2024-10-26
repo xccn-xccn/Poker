@@ -29,7 +29,7 @@ def get_winner1(h1, h2):
         get_three,
         get_2pair,
         get_pair,
-        lambda cards: sorted(list(set(cards)), key=lambda x: cardValues[x[0]], reverse=True)
+        cardValue_sort,
     ]
 
     cards = [h1, h2]

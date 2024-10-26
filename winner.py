@@ -16,9 +16,7 @@ def get_winner(hands, community):
         get_three,
         get_2pair,
         get_pair,
-        lambda cards: sorted(
-            list(set(cards)), key=lambda x: cardValues[x[0]], reverse=True
-        ),
+        cardValue_sort,
     ]
 
     cards = [list(h) + community for h in hands]
@@ -53,11 +51,15 @@ def compare_hand(hand1, hand2):
     return 3
 
 
+def cardValue_sort(x):
+    return sorted(x, key=lambda y: cardValues[y[0]], reverse=True)
+
+
 def get_hand(cards, f):
     used = f(cards)
     if used == False:
         return False
-    remaining = [c for c in cards if c not in used]
+    remaining = cardValue_sort([c for c in cards if c not in used])
 
     return used[:5] + remaining[: 5 - len(used)]
 
@@ -70,11 +72,7 @@ def get_same(cards, n):
         if val >= n:
             pairs.append(card)
 
-    output = sorted(
-        [c for c in cards if c[0] in pairs],
-        key=lambda x: cardValues[x[0]],
-        reverse=True,
-    )
+    output = cardValue_sort([c for c in cards if c[0] in pairs])
 
     return output if output else False
 
@@ -155,9 +153,7 @@ def get_flush(cards, l_5=True):
     else:
         return False
 
-    output = sorted(
-        [c for c in cards if c[1] == suit], key=lambda x: cardValues[x[0]], reverse=True
-    )
+    output = cardValue_sort([c for c in cards if c[1] == suit])
     if l_5:
         output = output[:5]
 
@@ -174,7 +170,7 @@ def get_straight_flush(cards):
     return s_f_cards
 
 
-def get_best_hand(cards):  # not really used
+def get_best_hand(cards):
     order = [
         get_straight_flush,
         get_four,
@@ -184,9 +180,7 @@ def get_best_hand(cards):  # not really used
         get_three,
         get_2pair,
         get_pair,
-        lambda cards: sorted(
-            list(set(cards)), key=lambda x: cardValues[x[0]], reverse=True
-        ),
+        cardValue_sort,
     ]
 
     for f in order:
@@ -202,6 +196,6 @@ if __name__ == "__main__":
     # print(get_pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
     # print(get_2pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
 
-    print(get_winner([("AD", "AH"), ("2D", "3H")], ["AC", "2S", "2C", "3S", "9D"]))
+    print(get_winner([("QD", "4H"), ("2D", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
 
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
