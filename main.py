@@ -5,11 +5,9 @@ from winner import get_winner
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
 
-# BUG Players can decide to bet when they have to go all in but the betting size is either too little to call but more than players chips
 # BUG blinds can put players into the negative
-# TODO stop betting from being an option if the player has to go all in to call, make all in attribute
-# TODO Make GUI
-# TODO Min bet, Skip positions when players have ran out of money Implement all in
+# TODO Make GUI, Draws
+# TODO Min bet, Skip positions when players have ran out of money
 # Main pot and side pots
 class Player:
     pos_names = {
@@ -21,14 +19,14 @@ class Player:
         6: "Button",
     }
 
-    def __init__(self, position) -> None:
-        self.chips = 1000
+    def __init__(self, position, chips=1000) -> None:
+        self.chips = chips
         self.position = position
 
     def new_hand(self, deck, blinds):
 
         self.fold = False
-
+        self.allIn = False
         if self.chips <= 0:
             print("Player is Broke")
             self.fold = True
@@ -67,7 +65,8 @@ class Player:
 
             actionText = "calls" if extra else "checks"
 
-            if roundTotal >= self.roundInvested + self.chips:  # all in
+            if roundTotal >= self.roundInvested + self.chips:
+                self.allIn = True
                 extra = self.chips
 
         else:
@@ -109,9 +108,6 @@ class Bot(Player):
 
     def move(self, roundTotal, pot, community):
 
-        if self.fold:
-            return
-
         action = self.get_action(roundTotal)
 
         agg, self.roundInvested, extra, actionText = super().move_action(
@@ -126,10 +122,8 @@ class Bot(Player):
 
 class Human(Player):
 
-    def __init__(self, position):
-        super().__init__(position)
-
     def get_bet(self, roundTotal):
+
         extra = int(input("How much is your bet "))
 
         while True:
@@ -146,43 +140,46 @@ class Human(Player):
 
     def display_message(self, roundTotal, pot, community):
 
+        valid = [1, 2, 3]
+        option3 = "3 Bet"
+
         if community:
             end = f", Community Cards {community}"
         else:
             end = ""
-        print(roundTotal, self.roundInvested)
+
         print(f"Your cards are {self.holeCards}{end}")
 
         if roundTotal == self.roundInvested:  # should not be possible to be less
             option2 = "2 Check"
+        elif roundTotal >= self.roundInvested + self.chips:
+            option2 = f"2 Call (All In) {roundTotal - self.roundInvested}"
+            option3 = ""
+            valid = [1, 2]
         else:
             option2 = f"2 Call {roundTotal - self.roundInvested}"
+
         message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.roundInvested} in this round so far - pot {pot}:
             1 Fold
             {option2}
-            3 Bet
+            {option3}
             Current table bet {roundTotal} \n"""
 
-        return message
+        return message, valid
 
     def get_action(self, roundTotal, pot, community):
 
-        message = self.display_message(roundTotal, pot, community)
+        message, valid = self.display_message(roundTotal, pot, community)
 
         action = int(input(message))
 
+        while action not in valid:
+            action = int(input("Re-enter move "))
         return action
 
     def move(self, roundTotal, pot, community):
-        # super().move()  # check if return in the parent function actually ends it (it doesnt)
-
-        if self.fold:
-            return
 
         action = self.get_action(roundTotal, pot, community)
-
-        while action not in [1, 2, 3]:
-            action = int(input("Re-enter move "))
 
         agg, self.roundInvested, extra, actionText = super().move_action(
             action, roundTotal
@@ -228,23 +225,32 @@ class Table:
                 p.end_round()
 
         c_players = [p for p in self.players if not p.fold]
-        if self.playerRemaining > 1:
 
+        print([x.positionName for x in c_players])
+
+        if self.playerRemaining > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
         else:
             wInfo = [[None, 1]]
+
         if len(wInfo) == 1:
-            wHand, wPI = wInfo[0]
-            wPI -= 1
-            wPlayer = c_players[wPI]
+            wHand = wInfo[0][0]
+            wPIs = [x[1] - 1 for x in wInfo]
+            winners = [p for i, p in enumerate(c_players) if i in wPIs]
+
+            for wP in winners:
+                wP.chips += self.pot // len(winners)
 
             if wHand:
                 end = f"with {wHand}"
             else:
                 end = ""
-            print(f"Winner {wPlayer.positionName} wins {self.pot} chips {end}")
 
-            wPlayer.chips += self.pot
+            print(
+                f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.positionName for p in winners])} wins {self.pot} chips {end}"
+            )
+
+            print("Testing", [x.holeCards for x in winners], self.community)
 
     def s_round(self, r, sb_i):
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
@@ -272,12 +278,16 @@ class Table:
             ) % self.noPlayers  # last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
         # agg = False
         while cont:
+            agg = False
             if self.playerRemaining == 1:
                 return
             currentPlayer = self.players[cPI]
 
-            # print("position", currentPlayer.position, cPI, last_agg, currentPlayer.fold)
-            if currentPlayer.fold != True:
+            if currentPlayer.allIn == True:
+                print(
+                    f"{currentPlayer.positionName} is all in so turn is skipped {currentPlayer.chips} behind (should be 0)"
+                )
+            elif currentPlayer.fold == False:
 
                 agg, invested, bet = currentPlayer.move(
                     self.roundTotal, self.pot, self.community
@@ -286,8 +296,6 @@ class Table:
 
                 if currentPlayer.fold == True:
                     self.playerRemaining -= 1
-            else:
-                agg = False
 
             if agg:  # if the player just made an aggresive move (any bet / raise)
                 last_agg = cPI
@@ -304,7 +312,7 @@ def start():
     for r in range(5):
         table1.add_player(Bot(r + 1))
 
-    table1.add_player(Human(6))
+    table1.add_player(Human(6, chips=2000))
     return table1
 
 
