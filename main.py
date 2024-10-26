@@ -64,7 +64,7 @@ class Bot(Player):
         h = 3
         if roundTotal == 0: 
             l = 2
-        if roundTotal >= self.invested + self.chips: #all in BUG round ends but self.invested does not change?
+        if pot >= self.invested + self.chips: #all in BUG round ends but self.invested does not change?
             h = 2
             l = 2
         
@@ -83,7 +83,7 @@ class Bot(Player):
             actionText = "calls" if extra else "checks"
             # self.invested = roundTotal #TODO Make side and main pots
 
-            if roundTotal >= self.invested + self.chips: #all in
+            if pot >= self.invested + self.chips: #all in
                 extra = self.chips
 
         else:
@@ -154,7 +154,7 @@ class Human(Player):
             extra = roundTotal - self.invested
             self.invested = roundTotal
 
-            if roundTotal > self.invested + self.chips: #all in negative chips if too much money all in - only somtimes??
+            if pot >= self.invested + self.chips: #all in negative chips if too much money all in - only somtimes??
                 extra = self.chips
         else:
             extra = int(input("How much is your bet "))
@@ -301,6 +301,8 @@ def main():
     while running:
         table1.hand(sb_i)
         sb_i = (sb_i - 1) % 6
+
+        input("Click Enter for next hand: \n")
 
 
 if __name__ == "__main__":
