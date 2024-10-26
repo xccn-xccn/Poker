@@ -1,6 +1,6 @@
 from collections import Counter
 
-cardValues = {}
+cardValues = {1: "A"}
 for v, k in enumerate("23456789TJQKA", 2):
     cardValues[k] = v
     cardValues[v] = k

@@ -4,8 +4,7 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-# BUG Bots fold when there is only 1 player in the hand resulting in a crash because there are unexcectedly 0 players
-# BUG cards not shown (so self.playerRemaining == 1) when players go all in
+# BUG Players can decide to bet when they have to go all in but the betting size is either too little to call but more than players chips
 # TODO Make small functions for Player.move to reduce repetition between Bot and Human, make all in attribute
 # TODO Make GUI
 # TODO Min bet, Skip positions when players have ran out of money Implement all in
@@ -65,7 +64,7 @@ class Bot(Player):
         h = 3
         if roundTotal == 0: 
             l = 2
-        if roundTotal >= self.invested + self.chips: #all in
+        if roundTotal >= self.invested + self.chips: #all in BUG round ends but self.invested does not change?
             h = 2
             l = 2
         
@@ -155,7 +154,7 @@ class Human(Player):
             extra = roundTotal - self.invested
             self.invested = roundTotal
 
-            if roundTotal > self.invested + self.chips: #all in
+            if roundTotal > self.invested + self.chips: #all in negative chips if too much money all in - only somtimes??
                 extra = self.chips
         else:
             extra = int(input("How much is your bet "))
@@ -202,7 +201,7 @@ class Table:
             p.new_hand(self.deck, self.blinds)
 
         
-        self.playerRemaining = sum([1 for p in self.players if p.fold]) #Check
+        self.playerRemaining = sum([1 for p in self.players if not p.fold]) #Check
         self.communityCard_i = (
             self.noPlayers * 2
         )  # the index of the first card to be drawn in the flop
