@@ -4,7 +4,9 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
+
 # BUG Players can decide to bet when they have to go all in but the betting size is either too little to call but more than players chips
+# BUG blinds can put players into the negative
 # TODO Make small functions for Player.move to reduce repetition between Bot and Human, make all in attribute
 # TODO Make GUI
 # TODO Min bet, Skip positions when players have ran out of money Implement all in
@@ -41,14 +43,18 @@ class Player:
         self.holeCards = deck[i * 2 : i * 2 + 2]
 
         if self.position <= 2:  # One of the blinds
-            self.invested = blinds[i]
+            self.totalInvested = blinds[i]
         else:
-            self.invested = 0
+            self.totalInvested = 0
+        self.roundInvested = self.totalInvested
 
-        self.chips -= self.invested
+        self.chips -= self.roundInvested
 
-    def set_bet(self, val=0):
-        self.invested = val
+    def end_round(self):
+        self.roundInvested = 0
+
+    # def set_bet(self, val=0):
+    #     self.roundInvested = val
 
     def move(self):
         pass
@@ -62,13 +68,18 @@ class Bot(Player):
 
         l = 1
         h = 3
-        if roundTotal == 0: 
+        if roundTotal == 0:
             l = 2
-        if pot >= self.invested + self.chips: #all in BUG round ends but self.invested does not change?
+        if (
+            roundTotal >= self.roundInvested + self.chips
+        ):  # all in BUG round ends but self.invested does not change?
             h = 2
             l = 2
-        
+
         action = random.randint(l, h)
+
+        if roundTotal < self.roundInvested:
+            raise Exception
         if action == 1:  # change maybe
             actionText = "folds"
             self.fold = True
@@ -78,37 +89,34 @@ class Bot(Player):
         elif action == 2:
 
             agg = False
-            extra = roundTotal - self.invested #TODO Make side and main pots
+            extra = roundTotal - self.roundInvested  # TODO Make side and main pots
 
             actionText = "calls" if extra else "checks"
             # self.invested = roundTotal #TODO Make side and main pots
 
-            if pot >= self.invested + self.chips: #all in
+            if roundTotal >= self.roundInvested + self.chips:  # all in
                 extra = self.chips
 
         else:
-            extra = random.randint(roundTotal-self.invested, self.chips) # BUG Int rounding not trustworthy TODO make max bet half chips
+            extra = random.randint(
+                roundTotal - self.roundInvested, self.chips
+            )  # BUG Int rounding not trustworthy TODO make max bet half chips
 
-
-            if self.invested + extra < roundTotal:
+            if self.roundInvested + extra < roundTotal:
                 raise Exception
 
             if extra > self.chips:
                 raise Exception
 
-
-
-            
             actionText = f"bets {extra}"
 
-            
             agg = True
 
-        self.invested += extra
+        self.roundInvested += extra
         self.chips -= extra
 
-        print(f"{self.positionName} {actionText} with {self.chips} chips behind")
-        return agg, self.invested, extra
+        print(f"{self.positionName} {actionText} with {self.chips} chips behind {self.roundInvested} invested this round")
+        return agg, self.roundInvested, extra
 
 
 class Human(Player):
@@ -126,14 +134,16 @@ class Human(Player):
             end = f", Community Cards {community}"
         else:
             end = ""
-
+        print(roundTotal, self.roundInvested)
         print(f"Your cards are {self.holeCards}{end}")
 
-        if roundTotal == self.invested:  # should not be possible to be less
+        if roundTotal < self.roundInvested:
+            raise Exception
+        if roundTotal == self.roundInvested:  # should not be possible to be less
             option2 = "2 Check"
         else:
-            option2 = f"2 Call {roundTotal - self.invested}"
-        message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.invested} in this round so far - pot {pot}:
+            option2 = f"2 Call {roundTotal - self.roundInvested}"
+        message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.roundInvested} in this round so far - pot {pot}:
             1 Fold
             {option2}
             3 Bet
@@ -151,17 +161,18 @@ class Human(Player):
 
         elif action == 2:
             agg = False
-            extra = roundTotal - self.invested
-            self.invested = roundTotal
+            extra = roundTotal - self.roundInvested
 
-            if pot >= self.invested + self.chips: #all in negative chips if too much money all in - only somtimes??
+            if (
+                roundTotal >= self.roundInvested + self.chips
+            ):  # all in negative chips if too much money all in - only somtimes??
                 extra = self.chips
         else:
             extra = int(input("How much is your bet "))
 
             while True:
 
-                if self.invested + extra < roundTotal:
+                if self.roundInvested + extra < roundTotal:
                     extra = int(input("Bet is too small "))
                     continue
 
@@ -171,13 +182,12 @@ class Human(Player):
 
                 break
 
-            
             agg = True
 
-        self.invested += extra
+        self.roundInvested += extra
         self.chips -= extra
 
-        return agg, self.invested, extra
+        return agg, self.roundInvested, extra
 
 
 class Table:
@@ -200,8 +210,7 @@ class Table:
         for p in self.players:
             p.new_hand(self.deck, self.blinds)
 
-        
-        self.playerRemaining = sum([1 for p in self.players if not p.fold]) #Check
+        self.playerRemaining = sum([1 for p in self.players if not p.fold])  # Check
         self.communityCard_i = (
             self.noPlayers * 2
         )  # the index of the first card to be drawn in the flop
@@ -211,7 +220,7 @@ class Table:
             if self.playerRemaining == 1:
                 break
             for p in self.players:
-                p.set_bet()
+                p.end_round()
 
         c_players = [p for p in self.players if not p.fold]
         if self.playerRemaining > 1:
@@ -247,7 +256,7 @@ class Table:
 
             print(f"{name[r]} Cards {self.community}")
 
-        self.to_call = 0 if r != 0 else self.blinds[1]
+        self.roundTotal = 0 if r != 0 else self.blinds[1]
 
         cont = True
         if r == 0:
@@ -266,7 +275,7 @@ class Table:
             if currentPlayer.fold != True:
 
                 agg, invested, bet = currentPlayer.move(
-                    self.to_call, self.pot, self.community
+                    self.roundTotal, self.pot, self.community
                 )
                 self.pot += bet
 
@@ -277,7 +286,7 @@ class Table:
 
             if agg:  # if the player just made an aggresive move (any bet / raise)
                 last_agg = cPI
-                self.to_call = invested
+                self.roundTotal = invested
             else:  # if the player was also the last person to make an aggresive move
                 if last_agg == (cPI + 1) % self.noPlayers:
                     break
