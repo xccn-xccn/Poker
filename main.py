@@ -7,7 +7,7 @@ from winner import get_winner
 
 # BUG Players can decide to bet when they have to go all in but the betting size is either too little to call but more than players chips
 # BUG blinds can put players into the negative
-# TODO Make small functions for Player.move to reduce repetition between Bot and Human, make all in attribute
+# TODO stop betting from being an option if the player has to go all in to call, make all in attribute
 # TODO Make GUI
 # TODO Min bet, Skip positions when players have ran out of money Implement all in
 # Main pot and side pots
@@ -53,33 +53,7 @@ class Player:
     def end_round(self):
         self.roundInvested = 0
 
-    # def set_bet(self, val=0):
-    #     self.roundInvested = val
-
-    def move(self):
-        pass
-
-
-class Bot(Player):
-    def move(self, roundTotal, pot, community):
-
-        if self.fold:
-            return
-
-        l = 1
-        h = 3
-        if roundTotal == 0:
-            l = 2
-        if (
-            roundTotal >= self.roundInvested + self.chips
-        ):  # all in BUG round ends but self.invested does not change?
-            h = 2
-            l = 2
-
-        action = random.randint(l, h)
-
-        if roundTotal < self.roundInvested:
-            raise Exception
+    def move_action(self, action, roundTotal):
         if action == 1:  # change maybe
             actionText = "folds"
             self.fold = True
@@ -92,21 +66,12 @@ class Bot(Player):
             extra = roundTotal - self.roundInvested  # TODO Make side and main pots
 
             actionText = "calls" if extra else "checks"
-            # self.invested = roundTotal #TODO Make side and main pots
 
             if roundTotal >= self.roundInvested + self.chips:  # all in
                 extra = self.chips
 
         else:
-            extra = random.randint(
-                roundTotal - self.roundInvested, self.chips
-            )  # BUG Int rounding not trustworthy TODO make max bet half chips
-
-            if self.roundInvested + extra < roundTotal:
-                raise Exception
-
-            if extra > self.chips:
-                raise Exception
+            extra = self.get_bet(roundTotal)
 
             actionText = f"bets {extra}"
 
@@ -115,7 +80,47 @@ class Bot(Player):
         self.roundInvested += extra
         self.chips -= extra
 
-        print(f"{self.positionName} {actionText} with {self.chips} chips behind {self.roundInvested} invested this round")
+        return agg, self.roundInvested, extra, actionText
+
+    def move(self):
+        pass
+
+
+class Bot(Player):
+    def get_bet(self, roundTotal):
+        extra = random.randint(
+            roundTotal - self.roundInvested, self.chips
+        )  # BUG Int rounding not trustworthy TODO make max bet half chips
+
+        return extra
+
+    def get_action(self, roundTotal):
+        l = 1
+        h = 3
+        if roundTotal == 0:
+            l = 2
+        if roundTotal >= self.roundInvested + self.chips:
+            h = 2
+            l = 2
+
+        action = random.randint(l, h)
+
+        return action
+
+    def move(self, roundTotal, pot, community):
+
+        if self.fold:
+            return
+
+        action = self.get_action(roundTotal)
+
+        agg, self.roundInvested, extra, actionText = super().move_action(
+            action, roundTotal
+        )
+
+        print(
+            f"{self.positionName} {actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+        )
         return agg, self.roundInvested, extra
 
 
@@ -124,11 +129,22 @@ class Human(Player):
     def __init__(self, position):
         super().__init__(position)
 
-    def move(self, roundTotal, pot, community):
-        # super().move()  # check if return in the parent function actually ends it (it doesnt)
+    def get_bet(self, roundTotal):
+        extra = int(input("How much is your bet "))
 
-        if self.fold:
-            return
+        while True:
+
+            if self.roundInvested + extra < roundTotal:
+                extra = int(input("Bet is too small "))
+                continue
+
+            if extra > self.chips:
+                extra = int(input("Bet is too large "))
+                continue
+
+            return extra  # bad practice?
+
+    def display_message(self, roundTotal, pot, community):
 
         if community:
             end = f", Community Cards {community}"
@@ -137,8 +153,6 @@ class Human(Player):
         print(roundTotal, self.roundInvested)
         print(f"Your cards are {self.holeCards}{end}")
 
-        if roundTotal < self.roundInvested:
-            raise Exception
         if roundTotal == self.roundInvested:  # should not be possible to be less
             option2 = "2 Check"
         else:
@@ -149,44 +163,35 @@ class Human(Player):
             3 Bet
             Current table bet {roundTotal} \n"""
 
+        return message
+
+    def get_action(self, roundTotal, pot, community):
+
+        message = self.display_message(roundTotal, pot, community)
+
         action = int(input(message))
+
+        return action
+
+    def move(self, roundTotal, pot, community):
+        # super().move()  # check if return in the parent function actually ends it (it doesnt)
+
+        if self.fold:
+            return
+
+        action = self.get_action(roundTotal, pot, community)
 
         while action not in [1, 2, 3]:
             action = int(input("Re-enter move "))
 
-        if action == 1:  # change maybe
-            self.fold = True
-            agg = False
-            extra = 0
+        agg, self.roundInvested, extra, actionText = super().move_action(
+            action, roundTotal
+        )
 
-        elif action == 2:
-            agg = False
-            extra = roundTotal - self.roundInvested
-
-            if (
-                roundTotal >= self.roundInvested + self.chips
-            ):  # all in negative chips if too much money all in - only somtimes??
-                extra = self.chips
-        else:
-            extra = int(input("How much is your bet "))
-
-            while True:
-
-                if self.roundInvested + extra < roundTotal:
-                    extra = int(input("Bet is too small "))
-                    continue
-
-                if extra > self.chips:
-                    extra = int(input("Bet is too large "))
-                    continue
-
-                break
-
-            agg = True
-
-        self.roundInvested += extra
-        self.chips -= extra
-
+        print(
+            f"{self.positionName} (YOU) {actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+        )
+        # Only printing for testing
         return agg, self.roundInvested, extra
 
 

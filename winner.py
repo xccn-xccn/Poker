@@ -196,6 +196,6 @@ if __name__ == "__main__":
     # print(get_pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
     # print(get_2pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
 
-    print(get_winner([("QD", "4H"), ("2D", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
+    print(get_winner([("AH", "JC"), ("AS", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
 
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
