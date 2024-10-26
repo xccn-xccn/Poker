@@ -233,24 +233,23 @@ class Table:
         else:
             wInfo = [[None, 1]]
 
-        if len(wInfo) == 1:
-            wHand = wInfo[0][0]
-            wPIs = [x[1] - 1 for x in wInfo]
-            winners = [p for i, p in enumerate(c_players) if i in wPIs]
+        wHand = wInfo[0][0]
+        wPIs = [x[1] - 1 for x in wInfo]
+        winners = [p for i, p in enumerate(c_players) if i in wPIs]
 
-            for wP in winners:
-                wP.chips += self.pot // len(winners)
+        for wP in winners:
+            wP.chips += self.pot // len(winners)
 
-            if wHand:
-                end = f"with {wHand}"
-            else:
-                end = ""
+        if wHand:
+            end = f"with {wHand}"
+        else:
+            end = ""
 
-            print(
-                f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.positionName for p in winners])} wins {self.pot} chips {end}"
-            )
+        print(
+            f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.positionName for p in winners])} wins {self.pot} chips {end}"
+        )
 
-            print("Testing", [x.holeCards for x in winners], self.community)
+        print("Testing", [x.holeCards for x in c_players], self.community)
 
     def s_round(self, r, sb_i):
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
@@ -273,10 +272,8 @@ class Table:
         if r == 0:
             last_agg = (sb_i + 2) % self.noPlayers  # last aggressor index
         else:
-            last_agg = (
-                sb_i
-            ) % self.noPlayers  # last aggressor is set to the sb so that at the end of the buttons turn, the next player who would be the sb is checked and the round ends
-        # agg = False
+            last_agg = (sb_i) % self.noPlayers
+
         while cont:
             agg = False
             if self.playerRemaining == 1:
@@ -297,13 +294,13 @@ class Table:
                 if currentPlayer.fold == True:
                     self.playerRemaining -= 1
 
-            if agg:  # if the player just made an aggresive move (any bet / raise)
+            if agg:
                 last_agg = cPI
                 self.roundTotal = invested
-            else:  # if the player was also the last person to make an aggresive move
+            else:
                 if last_agg == (cPI + 1) % self.noPlayers:
                     break
-            cPI = (cPI + 1) % self.noPlayers  # current player index
+            cPI = (cPI + 1) % self.noPlayers
 
 
 def start():
