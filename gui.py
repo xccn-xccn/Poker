@@ -3,7 +3,9 @@ from main import start
 
 pygame.init()
 
-# TODO display cards
+#TODO clean up code
+#TODO show other players actions, show winning hand in GUI
+#TODO create profile picture for players, show button / position
 
 
 def draw_text(text, font, text_colour, x, y):
