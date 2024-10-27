@@ -1,4 +1,4 @@
-import pygame
+import pygame, threading
 from main import start
 pygame.init()
 
@@ -28,11 +28,55 @@ class Button:
         if self.x <= bx <= self.x + BUTTONW and self.y <= by <= self.y + BUTTONH:
             print("Button Pressed")
 
-            self.action()
+            self.pressed_action()
 
 class DealButton(Button):
-    def action(self):
-        self.table.hand()
+    def pressed_action(self):
+        threading.Thread(target=self.table.hand).start()
+        # self.table.hand()
+        
+
+class ActionButton(Button):
+    def __init__(self, x, y, colour, text, action):
+        super().__init__(x, y, colour, text)
+        self.action = action
+
+    def pressed_action(self):
+        self.table.currentPlayer.paction = self.action
+
+class BetButton(ActionButton):
+    pbet = 0
+    def __init__(self, x, y, colour, text, action):
+        super().__init__(x, y, colour, text, action)
+        self.increase = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    +", False, WHITE), 1)
+        self.decrease = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    -", False, WHITE), -1)
+
+    def pressed_action(self):
+        if self.table.currentPlayer.action != 3:
+            return super().pressed_action()
+        else:
+            print(self.pbet)
+            self.table.currentPlayer.extra = BetButton.pbet #TODO bad
+            BetButton.pbet = 0  #bad
+
+    def draw(self):
+        super().draw()
+        draw_text(str(BetButton.pbet), text_font, BLACK, self.x, self.y - (BUTTONH + BUTTONBUFFER) * 3)
+
+class CBetButton(Button):
+    def __init__(self, x, y, colour, text, co):
+        super().__init__(x, y, colour, text)
+        self.co = co
+
+
+    def pressed_action(self):
+        if self.table.currentPlayer.action != 3:
+            return
+
+        BetButton.pbet += 40*self.co #bad
+
+        print(BetButton.pbet)
+
         
 screen = pygame.display.set_mode([1200, 800])
 screen_size = (1280, 800)
@@ -47,12 +91,15 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
 dealButton =  DealButton(screen_size[0] / 2 - (BUTTONW / 2), screen_size[1] / 6 - BUTTONH / 2, (169, 169, 169), text_font.render("   Deal", False, WHITE))
+foldButton = ActionButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 3, screen_size[1]- (BUTTONH + BUTTONBUFFER), (255, 0, 0), text_font.render("    Fold", False, WHITE), 1)
+checkButton = ActionButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER), (169, 169, 169), text_font.render("  Check", False, WHITE), 2)
+betButton = BetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER), (34, 140, 34), text_font.render("    Bet ", False, WHITE), 3)
 
-foldButton = Button(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 3, screen_size[1]- (BUTTONH + BUTTONBUFFER), (255, 0, 0), text_font.render("    Fold", False, WHITE))
-checkButton = Button(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER), (169, 169, 169), text_font.render("  Check", False, WHITE))
-betButton = Button(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER), (34, 140, 34), text_font.render("    Bet ", False, WHITE))
+# decreaseButton = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    -", False, WHITE), -1)
+# increaseButton = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    +", False, WHITE), 1)
 
-buttons = [dealButton, foldButton, checkButton, betButton]
+
+buttons = [dealButton, foldButton, checkButton, betButton, betButton.increase, betButton.decrease]
 
 # create a window
 screen = pygame.display.set_mode(screen_size)

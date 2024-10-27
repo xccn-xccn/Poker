@@ -1,4 +1,4 @@
-import random
+import random, time
 from deck import deck
 from winner import get_winner
 
@@ -124,19 +124,25 @@ class Human(Player):
 
     def get_bet(self, roundTotal):
 
-        extra = int(input("How much is your bet "))
+        self.extra = -1
+
+        while self.extra < 0:
+            print("Invalid Bet")
+            time.sleep(1)
 
         while True:
 
-            if self.roundInvested + extra < roundTotal:
-                extra = int(input("Bet is too small "))
+            if self.roundInvested + self.extra < roundTotal:
+                print("Bet is too small ")
+                time.sleep(1)
                 continue
 
-            if extra > self.chips:
-                extra = int(input("Bet is too large "))
+            if self.extra > self.chips:
+                print(("Bet is too large "))
+                time.sleep(1)
                 continue
 
-            return extra  # bad practice?
+            return self.extra  # bad practice?
 
     def display_message(self, roundTotal, pot, community):
 
@@ -171,18 +177,30 @@ class Human(Player):
 
         message, valid = self.display_message(roundTotal, pot, community)
 
-        action = int(input(message))
+        self.paction = 0 #not valid
+        self.action = 0
+        #set self.action from the button
+        count = 0
+        while True:
+            count += 1
+            print("in get action, action is currently invalid", count)
+            time.sleep(1)
 
-        while action not in valid:
-            action = int(input("Re-enter move "))
+            if self.paction in valid:
+                break
+
+        if self.paction not in valid:
+            
+            raise Exception
+        action = self.paction
         return action
 
     def move(self, roundTotal, pot, community):
 
-        action = self.get_action(roundTotal, pot, community)
+        self.action = self.get_action(roundTotal, pot, community)
 
         agg, self.roundInvested, extra, actionText = super().move_action(
-            action, roundTotal
+            self.action, roundTotal
         )
 
         print(
@@ -282,20 +300,21 @@ class Table:
             agg = False
             if self.playerRemaining == 1:
                 return
-            currentPlayer = self.players[cPI]
+            self.currentPlayer = self.players[cPI]
 
-            if currentPlayer.allIn == True:
+            if self.currentPlayer.allIn == True:
                 print(
-                    f"{currentPlayer.positionName} is all in so turn is skipped {currentPlayer.chips} behind (should be 0)"
+                    f"{self.currentPlayer.positionName} is all in so turn is skipped {self.currentPlayer.chips} behind (should be 0)"
                 )
-            elif currentPlayer.fold == False:
+            elif self.currentPlayer.fold == False:
 
-                agg, invested, bet = currentPlayer.move(
+                #function for button press here
+                agg, invested, bet = self.currentPlayer.move(
                     self.roundTotal, self.pot, self.community
                 )
                 self.pot += bet
 
-                if currentPlayer.fold == True:
+                if self.currentPlayer.fold == True:
                     self.playerRemaining -= 1
 
             if agg:
