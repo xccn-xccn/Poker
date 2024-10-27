@@ -21,12 +21,19 @@ class Button:
 
         screen.blit(self.text, (self.x, self.y))
 
+    def add_table(self, table):
+        self.table = table
+
     def check_press(self, bx, by):
         if self.x <= bx <= self.x + BUTTONW and self.y <= by <= self.y + BUTTONH:
             print("Button Pressed")
 
-class DealButton:
+            self.action()
+
+class DealButton(Button):
     def action(self):
+        self.table.hand()
+        
 screen = pygame.display.set_mode([1200, 800])
 screen_size = (1280, 800)
 
@@ -39,7 +46,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-dealButton =  Button(screen_size[0] / 2 - (BUTTONW / 2), screen_size[1] / 6 - BUTTONH / 2, (169, 169, 169), text_font.render("   Deal", False, WHITE))
+dealButton =  DealButton(screen_size[0] / 2 - (BUTTONW / 2), screen_size[1] / 6 - BUTTONH / 2, (169, 169, 169), text_font.render("   Deal", False, WHITE))
 
 foldButton = Button(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 3, screen_size[1]- (BUTTONH + BUTTONBUFFER), (255, 0, 0), text_font.render("    Fold", False, WHITE))
 checkButton = Button(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER), (169, 169, 169), text_font.render("  Check", False, WHITE))
@@ -64,7 +71,11 @@ tableImageSize = (646*TIS, 360*TIS)
 
 def main():
     running = True
-    sb_i = 6
+    table1 = start()
+
+    for b in buttons:
+        b.add_table(table1)
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
