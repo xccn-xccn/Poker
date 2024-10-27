@@ -1,4 +1,5 @@
 import pygame
+from main import start
 pygame.init()
 
 def draw_text(text, font, text_colour, x, y):
@@ -85,3 +86,16 @@ while running:
     clock.tick(60)
  
 pygame.quit()
+
+def main():
+    table1 = start()
+    running = True
+    sb_i = 5
+    while running:
+        table1.hand(sb_i)
+        sb_i = (sb_i - 1) % 6
+
+        input("Click Enter for next hand: \n")
+        
+if __name__ == "__main__":
+    main()

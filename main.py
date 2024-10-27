@@ -6,7 +6,7 @@ from winner import get_winner
 
 
 # BUG blinds can put players into the negative
-# TODO Make GUI, Draws
+# TODO Make GUI
 # TODO Min bet, Skip positions when players have ran out of money
 # Main pot and side pots
 class Player:
