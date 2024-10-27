@@ -7,6 +7,7 @@ from winner import get_winner
 
 # BUG blinds can put players into the negative
 # TODO Make GUI
+# TODO use os.path to use relative path instead of absolute path
 # TODO Min bet, Skip positions when players have ran out of money
 # Main pot and side pots
 class Player:
@@ -127,18 +128,18 @@ class Human(Player):
         self.extra = -1
 
         while self.extra < 0:
-            print("Invalid Bet")
+            # print("Invalid Bet")
             time.sleep(1)
 
         while True:
 
             if self.roundInvested + self.extra < roundTotal:
-                print("Bet is too small ")
+                # print("Bet is too small ")
                 time.sleep(1)
                 continue
 
             if self.extra > self.chips:
-                print(("Bet is too large "))
+                # print(("Bet is too large "))
                 time.sleep(1)
                 continue
 
@@ -183,7 +184,7 @@ class Human(Player):
         count = 0
         while True:
             count += 1
-            print("in get action, action is currently invalid", count)
+            # print("in get action, action is currently invalid", count)
             time.sleep(1)
 
             if self.paction in valid:
@@ -218,11 +219,14 @@ class Table:
         self.deck = deck
         self.blinds = [20, 40]
         self.sb_i = 6
+        self.running = False
+        self.community = []
 
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
 
     def hand(self):
+        self.running = True
         self.sb_i = (self.sb_i - 1) % 6
         self.noPlayers = len(self.players)
         self.pot = sum(self.blinds)
@@ -273,13 +277,14 @@ class Table:
 
         print("Testing", [x.holeCards for x in c_players], self.community)
 
+        self.running = True
     def s_round(self, r):
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         if r == 0:
             print("Pre Flop")
             cPI = (self.sb_i + 2) % self.noPlayers
-            self.community = None
+            self.community = []
         else:
             cPI = self.sb_i
             n = r + 2

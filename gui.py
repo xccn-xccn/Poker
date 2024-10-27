@@ -1,12 +1,38 @@
 import pygame, threading
 from main import start
+
 pygame.init()
+
+# TODO display cards
+
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
 
+
 text_font = pygame.font.SysFont("Comic Sans", 35)
+
+
+screen = pygame.display.set_mode([1200, 800])
+SCREENSIZE = (1200, 800)
+
+BUTTONW = 150
+BUTTONH = 50
+BUTTONBUFFER = 40
+
+CARDW, CARDH, CARDB = 47, 71, 3.75
+valFilename = {}
+suitFilename = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
+for k, v in zip(
+    "23456789TJQKA",
+    ["2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king", "ace"],
+):
+    valFilename[k] = v
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+
 
 class Button:
     def __init__(self, x, y, colour, text):
@@ -30,11 +56,15 @@ class Button:
 
             self.pressed_action()
 
+
 class DealButton(Button):
+    pressed = False
+
     def pressed_action(self):
+        DealButton.pressed = True
         threading.Thread(target=self.table.hand).start()
         # self.table.hand()
-        
+
 
 class ActionButton(Button):
     def __init__(self, x, y, colour, text, action):
@@ -44,81 +74,151 @@ class ActionButton(Button):
     def pressed_action(self):
         self.table.currentPlayer.paction = self.action
 
+
 class BetButton(ActionButton):
     pbet = 0
+
     def __init__(self, x, y, colour, text, action):
         super().__init__(x, y, colour, text, action)
-        self.increase = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    +", False, WHITE), 1)
-        self.decrease = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    -", False, WHITE), -1)
+        self.increase = CBetButton(
+            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
+            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
+            (34, 140, 34),
+            text_font.render("    +", False, WHITE),
+            1,
+        )
+        self.decrease = CBetButton(
+            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 2,
+            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
+            (34, 140, 34),
+            text_font.render("    -", False, WHITE),
+            -1,
+        )
 
     def pressed_action(self):
         if self.table.currentPlayer.action != 3:
             return super().pressed_action()
         else:
             print(self.pbet)
-            self.table.currentPlayer.extra = BetButton.pbet #TODO bad
-            BetButton.pbet = 0  #bad
+            self.table.currentPlayer.extra = BetButton.pbet  # TODO bad
+            BetButton.pbet = 0  # bad
 
     def draw(self):
         super().draw()
-        draw_text(str(BetButton.pbet), text_font, BLACK, self.x, self.y - (BUTTONH + BUTTONBUFFER) * 3)
+        draw_text(
+            str(BetButton.pbet),
+            text_font,
+            BLACK,
+            self.x,
+            self.y - (BUTTONH + BUTTONBUFFER) * 3,
+        )
+
 
 class CBetButton(Button):
     def __init__(self, x, y, colour, text, co):
         super().__init__(x, y, colour, text)
         self.co = co
 
-
     def pressed_action(self):
         if self.table.currentPlayer.action != 3:
             return
 
-        BetButton.pbet += 40*self.co #bad
+        BetButton.pbet += 40 * self.co  # bad
 
         print(BetButton.pbet)
 
-        
-screen = pygame.display.set_mode([1200, 800])
-screen_size = (1280, 800)
 
-BUTTONW = 150
-BUTTONH = 50
-BUTTONBUFFER = 40
+class Card:
+    def __init__(self, value, order):
+        self.value = value
+        self.order = order
+
+        imagePath = rf"C:\Users\Geyong Min\Documents\programming\Poker\cards\{valFilename[self.value[0]]}_of_{suitFilename[value[1]]}.png"
+        self.image = pygame.transform.scale(
+            pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
+        )
+
+    def draw(self):
+        screen.blit(
+            self.image,
+            (
+                self.STARTINGX + (CARDW + CARDB) * (self.order - 1),
+                self.STARTINGY,
+            ),
+        )
 
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-
-dealButton =  DealButton(screen_size[0] / 2 - (BUTTONW / 2), screen_size[1] / 6 - BUTTONH / 2, (169, 169, 169), text_font.render("   Deal", False, WHITE))
-foldButton = ActionButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 3, screen_size[1]- (BUTTONH + BUTTONBUFFER), (255, 0, 0), text_font.render("    Fold", False, WHITE), 1)
-checkButton = ActionButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER), (169, 169, 169), text_font.render("  Check", False, WHITE), 2)
-betButton = BetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER), (34, 140, 34), text_font.render("    Bet ", False, WHITE), 3)
-
-# decreaseButton = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 2, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    -", False, WHITE), -1)
-# increaseButton = CBetButton(screen_size[0]- (BUTTONW + BUTTONBUFFER) * 1, screen_size[1]- (BUTTONH + BUTTONBUFFER) * 2, (34, 140, 34), text_font.render("    +", False, WHITE), 1)
+class HoleCard(Card):
+    STARTINGX = SCREENSIZE[0] / 2 - CARDW / 2
+    STARTINGY = 19 / 30 * SCREENSIZE[1] - 10
 
 
-buttons = [dealButton, foldButton, checkButton, betButton, betButton.increase, betButton.decrease]
+class CommunityCard(Card):
+    STARTINGX = 474.5
+    STARTINGY = 365.5
+    CARDW, CARDH, CARDB = 47, 71, 3.75
+
+    def __init__(self, value, order):
+        super().__init__(value, order)
+
+
+dealButton = DealButton(
+    SCREENSIZE[0] / 2 - (BUTTONW / 2),
+    SCREENSIZE[1] / 6 - BUTTONH / 2,
+    (169, 169, 169),
+    text_font.render("   Deal", False, WHITE),
+)
+foldButton = ActionButton(
+    SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 3,
+    SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
+    (255, 0, 0),
+    text_font.render("    Fold", False, WHITE),
+    1,
+)
+checkButton = ActionButton(
+    SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 2,
+    SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
+    (169, 169, 169),
+    text_font.render("  Check", False, WHITE),
+    2,
+)
+betButton = BetButton(
+    SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
+    SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
+    (34, 140, 34),
+    text_font.render("    Bet ", False, WHITE),
+    3,
+)
+
+
+buttons = [
+    dealButton,
+    foldButton,
+    checkButton,
+    betButton,
+    betButton.increase,
+    betButton.decrease,
+]
 
 # create a window
-screen = pygame.display.set_mode(screen_size)
+screen = pygame.display.set_mode(SCREENSIZE)
 pygame.display.set_caption("pygame Test")
- 
+
 # clock is used to set a max fps
 clock = pygame.time.Clock()
- 
-# pygame.draw.aaline(test_surface, RED, (0, surface_size[1]), (surface_size[0], 0))
-tableImage = pygame.image.load(r"C:\Users\Geyong Min\Documents\programming\Poker\PokerTable.png").convert_alpha()
-TIS = 1.5
-tableImage = pygame.transform.scale(tableImage, (640*TIS, 360*TIS))
-tableImageSize = (646*TIS, 360*TIS)
 
+tableImage = pygame.image.load(
+    r"C:\Users\Geyong Min\Documents\programming\Poker\PokerTable.png"
+).convert_alpha()
+TIS = 1.5
+tableImageSize = (646 * TIS, 360 * TIS)
+tableImage = pygame.transform.scale(tableImage, tableImageSize)
 
 
 def main():
     running = True
     table1 = start()
+    cards = []
 
     for b in buttons:
         b.add_table(table1)
@@ -127,29 +227,48 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for b in buttons:
                     b.check_press(*mouse)
 
         screen.fill((0, 119, 8))
-        
-        # draw to the screen
-        # YOUR CODE HERE
-        x = (screen_size[0]/2) - (tableImageSize[0]/2)
-        y = (screen_size[1]/2) - (tableImageSize[1]/2)
+
+        x = (SCREENSIZE[0] / 2) - (tableImageSize[0] / 2)
+        y = (SCREENSIZE[1] / 2) - (tableImageSize[1] / 2)
         screen.blit(tableImage, (x, y))
-        
+
+        if table1.running:
+            pygame.time.wait(100)  # TODO not great
+            if len(cards) < len(table1.community) + len(
+                table1.currentPlayer.holeCards
+            ):  # worried current player holecards may be a bot - shouldnt be an issue though
+                print("In card image making")
+                for i, c in enumerate(table1.currentPlayer.holeCards):
+                    if i + 1 > len(cards):
+                        cards.append(HoleCard(c, i + 1))
+
+                for i, c in enumerate(table1.community):
+                    if i + 3 > len(cards):
+                        cards.append(CommunityCard(c, i + 1))
+
+            elif len(cards) > len(table1.community) + len(
+                table1.currentPlayer.holeCards
+            ):
+                cards = []
+
+        for CCard in cards:
+            CCard.draw()
+
         for b in buttons:
             b.draw()
-        # flip() updates the screen to make our changes visible
 
-        mouse = pygame.mouse.get_pos() 
+        mouse = pygame.mouse.get_pos()
         pygame.display.flip()
-        
+
         # how many updates per second
         clock.tick(60)
-    
+
     pygame.quit()
 
     # table1 = start()
@@ -160,6 +279,7 @@ def main():
     #     sb_i = (sb_i - 1) % 6
 
     #     input("Click Enter for next hand: \n")
-        
+
+
 if __name__ == "__main__":
     main()
