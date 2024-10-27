@@ -199,13 +199,11 @@ class Table:
         self.players = []
         self.deck = deck
         self.blinds = [20, 40]
-        self.sb_i = 6
 
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
 
-    def hand(self):
-        self.sb_i = (self.sb_i - 1) % 6
+    def hand(self, sb_i):
         self.noPlayers = len(self.players)
         self.pot = sum(self.blinds)
 
@@ -218,10 +216,8 @@ class Table:
         self.communityCard_i = (
             self.noPlayers * 2
         )  # the index of the first card to be drawn in the flop
-
-
         for r in range(0, 4):
-            self.s_round(r)
+            self.s_round(r, sb_i)
 
             if self.playerRemaining == 1:
                 break
@@ -255,15 +251,15 @@ class Table:
 
         print("Testing", [x.holeCards for x in c_players], self.community)
 
-    def s_round(self, r):
+    def s_round(self, r, sb_i):
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         if r == 0:
             print("Pre Flop")
-            cPI = (self.sb_i + 2) % self.noPlayers
+            cPI = (sb_i + 2) % self.noPlayers
             self.community = None
         else:
-            cPI = self.sb_i
+            cPI = sb_i
             n = r + 2
 
             self.community = self.deck[self.communityCard_i : self.communityCard_i + n]
@@ -274,9 +270,9 @@ class Table:
 
         cont = True
         if r == 0:
-            last_agg = (self.sb_i + 2) % self.noPlayers  # last aggressor index
+            last_agg = (sb_i + 2) % self.noPlayers  # last aggressor index
         else:
-            last_agg = (self.sb_i) % self.noPlayers
+            last_agg = (sb_i) % self.noPlayers
 
         while cont:
             agg = False
@@ -320,8 +316,10 @@ def start():
 def main():
     table1 = start()
     running = True
+    sb_i = 5
     while running:
-        table1.hand()
+        table1.hand(sb_i)
+        sb_i = (sb_i - 1) % 6
 
         input("Click Enter for next hand: \n")
 
