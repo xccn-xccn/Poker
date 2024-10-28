@@ -6,7 +6,7 @@ pygame.init()
 #TODO clean up code
 #TODO show other players actions, show winning hand in GUI
 #TODO create profile picture for players, show button / position
-
+#BUG cards randomly changed after showdown (only once)
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
