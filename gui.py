@@ -3,6 +3,7 @@ from main import start
 
 pygame.init()
 
+#TODO show hole cards by starting on current player
 #TODO clean up code
 #TODO show other players actions, show winning hand in GUI
 #TODO create profile picture for players, show button / position
@@ -23,7 +24,7 @@ BUTTONW = 150
 BUTTONH = 50
 BUTTONBUFFER = 40
 
-CARDW, CARDH, CARDB = 47, 71, 3.75
+CARDW, CARDH, CARDB = 48, 71, 3.6
 valFilename = {}
 suitFilename = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
 for k, v in zip(
@@ -65,7 +66,6 @@ class DealButton(Button):
     def pressed_action(self):
         DealButton.pressed = True
         threading.Thread(target=self.table.hand).start()
-        # self.table.hand()
 
 
 class ActionButton(Button):
@@ -135,8 +135,10 @@ class Card:
         self.value = value
         self.order = order
 
-        imagePath = rf"C:\Users\Geyong Min\Documents\programming\Poker\cards\{valFilename[self.value[0]]}_of_{suitFilename[value[1]]}.png"
-        self.image = pygame.transform.scale(
+        card_path = "card_back" if value == None else f"{valFilename[self.value[0]]}_of_{suitFilename[value[1]]}"
+        imagePath = rf"C:\Users\Geyong Min\Documents\programming\Poker\cards\{card_path}.png"
+
+        self.image = pygame.transform.smoothscale(
             pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
         )
 
@@ -154,11 +156,12 @@ class HoleCard(Card):
     STARTINGX = SCREENSIZE[0] / 2 - CARDW / 2
     STARTINGY = 19 / 30 * SCREENSIZE[1] - 10
 
+    TCardY = 19 / 30 * SCREENSIZE[1] - 10
+    TCardX = SCREENSIZE[0] / 2.75 - CARDW / 2
 
 class CommunityCard(Card):
-    STARTINGX = 474.5
+    STARTINGX = 473
     STARTINGY = 365.5
-    CARDW, CARDH, CARDB = 47, 71, 3.75
 
     def __init__(self, value, order):
         super().__init__(value, order)
@@ -214,9 +217,10 @@ tableImage = pygame.image.load(
 ).convert_alpha()
 TIS = 1.5
 tableImageSize = (646 * TIS, 360 * TIS)
-tableImage = pygame.transform.scale(tableImage, tableImageSize)
+tableImage = pygame.transform.smoothscale(tableImage, tableImageSize)
 
-
+TCard = pygame.transform.smoothscale(pygame.image.load(r"C:\Users\Geyong Min\Documents\programming\Poker\cards\card_back.png").convert_alpha(), (CARDW, CARDH))
+TCard2 = pygame.transform.rotate(TCard, 90)
 def main():
     running = True
     table1 = start()
@@ -236,9 +240,9 @@ def main():
 
         screen.fill((0, 119, 8))
 
-        x = (SCREENSIZE[0] / 2) - (tableImageSize[0] / 2)
-        y = (SCREENSIZE[1] / 2) - (tableImageSize[1] / 2)
-        screen.blit(tableImage, (x, y))
+        TableX = (SCREENSIZE[0] / 2) - (tableImageSize[0] / 2)
+        TableY = (SCREENSIZE[1] / 2) - (tableImageSize[1] / 2)
+        screen.blit(tableImage, (TableX, TableY))
 
         if table1.running:
             pygame.time.wait(100)  # TODO not great
@@ -265,6 +269,29 @@ def main():
         for b in buttons:
             b.draw()
 
+        
+        TCardY = 19 / 30 * SCREENSIZE[1] - 10
+        TCardX = 4 / 11 * SCREENSIZE[0] - CARDW - CARDB 
+
+        screen.blit(TCard, (TCardX, TCardY))
+        screen.blit(TCard, (TCardX + CARDW + CARDB , TCardY))
+
+        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] - (CARDW + CARDB), TCardY))
+        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] , TCardY))
+
+        screen.blit(TCard, (TCardX, 11/30 * SCREENSIZE[1] - CARDH + 10))
+        screen.blit(TCard, (TCardX + CARDW + CARDB , 11/30 * SCREENSIZE[1] - CARDH + 10))
+
+        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] - (CARDW + CARDB), 11/30 * SCREENSIZE[1] - CARDH + 10))
+        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] , 11/30 * SCREENSIZE[1] - CARDH + 10))
+
+        screen.blit(TCard2, (TableX + CARDH + 36, SCREENSIZE[1]/2 - CARDW - CARDB ))
+        screen.blit(TCard2, (TableX + CARDH + 36, SCREENSIZE[1]/2))
+
+        screen.blit(TCard2, (TableX + tableImageSize[0] - 2* CARDH - 36, SCREENSIZE[1]/2 - CARDW - CARDB ))
+        screen.blit(TCard2, (TableX + tableImageSize[0] - 2 * CARDH - 36, SCREENSIZE[1]/2))
+    
+
         mouse = pygame.mouse.get_pos()
         pygame.display.flip()
 
@@ -272,15 +299,6 @@ def main():
         clock.tick(60)
 
     pygame.quit()
-
-    # table1 = start()
-    # running = True
-    # sb_i = 5
-    # while running:
-    #     table1.hand(sb_i)
-    #     sb_i = (sb_i - 1) % 6
-
-    #     input("Click Enter for next hand: \n")
 
 
 if __name__ == "__main__":
