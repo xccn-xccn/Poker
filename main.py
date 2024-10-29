@@ -32,11 +32,11 @@ class Player:
             print("Player is Broke")
             self.fold = True
 
-        self.position = self.position + 1  # TODO important change this to be dynamic
+        self.position = self.position - 1  # TODO important change this to be dynamic
         self.position = (
-            1 if self.position == 7 else self.position
+            6 if self.position == 0 else self.position
         )  # TODO important change this to be dynamic
-
+        #line 39 BUG
         i = self.position - 1
         self.positionName = Player.pos_names[self.position]
         self.holeCards = deck[i * 2 : i * 2 + 2]
@@ -71,8 +71,6 @@ class Player:
                 self.extra = self.chips
 
         else:
-            self.extra = self.get_bet(roundTotal)
-
             self.actionText = f"bets {self.extra}"
 
             self.agg = True
@@ -91,19 +89,27 @@ class Bot(Player):
 
     def get_action(self, roundTotal):
         l = 1
-        h = 3
+        h = 2 #TODO dont forget to change
         if roundTotal == 0:
             l = 2
         if roundTotal >= self.roundInvested + self.chips:
-            h = 2
+            h = 2 
             l = 2
 
         action = random.randint(l, h)
 
-        return action
+        if action == 3:
+            bet = self.get_bet(roundTotal)
+        else:
+            bet = 0
+        return action, bet
 
     def move(self, roundTotal, pot, community, action):
-        self.action = action
+
+        if len(action) == 2:
+            self.action, self.extra = action
+        else:
+            self.action, self.extra = action, 0
 
         super().move_action(roundTotal)
 
@@ -195,12 +201,14 @@ class Table:
         return True
 
     def single_move(self, action=None):
+
         valid = self.currentPlayer.move(
             self.roundTotal, self.pot, self.community, action
         )
 
         if not valid:
             return False
+        
         self.pot += self.currentPlayer.extra
 
         if self.currentPlayer.fold == True:
@@ -221,11 +229,15 @@ class Table:
 
         print(self.cPI)
 
-        if self.last_agg == (self.cPI + 1) % self.noPlayers:
-            self.start_round()
+        if self.last_agg == self.cPI:
+            self.end_round()
 
-    def start_round(self):
-        self.r += 1
+    def end_round(self, start=False):
+        if not start:
+            self.r += 1
+
+            for p in self.players:
+                p.roundInvested = 0
 
         if self.r == 4:
             self.end_hand()
@@ -251,10 +263,10 @@ class Table:
 
     def start_hand(self):
         self.running = True
-        self.sb_i = (self.sb_i - 1) % 6
+        self.sb_i = (self.sb_i + 1) % 6
         self.noPlayers = len(self.players)
         self.pot = sum(self.blinds)
-        self.r = -1
+        self.r = 0
 
         random.shuffle(self.deck)
 
@@ -266,7 +278,7 @@ class Table:
             self.noPlayers * 2
         )  # the index of the first card to be drawn in the flop
 
-        self.start_round()
+        self.end_round(start=True)
     def end_hand(self):
         self.running = False
 

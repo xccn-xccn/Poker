@@ -7,7 +7,7 @@ pygame.init()
 # TODO clean up code
 # TODO show other players actions, show winning hand in GUI
 # TODO create profile picture for players, show button / position
-# BUG cards randomly changed after showdown (only once)
+# BUG cards randomly change to winners hand after showdown (only sometimes)
 
 
 def draw_text(text, font, text_colour, x, y):
@@ -279,7 +279,7 @@ def main():
             ):  # worried current player holecards may be a bot - shouldnt be an issue though
                 print("In card image making")
                 for i, c in enumerate(table.currentPlayer.holeCards):
-                    if i + 1 > len(cards):
+                    if i + 1 > len(cards): #BUG here at showdown cards change because currentPlayer is not the user
                         cards.append(HoleCard(c, i + 1))
 
                 for i, c in enumerate(table.community):
