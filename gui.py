@@ -3,7 +3,7 @@ from main import start
 
 pygame.init()
 
-#TODO show hole cards by starting on current player
+#TODO show hole cards by starting on current
 #TODO clean up code
 #TODO show other players actions, show winning hand in GUI
 #TODO create profile picture for players, show button / position
