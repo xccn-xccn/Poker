@@ -1,13 +1,14 @@
 import pygame, threading
-from main import start
+from main import start, Bot
 
 pygame.init()
 
-#TODO show hole cards by starting on current
-#TODO clean up code
-#TODO show other players actions, show winning hand in GUI
-#TODO create profile picture for players, show button / position
-#BUG cards randomly changed after showdown (only once)
+# TODO show hole cards by starting on current
+# TODO clean up code
+# TODO show other players actions, show winning hand in GUI
+# TODO create profile picture for players, show button / position
+# BUG cards randomly changed after showdown (only once)
+
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
@@ -65,7 +66,7 @@ class DealButton(Button):
 
     def pressed_action(self):
         DealButton.pressed = True
-        threading.Thread(target=self.table.hand).start()
+        self.table.start_hand()
 
 
 class ActionButton(Button):
@@ -74,7 +75,9 @@ class ActionButton(Button):
         self.action = action
 
     def pressed_action(self):
-        self.table.currentPlayer.paction = self.action
+        if isinstance(self.table.currentPlayer, Bot):
+            return
+        self.table.single_move(action=self.action)  # TODO worry about bet later
 
 
 class BetButton(ActionButton):
@@ -135,8 +138,14 @@ class Card:
         self.value = value
         self.order = order
 
-        card_path = "card_back" if value == None else f"{valFilename[self.value[0]]}_of_{suitFilename[value[1]]}"
-        imagePath = rf"C:\Users\Geyong Min\Documents\programming\Poker\cards\{card_path}.png"
+        card_path = (
+            "card_back"
+            if value == None
+            else f"{valFilename[self.value[0]]}_of_{suitFilename[value[1]]}"
+        )
+        imagePath = (
+            rf"C:\Users\Geyong Min\Documents\programming\Poker\cards\{card_path}.png"
+        )
 
         self.image = pygame.transform.smoothscale(
             pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
@@ -158,6 +167,7 @@ class HoleCard(Card):
 
     TCardY = 19 / 30 * SCREENSIZE[1] - 10
     TCardX = SCREENSIZE[0] / 2.75 - CARDW / 2
+
 
 class CommunityCard(Card):
     STARTINGX = 473
@@ -219,15 +229,22 @@ TIS = 1.5
 tableImageSize = (646 * TIS, 360 * TIS)
 tableImage = pygame.transform.smoothscale(tableImage, tableImageSize)
 
-TCard = pygame.transform.smoothscale(pygame.image.load(r"C:\Users\Geyong Min\Documents\programming\Poker\cards\card_back.png").convert_alpha(), (CARDW, CARDH))
+TCard = pygame.transform.smoothscale(
+    pygame.image.load(
+        r"C:\Users\Geyong Min\Documents\programming\Poker\cards\card_back.png"
+    ).convert_alpha(),
+    (CARDW, CARDH),
+)
 TCard2 = pygame.transform.rotate(TCard, 90)
+
+
 def main():
     running = True
-    table1 = start()
+    table = start()
     cards = []
 
     for b in buttons:
-        b.add_table(table1)
+        b.add_table(table)
 
     while running:
         for event in pygame.event.get():
@@ -238,29 +255,38 @@ def main():
                 for b in buttons:
                     b.check_press(*mouse)
 
+        if table.running:
+            cont = table.start_move()
+            # print(cont)
+            if cont and isinstance(table.currentPlayer, Bot):  # TODO start here
+                # print("In loop")
+                table.single_move(
+                    action=(table.currentPlayer.get_action(table.roundTotal))
+                )  # TODO
+                pygame.time.wait(100)
+
         screen.fill((0, 119, 8))
 
         TableX = (SCREENSIZE[0] / 2) - (tableImageSize[0] / 2)
         TableY = (SCREENSIZE[1] / 2) - (tableImageSize[1] / 2)
         screen.blit(tableImage, (TableX, TableY))
 
-        if table1.running:
+        if table.running:
+
             pygame.time.wait(100)  # TODO not great
-            if len(cards) < len(table1.community) + len(
-                table1.currentPlayer.holeCards
+            if len(cards) < len(table.community) + len(
+                table.currentPlayer.holeCards
             ):  # worried current player holecards may be a bot - shouldnt be an issue though
                 print("In card image making")
-                for i, c in enumerate(table1.currentPlayer.holeCards):
+                for i, c in enumerate(table.currentPlayer.holeCards):
                     if i + 1 > len(cards):
                         cards.append(HoleCard(c, i + 1))
 
-                for i, c in enumerate(table1.community):
+                for i, c in enumerate(table.community):
                     if i + 3 > len(cards):
                         cards.append(CommunityCard(c, i + 1))
 
-            elif len(cards) > len(table1.community) + len(
-                table1.currentPlayer.holeCards
-            ):
+            elif len(cards) > len(table.community) + len(table.currentPlayer.holeCards):
                 cards = []
 
         for CCard in cards:
@@ -269,28 +295,44 @@ def main():
         for b in buttons:
             b.draw()
 
-        
         TCardY = 19 / 30 * SCREENSIZE[1] - 10
-        TCardX = 4 / 11 * SCREENSIZE[0] - CARDW - CARDB 
+        TCardX = 4 / 11 * SCREENSIZE[0] - CARDW - CARDB
 
         screen.blit(TCard, (TCardX, TCardY))
-        screen.blit(TCard, (TCardX + CARDW + CARDB , TCardY))
+        screen.blit(TCard, (TCardX + CARDW + CARDB, TCardY))
 
         screen.blit(TCard, (7 / 11 * SCREENSIZE[0] - (CARDW + CARDB), TCardY))
-        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] , TCardY))
+        screen.blit(TCard, (7 / 11 * SCREENSIZE[0], TCardY))
 
-        screen.blit(TCard, (TCardX, 11/30 * SCREENSIZE[1] - CARDH + 10))
-        screen.blit(TCard, (TCardX + CARDW + CARDB , 11/30 * SCREENSIZE[1] - CARDH + 10))
+        screen.blit(TCard, (TCardX, 11 / 30 * SCREENSIZE[1] - CARDH + 10))
+        screen.blit(
+            TCard, (TCardX + CARDW + CARDB, 11 / 30 * SCREENSIZE[1] - CARDH + 10)
+        )
 
-        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] - (CARDW + CARDB), 11/30 * SCREENSIZE[1] - CARDH + 10))
-        screen.blit(TCard, (7 / 11 * SCREENSIZE[0] , 11/30 * SCREENSIZE[1] - CARDH + 10))
+        screen.blit(
+            TCard,
+            (
+                7 / 11 * SCREENSIZE[0] - (CARDW + CARDB),
+                11 / 30 * SCREENSIZE[1] - CARDH + 10,
+            ),
+        )
+        screen.blit(
+            TCard, (7 / 11 * SCREENSIZE[0], 11 / 30 * SCREENSIZE[1] - CARDH + 10)
+        )
 
-        screen.blit(TCard2, (TableX + CARDH + 36, SCREENSIZE[1]/2 - CARDW - CARDB ))
-        screen.blit(TCard2, (TableX + CARDH + 36, SCREENSIZE[1]/2))
+        screen.blit(TCard2, (TableX + CARDH + 36, SCREENSIZE[1] / 2 - CARDW - CARDB))
+        screen.blit(TCard2, (TableX + CARDH + 36, SCREENSIZE[1] / 2))
 
-        screen.blit(TCard2, (TableX + tableImageSize[0] - 2* CARDH - 36, SCREENSIZE[1]/2 - CARDW - CARDB ))
-        screen.blit(TCard2, (TableX + tableImageSize[0] - 2 * CARDH - 36, SCREENSIZE[1]/2))
-    
+        screen.blit(
+            TCard2,
+            (
+                TableX + tableImageSize[0] - 2 * CARDH - 36,
+                SCREENSIZE[1] / 2 - CARDW - CARDB,
+            ),
+        )
+        screen.blit(
+            TCard2, (TableX + tableImageSize[0] - 2 * CARDH - 36, SCREENSIZE[1] / 2)
+        )
 
         mouse = pygame.mouse.get_pos()
         pygame.display.flip()

@@ -52,33 +52,38 @@ class Player:
     def end_round(self):
         self.roundInvested = 0
 
-    def move_action(self, roundTotal):
-        if self.action == 1:  # change maybe
-            self.actionText = "folds"
+    def move_action(self, action, roundTotal):
+        if action == 1:  # change maybe
+            actionText = "folds"
             self.fold = True
-            self.agg = False
-            self.extra = 0
+            agg = False
+            extra = 0
 
-        elif self.action == 2:
+        elif action == 2:
 
-            self.agg = False
-            self.extra = roundTotal - self.roundInvested  # TODO Make side and main pots
+            agg = False
+            extra = roundTotal - self.roundInvested  # TODO Make side and main pots
 
-            self.actionText = "calls" if self.extra else "checks"
+            actionText = "calls" if extra else "checks"
 
             if roundTotal >= self.roundInvested + self.chips:
                 self.allIn = True
-                self.extra = self.chips
+                extra = self.chips
 
         else:
-            self.extra = self.get_bet(roundTotal)
+            extra = self.get_bet(roundTotal)
 
-            self.actionText = f"bets {self.extra}"
+            actionText = f"bets {extra}"
 
-            self.agg = True
+            agg = True
 
-        self.roundInvested += self.extra
-        self.chips -= self.extra
+        self.roundInvested += extra
+        self.chips -= extra
+
+        return agg, self.roundInvested, extra, actionText
+
+    def move(self):
+        pass
 
 
 class Bot(Player):
@@ -102,16 +107,19 @@ class Bot(Player):
 
         return action
 
-    def move(self, roundTotal, pot, community, action):
-        self.action = action
+    def move(self, roundTotal, pot, community):
 
-        super().move_action(roundTotal)
+        action = self.get_action(roundTotal)
 
-        print(
-            f"{self.positionName} {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+        agg, self.roundInvested, extra, actionText = super().move_action(
+            action, roundTotal
         )
 
-        return True
+        print(
+            f"{self.positionName} {actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+        )
+        return agg, self.roundInvested, extra
+
 
 class Human(Player):
 
@@ -137,9 +145,10 @@ class Human(Player):
 
             return self.extra  # bad practice?
 
-    def get_valid(self, roundTotal, pot, community):
+    def display_message(self, roundTotal, pot, community):
 
         valid = [1, 2, 3]
+        option3 = "3 Bet"
 
         if community:
             end = f", Community Cards {community}"
@@ -148,26 +157,58 @@ class Human(Player):
 
         print(f"Your cards are {self.holeCards}{end}")
 
-        if roundTotal >= self.roundInvested + self.chips:
+        if roundTotal == self.roundInvested:  # should not be possible to be less
+            option2 = "2 Check"
+        elif roundTotal >= self.roundInvested + self.chips:
+            option2 = f"2 Call (All In) {roundTotal - self.roundInvested}"
+            option3 = ""
             valid = [1, 2]
+        else:
+            option2 = f"2 Call {roundTotal - self.roundInvested}"
 
-        return valid
+        message = f"""[Name] Enter your move you are {self.positionName}, you have {self.chips} chips, you have invested {self.roundInvested} in this round so far - pot {pot}:
+            1 Fold
+            {option2}
+            {option3}
+            Current table bet {roundTotal} \n"""
 
-    def move(self, roundTotal, pot, community, action):
-        valid = self.get_valid(roundTotal, pot, community)
+        return message, valid
 
-        if action not in valid:
-            return False
-        self.action = action
+    def get_action(self, roundTotal, pot, community):
 
-        super().move_action(roundTotal)
+        message, valid = self.display_message(roundTotal, pot, community)
+
+        self.paction = 0 #not valid
+        self.action = 0
+        #set self.action from the button
+        count = 0
+        while True:
+            count += 1
+            # print("in get action, action is currently invalid", count)
+            time.sleep(1)
+
+            if self.paction in valid:
+                break
+
+        if self.paction not in valid:
+            
+            raise Exception
+        action = self.paction
+        return action
+
+    def move(self, roundTotal, pot, community):
+
+        self.action = self.get_action(roundTotal, pot, community)
+
+        agg, self.roundInvested, extra, actionText = super().move_action(
+            self.action, roundTotal
+        )
 
         print(
-            f"{self.positionName} (YOU) {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+            f"{self.positionName} (YOU) {actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
         )
         # Only printing for testing
-
-        return True
+        return agg, self.roundInvested, extra
 
 
 class Table:
@@ -184,77 +225,11 @@ class Table:
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
 
-    def start_move(self):
-        self.agg = False
-        if self.currentPlayer.allIn == True or self.currentPlayer.fold == True:
-            print(
-                f"{self.currentPlayer.positionName} is all in / folded so turn is skipped {self.currentPlayer.chips} behind (should be 0)"
-            )
-            self.end_move()  # skip move
-            return False
-        return True
-
-    def single_move(self, action=None):
-        valid = self.currentPlayer.move(
-            self.roundTotal, self.pot, self.community, action
-        )
-
-        if not valid:
-            return False
-        self.pot += self.currentPlayer.extra
-
-        if self.currentPlayer.fold == True:
-            self.playerRemaining -= 1
-
-        self.end_move()
-
-    def end_move(self):
-        if self.playerRemaining == 1:
-            self.end_hand()
-
-        if self.currentPlayer.agg:
-            self.last_agg = self.cPI
-            self.roundTotal = self.currentPlayer.roundInvested
-
-        self.cPI = (self.cPI + 1) % self.noPlayers
-        self.currentPlayer = self.players[self.cPI]
-
-        print(self.cPI)
-
-        if self.last_agg == (self.cPI + 1) % self.noPlayers:
-            self.start_round()
-
-    def start_round(self):
-        self.r += 1
-
-        if self.r == 4:
-            self.end_hand()
-            return 
-
-        name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
-
-        if self.r == 0:
-            print("Pre Flop")
-            self.cPI = self.last_agg = (self.sb_i + 2) % self.noPlayers
-            self.roundTotal = self.blinds[1]
-            self.community = []
-        else:
-            self.cPI = self.last_agg = self.sb_i
-            self.roundTotal = 0
-            self.community = self.deck[
-                self.communityCard_i : self.communityCard_i + self.r + 2
-            ]
-
-            print(f"{name[self.r]} Cards {self.community}")
-
-        self.currentPlayer = self.players[self.cPI]
-
-    def start_hand(self):
+    def hand(self):
         self.running = True
         self.sb_i = (self.sb_i - 1) % 6
         self.noPlayers = len(self.players)
         self.pot = sum(self.blinds)
-        self.r = -1
 
         random.shuffle(self.deck)
 
@@ -266,9 +241,14 @@ class Table:
             self.noPlayers * 2
         )  # the index of the first card to be drawn in the flop
 
-        self.start_round()
-    def end_hand(self):
-        self.running = False
+
+        for r in range(0, 4):
+            self.s_round(r)
+
+            if self.playerRemaining == 1:
+                break
+            for p in self.players:
+                p.end_round()
 
         c_players = [p for p in self.players if not p.fold]
 
@@ -297,6 +277,59 @@ class Table:
 
         print("Testing", [x.holeCards for x in c_players], self.community)
 
+        self.running = True
+    def s_round(self, r):
+        name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
+
+        if r == 0:
+            print("Pre Flop")
+            cPI = (self.sb_i + 2) % self.noPlayers
+            self.community = []
+        else:
+            cPI = self.sb_i
+            n = r + 2
+
+            self.community = self.deck[self.communityCard_i : self.communityCard_i + n]
+
+            print(f"{name[r]} Cards {self.community}")
+
+        self.roundTotal = 0 if r != 0 else self.blinds[1]
+
+        cont = True
+        if r == 0:
+            last_agg = (self.sb_i + 2) % self.noPlayers  # last aggressor index
+        else:
+            last_agg = (self.sb_i) % self.noPlayers
+
+        while cont:
+            agg = False
+            if self.playerRemaining == 1:
+                return
+            self.currentPlayer = self.players[cPI]
+
+            if self.currentPlayer.allIn == True:
+                print(
+                    f"{self.currentPlayer.positionName} is all in so turn is skipped {self.currentPlayer.chips} behind (should be 0)"
+                )
+            elif self.currentPlayer.fold == False:
+
+                #function for button press here
+                agg, invested, bet = self.currentPlayer.move(
+                    self.roundTotal, self.pot, self.community
+                )
+                self.pot += bet
+
+                if self.currentPlayer.fold == True:
+                    self.playerRemaining -= 1
+
+            if agg:
+                last_agg = cPI
+                self.roundTotal = invested
+            else:
+                if last_agg == (cPI + 1) % self.noPlayers:
+                    break
+            cPI = (cPI + 1) % self.noPlayers
+
 
 def start():
     table1 = Table()
@@ -312,7 +345,7 @@ def main():
     table1 = start()
     running = True
     while running:
-        table1.start_hand()
+        table1.hand()
 
         input("Click Enter for next hand: \n")
 
