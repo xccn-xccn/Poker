@@ -3,6 +3,7 @@ from main import start, Bot
 
 pygame.init()
 
+# TODO Fix bets, show cards correctly
 # TODO show hole cards by starting on current
 # TODO clean up code
 # TODO show other players actions, show winning hand in GUI
@@ -77,7 +78,7 @@ class ActionButton(Button):
     def pressed_action(self):
         if isinstance(self.table.currentPlayer, Bot):
             return
-        self.table.single_move(action=self.action)  # TODO worry about bet later
+        self.table.single_move(action=(self.action, 0))  # TODO worry about bet later
 
 
 class BetButton(ActionButton):
@@ -101,12 +102,8 @@ class BetButton(ActionButton):
         )
 
     def pressed_action(self):
-        if self.table.currentPlayer.action != 3:
-            return super().pressed_action()
-        else:
-            print(self.pbet)
-            self.table.currentPlayer.extra = BetButton.pbet  # TODO bad
-            BetButton.pbet = 0  # bad
+        self.table.single_move(action=(3, BetButton.pbet))
+        BetButton.pbet = 0
 
     def draw(self):
         super().draw()
@@ -125,12 +122,9 @@ class CBetButton(Button):
         self.co = co
 
     def pressed_action(self):
-        if self.table.currentPlayer.action != 3:
-            return
 
         BetButton.pbet += 40 * self.co  # bad
 
-        print(BetButton.pbet)
 
 
 class Card:

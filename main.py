@@ -53,6 +53,7 @@ class Player:
         self.roundInvested = 0
 
     def move_action(self, roundTotal):
+        print("action", self.action)
         if self.action == 1:  # change maybe
             self.actionText = "folds"
             self.fold = True
@@ -79,6 +80,22 @@ class Player:
         self.chips -= self.extra
 
 
+    def is_valid(self, roundTotal, pot, community, action):
+        if len(action) == 2:
+            self.action, self.extra = action
+        else:
+            self.action, self.extra = action, 0
+
+        if action == 3 and roundTotal >= self.roundInvested + self.chips:
+            return False
+
+        if action == 3:
+            if self.roundInvested + self.extra < roundTotal or self.extra > self.chips:
+                return False
+
+
+        return True
+    
 class Bot(Player):
     def get_bet(self, roundTotal):
         extra = random.randint(
@@ -89,7 +106,7 @@ class Bot(Player):
 
     def get_action(self, roundTotal):
         l = 1
-        h = 2 #TODO dont forget to change
+        h = 3 
         if roundTotal == 0:
             l = 2
         if roundTotal >= self.roundInvested + self.chips:
@@ -106,11 +123,12 @@ class Bot(Player):
 
     def move(self, roundTotal, pot, community, action):
 
-        if len(action) == 2:
-            self.action, self.extra = action
-        else:
-            self.action, self.extra = action, 0
-
+        valid = self.is_valid(roundTotal, pot, community, action)
+        
+        if not valid:
+            raise Exception
+            return False
+        
         super().move_action(roundTotal)
 
         print(
@@ -143,9 +161,12 @@ class Human(Player):
 
             return self.extra  # bad practice?
 
-    def get_valid(self, roundTotal, pot, community):
+    def is_valid(self, roundTotal, pot, community, action):
+        if len(action) == 2:
+            self.action, self.extra = action
+        else:
+            self.action, self.extra = action, 0
 
-        valid = [1, 2, 3]
 
         if community:
             end = f", Community Cards {community}"
@@ -154,18 +175,22 @@ class Human(Player):
 
         print(f"Your cards are {self.holeCards}{end}")
 
-        if roundTotal >= self.roundInvested + self.chips:
-            valid = [1, 2]
+        if action == 3 and roundTotal >= self.roundInvested + self.chips:
+            return False
 
-        return valid
+        if action == 3:
+            if self.roundInvested + self.extra < roundTotal or self.extra > self.chips:
+                return False
+
+
+        return True
 
     def move(self, roundTotal, pot, community, action):
-        valid = self.get_valid(roundTotal, pot, community)
+        valid = self.is_valid(roundTotal, pot, community, action)
 
-        if action not in valid:
+        if not valid:
             return False
-        self.action = action
-
+        
         super().move_action(roundTotal)
 
         print(
