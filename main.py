@@ -79,6 +79,8 @@ class Player:
         self.roundInvested += self.extra
         self.chips -= self.extra
 
+        if self.chips == 0:
+            self.allIn = True
 
     def is_valid(self, roundTotal, pot, community, action):
         if len(action) == 2:
@@ -86,13 +88,13 @@ class Player:
         else:
             self.action, self.extra = action, 0
 
-        if action == 3 and roundTotal >= self.roundInvested + self.chips:
+        if self.action == 3 and roundTotal >= self.roundInvested + self.chips:
             return False
 
-        if action == 3:
+        if self.action == 3:
+
             if self.roundInvested + self.extra < roundTotal or self.extra > self.chips:
                 return False
-
 
         return True
     
@@ -162,12 +164,13 @@ class Human(Player):
             return self.extra  # bad practice?
 
     def is_valid(self, roundTotal, pot, community, action):
+        print("In human valid")
         if len(action) == 2:
             self.action, self.extra = action
         else:
             self.action, self.extra = action, 0
 
-
+        print(self.action)
         if community:
             end = f", Community Cards {community}"
         else:
@@ -175,13 +178,13 @@ class Human(Player):
 
         print(f"Your cards are {self.holeCards}{end}")
 
-        if action == 3 and roundTotal >= self.roundInvested + self.chips:
+        if self.action == 3 and roundTotal >= self.roundInvested + self.chips:
             return False
 
-        if action == 3:
+        if self.action == 3:
+
             if self.roundInvested + self.extra < roundTotal or self.extra > self.chips:
                 return False
-
 
         return True
 
@@ -235,6 +238,7 @@ class Table:
         )
 
         if not valid:
+            print("not valid")
             return False
         
         self.pot += self.currentPlayer.extra
@@ -269,7 +273,7 @@ class Table:
 
         for p in self.players:
             p.action = p.actionText = None 
-            
+
         if self.r == 4:
             self.end_hand()
             return 
@@ -347,7 +351,7 @@ def start():
     for r in range(5):
         table1.add_player(Bot(r + 1))
 
-    table1.add_player(Human(6, chips=2000))
+    table1.add_player(Human(6, chips=200))
     return table1
 
 
