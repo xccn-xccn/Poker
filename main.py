@@ -215,6 +215,9 @@ class Table:
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
 
+        if isinstance(newPlayer, Human):
+            self.human_player = newPlayer.position
+
     def start_move(self):
         self.agg = False
         if self.currentPlayer.allIn == True or self.currentPlayer.fold == True:
@@ -264,6 +267,9 @@ class Table:
             for p in self.players:
                 p.roundInvested = 0
 
+        for p in self.players:
+            p.action = p.actionText = None 
+            
         if self.r == 4:
             self.end_hand()
             return 
