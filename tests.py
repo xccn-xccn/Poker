@@ -1,4 +1,5 @@
-def f(x):
-    return sorted(x, reverse=True)
+def func(a, b, c="a"):
+    print(a, b, c)
 
-print(f([4, 2, 5, 1]))
+
+func(1, 2, 3)

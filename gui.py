@@ -12,7 +12,6 @@ pygame.init()
 
 
 def draw_text(text, font, text_colour, x, y):
-    # print(text)
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
 
@@ -158,18 +157,12 @@ class CBetButton(Button):
 
 
 class Card:
-    card_back = pygame.transform.smoothscale(
-        pygame.image.load(
-            r"C:\Users\Geyong Min\Documents\programming\Poker\cards\card_back.png"
-        ).convert_alpha(),
-        (CARDW, CARDH),
-    )
 
-    def __init__(self, value, order, showing=True):
+    def __init__(self, value, order, showing=True, rotate=False):
         self.value = value
         self.order = order
         self.showing = showing
-
+        self.rotate = rotate
         self.set_image()
 
     def set_image(self):
@@ -186,11 +179,23 @@ class Card:
             pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
         )
 
-    def draw(self, rotate=False):
+        self.card_back = pygame.transform.smoothscale(
+        pygame.image.load(
+            r"C:\Users\Geyong Min\Documents\programming\Poker\cards\card_back.png"
+        ).convert_alpha(),
+        (CARDW, CARDH),
+    )
+
+        if self.rotate:
+            self.image = pygame.transform.rotate(self.image, 90)
+            self.card_back = pygame.transform.rotate(self.card_back, 90)
+
+    def draw(self):
         difference = (CARDW + CARDB) * (self.order - 1)
 
-        image = self.image if self.showing else Card.card_back
-        if not rotate:
+        image = self.image if self.showing else self.card_back
+        
+        if not self.rotate:
             screen.blit(
                 image,
                 (
@@ -216,17 +221,18 @@ class HoleCard(Card):
         return [
             (x - CARDW - CARDB / 2, y - CARDH),
             (x - CARDW - CARDB / 2, y - CARDH),
-            (x + B2, y - CARDW - CARDB / 2),
+            (x, y - CARDW - CARDB / 2),
             (x - CARDW - CARDB / 2, y),
             (x - CARDW - CARDB / 2, y),
             (X4 - B2 - CARDH, Y3 - CARDW - CARDB / 2),
         ][self.r_i]
 
-    def __init__(self, value, order, r_i, showing):
-        super().__init__(value, order, showing=showing)
+    def __init__(self, value, order, r_i, showing, rotate=False):
+        super().__init__(value, order, showing=showing, rotate=rotate)
         x, y = player_coords[r_i]
         self.r_i = r_i
         self.STARTING_X, self.STARTING_Y = self.get_coords(x, y)
+        
 
     def show(self):
         self.showing = True
@@ -348,12 +354,15 @@ class PlayerGUI:
                 1,
                 self.r_i,
                 self.showing,
+                self.rotate,
             ),
             HoleCard(
                 self.player.holeCards[1],
                 2,
                 self.r_i,
                 self.showing,
+                self.rotate,
+
             ),
         )
 
