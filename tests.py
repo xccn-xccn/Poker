@@ -1,5 +1,3 @@
-def func(a, b, c="a"):
-    print(a, b, c)
+import os
 
-
-func(1, 2, 3)
+print(os.path.dirname(__file__))
