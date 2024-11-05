@@ -15,7 +15,7 @@ def draw_text(text, font, text_colour, x, y):
 text_font = pygame.font.SysFont("Comic Sans", 35)
 
 dirname = os.path.dirname(__file__)
-SCREENSIZE = (1200, 800)
+SCREENSIZE = (1300, 800)
 screen = pygame.display.set_mode(SCREENSIZE)
 
 
@@ -75,8 +75,6 @@ class Button:
 
     def check_press(self, bx, by):
         if self.x <= bx <= self.x + BUTTONW and self.y <= by <= self.y + BUTTONH:
-            print("Button Pressed")
-
             self.pressed_action()
 
 
@@ -153,7 +151,7 @@ class Card:
         self.value = value
         self.order = order
         self.showing = showing
-        self.rotate = rotate
+        self.rotate = False
         self.set_image()
 
     def set_image(self):
@@ -173,7 +171,11 @@ class Card:
             (CARDW, CARDH),
         )
 
-        if self.rotate:
+        self.card_back = pygame.transform.smoothscale(
+            pygame.image.load(rf"{dirname}\cards\layered_cardback.png").convert_alpha(),
+            (CARDW/3, CARDH/3),
+        )
+        if self.rotate: #TODO REMOVE?
             self.image = pygame.transform.rotate(self.image, 90)
             self.card_back = pygame.transform.rotate(self.card_back, 90)
 
@@ -201,8 +203,6 @@ class Card:
 
 
 class HoleCard(Card):
-    STARTINGX = SCREENSIZE[0] / 2 - CARDW / 2
-    STARTINGY = 19 / 30 * SCREENSIZE[1] - 10
 
     def get_coords(self, x, y):
         return [
@@ -226,8 +226,8 @@ class HoleCard(Card):
 
 
 class CommunityCard(Card):
-    STARTING_X = 473
-    STARTING_Y = 365.5
+    STARTING_X = SCREENSIZE[0] / 2 - 5 / 2 * CARDW - 2 * CARDB
+    STARTING_Y = SCREENSIZE[1] / 2 - 1 / 2 * CARDH
 
 
 X1 = 645 / 1000 * SCREENSIZE[0]
@@ -437,8 +437,6 @@ class Main:
                     pygame.time.wait(500)
 
             if len(self.community_cards) < len(self.table.community):
-                print("In card image making")
-
                 for i, c in enumerate(self.table.community):
                     if i + 1 > len(self.community_cards):
                         self.community_cards.append(CommunityCard(c, i + 1))
