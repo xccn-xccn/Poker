@@ -23,7 +23,7 @@ BUTTONW = 150
 BUTTONH = 50
 BUTTONBUFFER = 40
 
-CARDW, CARDH, CARDB = 48, 71, 3.6
+
 valFilename = {}
 suitFilename = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
 for k, v in zip(
@@ -40,18 +40,45 @@ pygame.display.set_caption("Poker Game")
 clock = pygame.time.Clock()
 
 tableImage = pygame.image.load(rf"{dirname}\PokerTable.png").convert_alpha()
-TIS = 1.5
-tableImageSize = (646 * TIS, 360 * TIS)
-tableImage = pygame.transform.smoothscale(tableImage, tableImageSize)
-TableX = (SCREENSIZE[0] / 2) - (tableImageSize[0] / 2)
-TableY = (SCREENSIZE[1] / 2) - (tableImageSize[1] / 2)
+TIS = 1
+table_image_size = (868 * TIS, 423 * TIS)
+tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
+TableX = (SCREENSIZE[0] / 2) - (table_image_size[0] / 2)
+TableY = (SCREENSIZE[1] / 2) - (table_image_size[1] / 2)
+
+CARDW, CARDH, CARDB = (
+    59 / 1000 * table_image_size[0],
+    173 / 1000 * table_image_size[1],
+    7 / 1000 * table_image_size[1],
+)
 TCard = pygame.transform.smoothscale(
     pygame.image.load(rf"{dirname}\cards\card_back.png").convert_alpha(),
     (CARDW, CARDH),
 )
+
 TCard2 = pygame.transform.rotate(TCard, 90)
 
-PROFILE_SIZE = (100, 100)
+PROFILE_SIZE = (125, 125)
+# buffer 30 pixels
+X1 = TableX + 700 / 1000 * table_image_size[0]
+Y1 = TableY + table_image_size[1]
+
+X2 = SCREENSIZE[0] - X1
+Y2 = SCREENSIZE[1] - Y1
+
+X3 = TableX
+Y3 = SCREENSIZE[1] / 2
+
+X4 = SCREENSIZE[0] - X3
+
+player_coords = [
+    (X1, Y1),
+    (X2, Y1),
+    (X3, Y3),
+    (X2, Y2),
+    (X1, Y2),
+    (X4, Y3),
+]
 
 
 class Button:
@@ -60,12 +87,14 @@ class Button:
         self.y = y
         self.colour = colour
         self.text = text
+        self.BW = BUTTONW
+        self.BH = BUTTONH
 
     def draw(self):
-        pygame.draw.rect(screen, self.colour, (self.x, self.y, BUTTONW, BUTTONH))
-        pygame.draw.rect(screen, BLACK, (self.x, self.y, BUTTONW, BUTTONH), 3)
-
-        screen.blit(self.text, (self.x, self.y))
+        pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
+        pygame.draw.rect(screen, BLACK, (self.x, self.y,  self.BW, self.BH), 3)
+        text_rect = self.text.get_rect(center=(self.x + self.BW/2, self.y + self.BH / 2))
+        screen.blit(self.text, text_rect)
 
     def add_table(self, table):
         self.table = table
@@ -74,7 +103,7 @@ class Button:
         self.window = window
 
     def check_press(self, bx, by):
-        if self.x <= bx <= self.x + BUTTONW and self.y <= by <= self.y + BUTTONH:
+        if self.x <= bx <= self.x + self.BW and self.y <= by <= self.y + self.BH:
             self.pressed_action()
 
 
@@ -105,17 +134,17 @@ class BetButton(ActionButton):
     def __init__(self, x, y, colour, text, action):
         super().__init__(x, y, colour, text, action)
         self.increase = CBetButton(
-            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
+            x + self.BW - SCREENSIZE[0] / 40, #TODO Bad
             SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
             (34, 140, 34),
-            text_font.render("    +", False, WHITE),
+            text_font.render("+", True, WHITE),
             1,
         )
         self.decrease = CBetButton(
-            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 2,
+            x, 
             SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
             (34, 140, 34),
-            text_font.render("    -", False, WHITE),
+            text_font.render("-", True, WHITE),
             -1,
         )
 
@@ -139,6 +168,7 @@ class CBetButton(Button):
     def __init__(self, x, y, colour, text, co):
         super().__init__(x, y, colour, text)
         self.co = co
+        self.BW = SCREENSIZE[0] / 40
 
     def pressed_action(self):
 
@@ -147,19 +177,14 @@ class CBetButton(Button):
 
 class Card:
 
-    def __init__(self, value, order, showing=True, rotate=False):
+    def __init__(self, value, order, showing=True):
         self.value = value
         self.order = order
         self.showing = showing
-        self.rotate = False
         self.set_image()
 
     def set_image(self):
-        card_path = (
-            "card_back"
-            if self.value == None
-            else f"{valFilename[self.value[0]]}_of_{suitFilename[self.value[1]]}"
-        )
+        card_path = f"{valFilename[self.value[0]]}_of_{suitFilename[self.value[1]]}"
         imagePath = rf"{dirname}\cards\{card_path}.png"
 
         self.image = pygame.transform.smoothscale(
@@ -171,54 +196,42 @@ class Card:
             (CARDW, CARDH),
         )
 
-        self.card_back = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\cards\layered_cardback.png").convert_alpha(),
-            (CARDW/3, CARDH/3),
-        )
-        if self.rotate: #TODO REMOVE?
-            self.image = pygame.transform.rotate(self.image, 90)
-            self.card_back = pygame.transform.rotate(self.card_back, 90)
+        # self.card_back = pygame.transform.smoothscale(
+        #     pygame.image.load(rf"{dirname}\cards\layered_cardback.png").convert_alpha(),
+        #     (CARDW/3, CARDH/3),
+        # )
 
     def draw(self):
-        difference = (CARDW + CARDB) * (self.order - 1)
+        difference = self.get_difference()
 
         image = self.image if self.showing else self.card_back
+        screen.blit(
+            image,
+            (
+                self.STARTING_X + difference,
+                self.STARTING_Y,
+            ),
+        )
 
-        if not self.rotate:
-            screen.blit(
-                image,
-                (
-                    self.STARTING_X + difference,
-                    self.STARTING_Y,
-                ),
-            )
-        else:
-            screen.blit(
-                image,
-                (
-                    self.STARTING_X,
-                    self.STARTING_Y + difference,
-                ),
-            )
+    def get_difference(self):
+        return (CARDW + CARDB) * (self.order - 1)
 
 
 class HoleCard(Card):
 
     def get_coords(self, x, y):
-        return [
-            (x - CARDW - CARDB / 2, y - CARDH),
-            (x - CARDW - CARDB / 2, y - CARDH),
-            (x, y - CARDW - CARDB / 2),
-            (x - CARDW - CARDB / 2, y),
-            (x - CARDW - CARDB / 2, y),
-            (X4 - B2 - CARDH, Y3 - CARDW - CARDB / 2),
-        ][self.r_i]
+        return (
+            x + PROFILE_SIZE[0] / 2 - CARDW - CARDB / 2,
+            y + PROFILE_SIZE[1] - CARDH,
+        )
 
-    def __init__(self, value, order, r_i, showing, rotate=False):
-        super().__init__(value, order, showing=showing, rotate=rotate)
-        x, y = player_coords[r_i]
+    def __init__(self, value, order, r_i, showing, x, y):
+        super().__init__(value, order, showing=showing)
         self.r_i = r_i
         self.STARTING_X, self.STARTING_Y = self.get_coords(x, y)
+
+    def get_difference(self):
+        return (CARDW - (0 if self.showing else 0.5)) * (self.order - 1)
 
     def show(self):
         self.showing = True
@@ -229,28 +242,6 @@ class CommunityCard(Card):
     STARTING_X = SCREENSIZE[0] / 2 - 5 / 2 * CARDW - 2 * CARDB
     STARTING_Y = SCREENSIZE[1] / 2 - 1 / 2 * CARDH
 
-
-X1 = 645 / 1000 * SCREENSIZE[0]
-Y1 = TableY + tableImageSize[1]
-B1 = 125 / 1000 * SCREENSIZE[1]
-
-X2 = SCREENSIZE[0] - X1
-Y2 = SCREENSIZE[1] - Y1
-
-X3 = TableX
-Y3 = SCREENSIZE[1] / 2
-B2 = 89 / 1000 * SCREENSIZE[0]
-
-X4 = SCREENSIZE[0] - X3
-
-player_coords = [
-    (X1, Y1 - B1),
-    (X2, Y1 - B1),
-    (X3 + B2, Y3),
-    (X2, Y2 + B1),
-    (X1, Y2 + B1),
-    (X4 - B2, Y3),
-]
 
 # create a window
 screen = pygame.display.set_mode(SCREENSIZE)
@@ -266,14 +257,14 @@ class PlayerGUI:
     def __init__(self, player, table, profile="nature") -> None:
         self.r_i = get_r_i(player, table)
         self.x, self.y = player_coords[self.r_i]
-        self.rotate = False
         self.player = player
         self.showing = isinstance(self.player, Human)
         self.action = None
         self.acted = True
-        if self.r_i in [2, 5]:
-            self.rotate = True
 
+        self.PX, self.PY = self.direction(
+            self.x, self.y, 56 / 1000 * SCREENSIZE[1], *PROFILE_SIZE
+        )
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
             pygame.image.load(
@@ -295,22 +286,20 @@ class PlayerGUI:
         ][self.r_i]
 
     def add_cards(self):
-        self.cards = (
-            HoleCard(
-                self.player.holeCards[0],
-                1,
-                self.r_i,
-                self.showing,
-                self.rotate,
-            ),
-            HoleCard(
-                self.player.holeCards[1],
-                2,
-                self.r_i,
-                self.showing,
-                self.rotate,
-            ),
-        )
+        card_info = [
+            self.player.holeCards[0],
+            1,
+            self.r_i,
+            self.showing,
+            self.PX,
+            self.PY,
+        ]
+
+        self.cards = []
+        for r in range(2):
+            self.cards.append(HoleCard(*card_info))
+            card_info[0] = self.player.holeCards[1]
+            card_info[1] += 1
 
     def show_cards(self):
         for c in self.cards:
@@ -328,21 +317,15 @@ class PlayerGUI:
             c.showing = self.showing
 
     def draw(self):
-        if self.player.fold == False:
-            for c in self.cards:
-                c.draw()
 
-        PX, PY = self.direction(
-            self.x, self.y, 56 / 1000 * SCREENSIZE[1], *PROFILE_SIZE
-        )
-        screen.blit(self.profile, (PX, PY))
+        screen.blit(self.profile, (self.PX, self.PY))
 
         draw_text(
             str(self.player.chips),
             text_font,
             (255, 215, 0),
-            PX,
-            PY + 3 / 4 * PROFILE_SIZE[1],
+            self.PX,
+            self.PY + 3 / 4 * PROFILE_SIZE[1],
         )
 
         if self.action:
@@ -350,8 +333,15 @@ class PlayerGUI:
                 self.action,
                 text_font,
                 BLACK,
-                *self.direction(PX, PY, PROFILE_SIZE[1]),
+                *self.direction(self.PX, self.PY, PROFILE_SIZE[1]),
             )
+
+        if self.player.fold == False:
+            for c in self.cards:
+                c.draw()
+
+        pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 2, 2))
+        pygame.draw.rect(screen, (255, 0, 0), (self.PX, self.PY, 2, 2))
 
 
 class Main:
@@ -364,27 +354,27 @@ class Main:
             SCREENSIZE[0] / 2 - (BUTTONW / 2),
             SCREENSIZE[1] / 6 - BUTTONH / 2,
             (169, 169, 169),
-            text_font.render("   Deal", False, WHITE),
+            text_font.render("Deal", True, WHITE),
         )
         self.foldButton = ActionButton(
-            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 3,
-            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
+            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
+            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
             (255, 0, 0),
-            text_font.render("    Fold", False, WHITE),
+            text_font.render("Fold", True, WHITE),
             1,
         )
         self.checkButton = ActionButton(
             SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 2,
             SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
             (169, 169, 169),
-            text_font.render("  Check", False, WHITE),
+            text_font.render("Check", True, WHITE),
             2,
         )
         self.betButton = BetButton(
             SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
             SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
             (34, 140, 34),
-            text_font.render("    Bet ", False, WHITE),
+            text_font.render("Bet ", True, WHITE),
             3,
         )
 
