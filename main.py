@@ -106,7 +106,7 @@ class Player:
         if self.action == 3:
 
             if (
-                self.roundInvested + self.extra < round_total + prev_raise
+                self.roundInvested + self.extra < min(round_total + prev_raise, self.chips)
                 or self.extra > self.chips
             ):
                 return False
@@ -122,7 +122,7 @@ class Bot(Player):
             prev_raise = bets[-1] - bets[-2]
 
         extra = random.randint(
-            bets[-1] - self.roundInvested + prev_raise, self.chips
+            min(self.chips, bets[-1] - self.roundInvested + prev_raise), self.chips
         )  # BUG Int rounding not trustworthy TODO make max bet half chips
 
         return extra
@@ -149,6 +149,7 @@ class Bot(Player):
         valid = self.is_valid(bets, pot, community, action)
 
         if not valid:
+            print(bets, action)
             raise Exception
             return False
 

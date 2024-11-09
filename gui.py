@@ -7,7 +7,7 @@ pygame.init()
 # TODO show action better, change image for card back and card position
 # TODO create profile picture for players, show button / position by treating the button like another card
 
-
+#Button, chips 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
@@ -261,8 +261,12 @@ class PlayerGUI:
         self.action = None
         self.acted = True
 
-        self.PX, self.PY = self.direction(
+        self.PX, self.PY = self.direction(self.r_i,
             self.x, self.y, 50 / 1000 * screen.get_height(), *PROFILE_SIZE
+        )
+
+        self.BX, self.BY = self.direction(self.r_i,
+            self.x, self.y, -100 / 1000 * screen.get_height(), *PROFILE_SIZE
         )
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
@@ -271,6 +275,24 @@ class PlayerGUI:
             ).convert_alpha(),
             PROFILE_SIZE,
         )
+    
+    @staticmethod
+    def move_position(pos, x, y, distance, direction):
+        i = int(bool(pos % 3))
+        co = -1 if pos <= 3 else 1
+
+        if direction in [1, 2]:
+            i = int(not(i))
+        elif not pos % 3:
+            co *= -1 
+
+        if direction in [2, 4]:
+            co *= -1
+
+        coords = [x, y]
+        coords[co] += distance * co
+        return coords
+
 
     def direction(self, x, y, distance, ix=0, iy=0):
         return [
@@ -335,6 +357,7 @@ class PlayerGUI:
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
         pygame.draw.rect(screen, (255, 0, 0), (text_rect[0], self.PY + PROFILE_SIZE[1], 2, 2))
+        pygame.draw.rect(screen, (0, 0, 255), (self.BX, self.BY, 30, 30))
         if self.action:
             draw_text(
                 self.action,
@@ -346,6 +369,9 @@ class PlayerGUI:
         if self.player.fold == False:
             for c in self.cards:
                 c.draw()
+
+        pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 2, 2))
+
 
 
 class Main:
