@@ -3,6 +3,7 @@ from main import start, Bot, Human
 
 pygame.init()
 
+# TODO make profiles at the top move upwards more
 # TODO show action better, change image for card back and card position
 # TODO create profile picture for players, show button / position by treating the button like another card
 
@@ -15,8 +16,8 @@ def draw_text(text, font, text_colour, x, y):
 text_font = pygame.font.SysFont("Comic Sans", 35)
 
 dirname = os.path.dirname(__file__)
-SCREENSIZE = (1300, 800)
-screen = pygame.display.set_mode(SCREENSIZE)
+SCREENSIZE = (1600, 900)
+screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 
 BUTTONW = 150
@@ -43,8 +44,8 @@ tableImage = pygame.image.load(rf"{dirname}\PokerTable.png").convert_alpha()
 TIS = 1
 table_image_size = (868 * TIS, 423 * TIS)
 tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
-TableX = (SCREENSIZE[0] / 2) - (table_image_size[0] / 2)
-TableY = (SCREENSIZE[1] / 2) - (table_image_size[1] / 2)
+TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
+TableY = (screen.get_height() / 2) - (table_image_size[1] / 2)
 
 CARDW, CARDH, CARDB = (
     59 / 1000 * table_image_size[0],
@@ -63,13 +64,13 @@ PROFILE_SIZE = (125, 125)
 X1 = TableX + 700 / 1000 * table_image_size[0]
 Y1 = TableY + table_image_size[1]
 
-X2 = SCREENSIZE[0] - X1
-Y2 = SCREENSIZE[1] - Y1
+X2 = screen.get_width() - X1
+Y2 = screen.get_height() - Y1
 
 X3 = TableX
-Y3 = SCREENSIZE[1] / 2
+Y3 = screen.get_height() / 2
 
-X4 = SCREENSIZE[0] - X3
+X4 = screen.get_width() - X3
 
 player_coords = [
     (X1, Y1),
@@ -92,8 +93,10 @@ class Button:
 
     def draw(self):
         pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
-        pygame.draw.rect(screen, BLACK, (self.x, self.y,  self.BW, self.BH), 3)
-        text_rect = self.text.get_rect(center=(self.x + self.BW/2, self.y + self.BH / 2))
+        pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
+        text_rect = self.text.get_rect(
+            center=(self.x + self.BW / 2, self.y + self.BH / 2)
+        )
         screen.blit(self.text, text_rect)
 
     def add_table(self, table):
@@ -134,15 +137,15 @@ class BetButton(ActionButton):
     def __init__(self, x, y, colour, text, action):
         super().__init__(x, y, colour, text, action)
         self.increase = CBetButton(
-            x + self.BW - SCREENSIZE[0] / 40, #TODO Bad
-            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
+            x + self.BW - screen.get_width() / 40,  # TODO Bad
+            screen.get_height() - (BUTTONH + BUTTONBUFFER) * 2,
             (34, 140, 34),
             text_font.render("+", True, WHITE),
             1,
         )
         self.decrease = CBetButton(
-            x, 
-            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
+            x,
+            screen.get_height() - (BUTTONH + BUTTONBUFFER) * 2,
             (34, 140, 34),
             text_font.render("-", True, WHITE),
             -1,
@@ -168,7 +171,7 @@ class CBetButton(Button):
     def __init__(self, x, y, colour, text, co):
         super().__init__(x, y, colour, text)
         self.co = co
-        self.BW = SCREENSIZE[0] / 40
+        self.BW = BUTTONW / 4
 
     def pressed_action(self):
 
@@ -239,12 +242,8 @@ class HoleCard(Card):
 
 
 class CommunityCard(Card):
-    STARTING_X = SCREENSIZE[0] / 2 - 5 / 2 * CARDW - 2 * CARDB
-    STARTING_Y = SCREENSIZE[1] / 2 - 1 / 2 * CARDH
-
-
-# create a window
-screen = pygame.display.set_mode(SCREENSIZE)
+    STARTING_X = screen.get_width() / 2 - 5 / 2 * CARDW - 2 * CARDB
+    STARTING_Y = screen.get_height() / 2 - 1 / 2 * CARDH
 
 
 def get_r_i(player, table):
@@ -263,7 +262,7 @@ class PlayerGUI:
         self.acted = True
 
         self.PX, self.PY = self.direction(
-            self.x, self.y, 56 / 1000 * SCREENSIZE[1], *PROFILE_SIZE
+            self.x, self.y, 50 / 1000 * screen.get_height(), *PROFILE_SIZE
         )
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
@@ -273,9 +272,7 @@ class PlayerGUI:
             PROFILE_SIZE,
         )
 
-    def direction(
-        self, x, y, distance, ix=0, iy=0
-    ):  # TODO account if profile is not square
+    def direction(self, x, y, distance, ix=0, iy=0):
         return [
             (x - ix / 2, y + distance),
             (x - ix / 2, y + distance),
@@ -320,14 +317,23 @@ class PlayerGUI:
 
         screen.blit(self.profile, (self.PX, self.PY))
 
-        draw_text(
-            str(self.player.chips),
-            text_font,
-            (255, 215, 0),
-            self.PX,
-            self.PY + 3 / 4 * PROFILE_SIZE[1],
+        text = text_font.render(str(self.player.chips), True, (255, 215, 0))
+        text_rect = text.get_rect(
+            center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1.175 * PROFILE_SIZE[1])
+        )
+        pygame.draw.rect(
+            screen,
+            (40, 40, 40),
+            (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height),
         )
 
+        pygame.draw.rect(
+            screen,
+            BLACK,
+            (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height), 3
+        )
+
+        screen.blit(text, text_rect)
         if self.action:
             draw_text(
                 self.action,
@@ -340,9 +346,6 @@ class PlayerGUI:
             for c in self.cards:
                 c.draw()
 
-        pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 2, 2))
-        pygame.draw.rect(screen, (255, 0, 0), (self.PX, self.PY, 2, 2))
-
 
 class Main:
     def __init__(self) -> None:
@@ -351,28 +354,28 @@ class Main:
         self.community_cards = []
 
         self.dealButton = DealButton(
-            SCREENSIZE[0] / 2 - (BUTTONW / 2),
-            SCREENSIZE[1] / 6 - BUTTONH / 2,
+            screen.get_width() / 2 - (BUTTONW / 2),
+            screen.get_height() / 6 - BUTTONH / 2,
             (169, 169, 169),
             text_font.render("Deal", True, WHITE),
         )
         self.foldButton = ActionButton(
-            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
-            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER) * 2,
+            screen.get_width() - (BUTTONW + BUTTONBUFFER) * 2,
+            screen.get_height() - (BUTTONH + BUTTONBUFFER) * 2,
             (255, 0, 0),
             text_font.render("Fold", True, WHITE),
             1,
         )
         self.checkButton = ActionButton(
-            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 2,
-            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
+            screen.get_width() - (BUTTONW + BUTTONBUFFER) * 2,
+            screen.get_height() - (BUTTONH + BUTTONBUFFER),
             (169, 169, 169),
             text_font.render("Check", True, WHITE),
             2,
         )
         self.betButton = BetButton(
-            SCREENSIZE[0] - (BUTTONW + BUTTONBUFFER) * 1,
-            SCREENSIZE[1] - (BUTTONH + BUTTONBUFFER),
+            screen.get_width() - (BUTTONW + BUTTONBUFFER) * 1,
+            screen.get_height() - (BUTTONH + BUTTONBUFFER),
             (34, 140, 34),
             text_font.render("Bet ", True, WHITE),
             3,
@@ -398,6 +401,7 @@ class Main:
         )
 
     def single_frame(self):
+        global screen
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -405,6 +409,12 @@ class Main:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for b in self.buttons:
                     b.check_press(*self.mouse)
+            if event.type == pygame.VIDEORESIZE:
+                screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_f:
+                    pass
 
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
@@ -450,6 +460,10 @@ class Main:
             b.draw()
 
         self.mouse = pygame.mouse.get_pos()
+        pygame.draw.rect(
+            screen, (255, 0, 0), (screen.get_width() / 2, screen.get_height() / 2, 4, 4)
+        )
+
         pygame.display.flip()
 
         return True
