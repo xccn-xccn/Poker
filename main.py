@@ -83,56 +83,79 @@ class Player:
         if self.chips == 0:
             self.allIn = True
 
-    def is_valid(self, roundTotal, pot, community, action):
+    def is_valid(self, bets, pot, community, action):
+    
+        round_total = bets[-1]
+
         if len(action) == 2:
             self.action, self.extra = action
         else:
             self.action, self.extra = action, 0
 
-        if self.action == 3 and roundTotal >= self.roundInvested + self.chips:
-            return False
+        print(self.action)
+
+        if isinstance(self, Human):
+            if community:
+                end = f", Community Cards {community}"
+            else:
+                end = ""
+
+            print(f"Your cards are {self.holeCards}{end}")
+
+        prev_raise = 40
+        if len(bets) >= 2:
+            prev_raise = bets[-1] - bets[-2]
 
         if self.action == 3:
 
-            if self.roundInvested + self.extra < roundTotal or self.extra > self.chips:
+            if (
+                self.roundInvested + self.extra < round_total + prev_raise
+                or self.extra > self.chips
+            ):
                 return False
 
         return True
 
 
 class Bot(Player):
-    def get_bet(self, roundTotal):
+    def get_bet(self, bets):
+
+        prev_raise = 40
+        if len(bets) >= 2:
+            prev_raise = bets[-1] - bets[-2]
+
         extra = random.randint(
-            roundTotal - self.roundInvested, self.chips
+            bets[-1] - self.roundInvested + prev_raise, self.chips
         )  # BUG Int rounding not trustworthy TODO make max bet half chips
 
         return extra
 
-    def get_action(self, roundTotal):
+    def get_action(self, bets):
+        round_total = bets[-1]
         l = 1
         h = 3
-        if roundTotal == 0:
+        if round_total == 0:
             l = 2
-        if roundTotal >= self.roundInvested + self.chips:
+        if round_total >= self.roundInvested + self.chips:
             h = 2
 
         action = random.randint(l, h)
 
         if action == 3:
-            bet = self.get_bet(roundTotal)
+            bet = self.get_bet(bets)
         else:
             bet = 0
         return action, bet
 
-    def move(self, roundTotal, pot, community, action):
+    def move(self, bets, pot, community, action):
 
-        valid = self.is_valid(roundTotal, pot, community, action)
+        valid = self.is_valid(bets, pot, community, action)
 
         if not valid:
             raise Exception
             return False
 
-        super().move_action(roundTotal)
+        super().move_action(bets[-1])
 
         print(
             f"{self.positionName} {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
@@ -165,38 +188,13 @@ class Human(Player):
 
             return self.extra  # bad practice?
 
-    def is_valid(self, roundTotal, pot, community, action):
-        print("In human valid")
-        if len(action) == 2:
-            self.action, self.extra = action
-        else:
-            self.action, self.extra = action, 0
-
-        print(self.action)
-        if community:
-            end = f", Community Cards {community}"
-        else:
-            end = ""
-
-        print(f"Your cards are {self.holeCards}{end}")
-
-        if self.action == 3 and roundTotal >= self.roundInvested + self.chips:
-            return False
-
-        if self.action == 3:
-
-            if self.roundInvested + self.extra < roundTotal or self.extra > self.chips:
-                return False
-
-        return True
-
-    def move(self, roundTotal, pot, community, action):
-        valid = self.is_valid(roundTotal, pot, community, action)
+    def move(self, bets, pot, community, action):
+        valid = self.is_valid(bets, pot, community, action)
 
         if not valid:
             return False
 
-        super().move_action(roundTotal)
+        super().move_action(bets[-1])
 
         print(
             f"{self.positionName} (YOU) {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
@@ -229,16 +227,14 @@ class Table:
                 f"{self.currentPlayer.positionName} is all in / folded so turn is skipped {self.currentPlayer.chips} behind (should be 0)"
             )
             self.end_move()  # skip move
-            
-            self.currentPlayer.agg = False #Bad?
+
+            self.currentPlayer.agg = False  # Bad?
             return False
         return True
 
     def single_move(self, action=None):
 
-        valid = self.currentPlayer.move(
-            self.roundTotal, self.pot, self.community, action
-        )
+        valid = self.currentPlayer.move(self.bets, self.pot, self.community, action)
 
         if not valid:
             print("not valid")
@@ -248,7 +244,7 @@ class Table:
 
         if self.currentPlayer.fold == True:
             self.players_remaining -= 1
-            
+
         self.end_move()
 
     def end_move(self):
@@ -257,7 +253,7 @@ class Table:
 
         if self.currentPlayer.agg:
             self.last_agg = self.cPI
-            self.roundTotal = self.currentPlayer.roundInvested
+            self.bets.append(self.currentPlayer.roundInvested)
 
         self.cPI = (self.cPI + 1) % self.noPlayers
         self.currentPlayer = self.players[self.cPI]
@@ -286,16 +282,17 @@ class Table:
         if self.r == 0:
             print("Pre Flop")
             self.cPI = self.last_agg = (self.sb_i + 2) % self.noPlayers
-            self.roundTotal = self.blinds[1]
+            self.bets = [self.blinds[1]]
             self.community = []
         else:
             self.cPI = self.last_agg = self.sb_i
-            self.roundTotal = 0
+            self.bets = [0]
             self.community = self.deck[
                 self.communityCard_i : self.communityCard_i + self.r + 2
             ]
 
             print(f"{name[self.r]} Cards {self.community}")
+
 
         self.currentPlayer = self.players[self.cPI]
 

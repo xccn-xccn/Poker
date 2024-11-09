@@ -319,21 +319,22 @@ class PlayerGUI:
 
         text = text_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
-            center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1.175 * PROFILE_SIZE[1])
+            center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
-        pygame.draw.rect(
-            screen,
-            (40, 40, 40),
-            (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height),
-        )
+        # pygame.draw.rect(
+        #     screen,
+        #     (40, 40, 40),
+        #     (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height),
+        # )
 
-        pygame.draw.rect(
-            screen,
-            BLACK,
-            (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height), 3
-        )
+        # pygame.draw.rect(
+        #     screen,
+        #     BLACK,
+        #     (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height), 3
+        # )
 
-        screen.blit(text, text_rect)
+        screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
+        pygame.draw.rect(screen, (255, 0, 0), (text_rect[0], self.PY + PROFILE_SIZE[1], 2, 2))
         if self.action:
             draw_text(
                 self.action,
@@ -426,7 +427,7 @@ class Main:
             r_i = get_r_i(self.table.currentPlayer, self.table)
             if cont and isinstance(self.table.currentPlayer, Bot):
                 self.table.single_move(
-                    action=(self.table.currentPlayer.get_action(self.table.roundTotal))
+                    action=(self.table.currentPlayer.get_action(self.table.bets))
                 )
 
                 self.players[r_i].update()
