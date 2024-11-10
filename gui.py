@@ -40,7 +40,7 @@ pygame.display.set_caption("Poker Game")
 
 clock = pygame.time.Clock()
 
-tableImage = pygame.image.load(rf"{dirname}\PokerTable.png").convert_alpha()
+tableImage = pygame.image.load(rf"{dirname}\images\misc\PokerTable.png").convert_alpha()
 TIS = 1
 table_image_size = (868 * TIS, 423 * TIS)
 tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
@@ -53,7 +53,7 @@ CARDW, CARDH, CARDB = (
     7 / 1000 * table_image_size[1],
 )
 TCard = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}\cards\card_back.png").convert_alpha(),
+    pygame.image.load(rf"{dirname}\images\cards\card_back.png").convert_alpha(),
     (CARDW, CARDH),
 )
 
@@ -188,19 +188,19 @@ class Card:
 
     def set_image(self):
         card_path = f"{valFilename[self.value[0]]}_of_{suitFilename[self.value[1]]}"
-        imagePath = rf"{dirname}\cards\{card_path}.png"
+        imagePath = rf"{dirname}\images\cards\{card_path}.png"
 
         self.image = pygame.transform.smoothscale(
             pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
         )
 
         self.card_back = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\cards\card_back.png").convert_alpha(),
+            pygame.image.load(rf"{dirname}\images\cards\card_back.png").convert_alpha(),
             (CARDW, CARDH),
         )
 
         # self.card_back = pygame.transform.smoothscale(
-        #     pygame.image.load(rf"{dirname}\cards\layered_cardback.png").convert_alpha(),
+        #     pygame.image.load(rf"{dirname}\images\cards\layered_cardback.png").convert_alpha(),
         #     (CARDW/3, CARDH/3),
         # )
 
@@ -265,11 +265,21 @@ class PlayerGUI:
         #TODO do this with the move_position function, then button, chips and face down cards?
 
         self.PX, self.PY = self.get_profile_pos(6/100 * table_image_size[0], PROFILE_SIZE[0])
-        self.BX, self.BY = self.get_button_pos(12/100 * table_image_size[0], PROFILE_SIZE[0], 30)
+
+        DBUTTONW = 30
+        self.button_image = pygame.transform.smoothscale(
+            pygame.image.load(
+                rf"{dirname}\images\misc\Button.png"
+            ).convert_alpha(),
+            (DBUTTONW, DBUTTONW),
+        )
+        self.BX, self.BY = self.get_button_pos(12/100 * table_image_size[0], PROFILE_SIZE[0], DBUTTONW)
+
+
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
             pygame.image.load(
-                rf"{dirname}\profile_pictures\{profile}.png"
+                rf"{dirname}\images\profile_pictures\{profile}.png"
             ).convert_alpha(),
             PROFILE_SIZE,
         )
@@ -369,7 +379,9 @@ class PlayerGUI:
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
         pygame.draw.rect(screen, (255, 0, 0), (self.PX, self.PY, 2, 2))
-        pygame.draw.rect(screen, (0, 0, 255), (self.BX, self.BY, 30, 30))
+
+        if self.player.positionName == "Button":
+            screen.blit(self.button_image, (self.BX, self.BY))
         if self.action:
             draw_text(
                 self.action,
