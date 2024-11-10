@@ -261,13 +261,11 @@ class PlayerGUI:
         self.action = None
         self.acted = True
 
-        self.PX, self.PY = self.direction(self.r_i,
-            self.x, self.y, 50 / 1000 * screen.get_height(), *PROFILE_SIZE
-        )
+        
+        #TODO do this with the move_position function, then button, chips and face down cards?
 
-        self.BX, self.BY = self.direction(self.r_i,
-            self.x, self.y, -100 / 1000 * screen.get_height(), *PROFILE_SIZE
-        )
+        self.PX, self.PY = self.get_profile_pos(6/100 * table_image_size[0], PROFILE_SIZE[0])
+        self.BX, self.BY = self.get_button_pos(12/100 * table_image_size[0], PROFILE_SIZE[0], 30)
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
             pygame.image.load(
@@ -276,8 +274,11 @@ class PlayerGUI:
             PROFILE_SIZE,
         )
     
-    @staticmethod
-    def move_position(pos, x, y, distance, direction):
+    def move_position(self, x, y, distance, direction):
+        """Moves a co-ordinate in a direction relative to the seat position 1: left, 2: right, 3:towards centre, 4: away"""
+
+        pos = self.r_i + 1
+
         i = int(bool(pos % 3))
         co = -1 if pos <= 3 else 1
 
@@ -290,19 +291,30 @@ class PlayerGUI:
             co *= -1
 
         coords = [x, y]
-        coords[co] += distance * co
+        coords[i] += distance * co
+
         return coords
 
 
-    def direction(self, x, y, distance, ix=0, iy=0):
-        return [
-            (x - ix / 2, y + distance),
-            (x - ix / 2, y + distance),
-            (x - distance - ix, y - iy / 2),
-            (x - ix / 2, y - distance - iy),
-            (x - ix / 2, y - distance - iy),
-            (x + distance, y - iy / 2),
-        ][self.r_i]
+    def get_button_pos(self, buffer, p_width, b_width):
+        x, y = self.move_position(self.x, self.y, buffer, 3)
+        x, y = self.move_position(x, y, 35/100 * p_width, 1)
+        return self.fix_pos(x, y,  b_width)
+
+
+    def get_profile_pos(self, buffer, p_width):
+        x, y = self.move_position(self.x, self.y, buffer, 4)
+        return self.fix_pos(x, y, p_width)
+
+    def fix_pos(self, x, y, dimension):
+        """Fixes the co-ordinates of images because images are blitted with the top left being the given co-ordinate"""
+        pos = self.r_i + 1
+        if pos in [3, 4, 5]:
+            x, y = self.move_position(x, y, dimension, 4)
+        
+        x, y = self.move_position(x, y, dimension/2, 1 if pos <=3 else 2)
+        return x, y
+
 
     def add_cards(self):
         card_info = [
@@ -356,14 +368,14 @@ class PlayerGUI:
         # )
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
-        pygame.draw.rect(screen, (255, 0, 0), (text_rect[0], self.PY + PROFILE_SIZE[1], 2, 2))
+        pygame.draw.rect(screen, (255, 0, 0), (self.PX, self.PY, 2, 2))
         pygame.draw.rect(screen, (0, 0, 255), (self.BX, self.BY, 30, 30))
         if self.action:
             draw_text(
                 self.action,
                 text_font,
                 BLACK,
-                *self.direction(self.PX, self.PY, PROFILE_SIZE[1]),
+                *self.move_position(self.PX, self.PY, PROFILE_SIZE[0] / 2, 4),
             )
 
         if self.player.fold == False:
