@@ -4,7 +4,7 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-
+# BUG money appears out of now-where
 # TODO Skip positions when players have ran out of money
 # Main pot and side pots
 class Player:

@@ -60,7 +60,6 @@ TCard = pygame.transform.smoothscale(
 TCard2 = pygame.transform.rotate(TCard, 90)
 
 PROFILE_SIZE = (125, 125)
-# buffer 30 pixels
 X1 = TableX + 700 / 1000 * table_image_size[0]
 Y1 = TableY + table_image_size[1]
 
