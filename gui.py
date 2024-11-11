@@ -1,4 +1,4 @@
-import pygame, os
+import pygame, random, os
 from main import start, Bot, Human
 
 pygame.init()
@@ -24,6 +24,8 @@ BUTTONW = 150
 BUTTONH = 50
 BUTTONBUFFER = 40
 
+CS = 20
+CHIPW, CHIPH = (2 * CS, 1 * CS)
 
 valFilename = {}
 suitFilename = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
@@ -273,16 +275,18 @@ class PlayerGUI:
             (DBUTTONW, DBUTTONW),
         )
 
-        CS = 20
-        CHIPW, CHIPH = (2 * CS, 1 * CS)
+        
         self.chip_image = pygame.transform.smoothscale(
             pygame.image.load(
                 rf"{dirname}\images\chips\red_chip.png"
             ).convert_alpha(),
             (CHIPW, CHIPH),
         )
-        self.BX, self.BY = self.get_button_pos(12/100 * table_image_size[0], PROFILE_SIZE[0], DBUTTONW)
+        self.BX, self.BY = self.get_button_pos(PROFILE_SIZE[0], DBUTTONW)
         self.CX, self.CY = self.get_chip_pos(10/100 * table_image_size[0], CHIPW, CHIPH)
+        self.CXB = [0]
+        for _ in range(30):
+            self.CXB.append(self.CXB[-1] + random.randint(-2, 2))
 
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
@@ -314,14 +318,18 @@ class PlayerGUI:
         return coords
 
 
-    def get_button_pos(self, buffer, p_width, b_width):
-        x, y = self.move_position(self.x, self.y, buffer, 3)
-        x, y = self.move_position(x, y, 40/100 * p_width, 1)
+    def get_button_pos(self, p_width, b_width):
+        buffer = (13/100 if self.r_i != 5 else 12/100) * table_image_size[0]
+        ws = 74/100 if self.r_i != 5 else 55/100
+        x, y = self.move_position(self.x, self.y, (1.2 if self.r_i in [2, 5] else 1) * buffer, 3)
+        x, y = self.move_position(x, y, ws * p_width, 1)
         return self.fix_pos(x, y,  b_width)
 
 
     def get_chip_pos(self, buffer, width, height):
         x, y = self.move_position(self.x, self.y, buffer, 3)
+        if self.r_i not in [2, 5]:
+            x -= width * 1.2
         return self.fix_pos(x, y, width, height)
     
     def get_profile_pos(self, buffer, p_width):
@@ -381,21 +389,16 @@ class PlayerGUI:
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
 
-        screen.blit(self.chip_image, (self.CX, self.CY))
-        # pygame.draw.rect(
-        #     screen,
-        #     (40, 40, 40),
-        #     (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height),
-        # )
+        for a in range(30):
+            screen.blit(self.chip_image, self.move_position(self.CX + self.CXB[a], self.CY- a%10 * 36/100* CHIPH, ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.2 * (a//10)), 2 if self.r_i <=2 else 1))
+            
+            
 
-        # pygame.draw.rect(
-        #     screen,
-        #     BLACK,
-        #     (self.PX, self.PY + PROFILE_SIZE[1], PROFILE_SIZE[0], text_rect.height), 3
-        # )
+        # screen.blit(self.chip_image, (self.CX+ random.randint(-3, 3)/100* CHIPW, self.CY - 36/100* CHIPH))
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
         pygame.draw.rect(screen, (255, 0, 0), (self.PX, self.PY, 2, 2))
+
 
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
