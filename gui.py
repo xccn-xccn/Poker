@@ -272,8 +272,17 @@ class PlayerGUI:
             ).convert_alpha(),
             (DBUTTONW, DBUTTONW),
         )
-        self.BX, self.BY = self.get_button_pos(12/100 * table_image_size[0], PROFILE_SIZE[0], DBUTTONW)
 
+        CS = 20
+        CHIPW, CHIPH = (2 * CS, 1 * CS)
+        self.chip_image = pygame.transform.smoothscale(
+            pygame.image.load(
+                rf"{dirname}\images\chips\red_chip.png"
+            ).convert_alpha(),
+            (CHIPW, CHIPH),
+        )
+        self.BX, self.BY = self.get_button_pos(12/100 * table_image_size[0], PROFILE_SIZE[0], DBUTTONW)
+        self.CX, self.CY = self.get_chip_pos(10/100 * table_image_size[0], CHIPW, CHIPH)
 
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
@@ -307,21 +316,28 @@ class PlayerGUI:
 
     def get_button_pos(self, buffer, p_width, b_width):
         x, y = self.move_position(self.x, self.y, buffer, 3)
-        x, y = self.move_position(x, y, 35/100 * p_width, 1)
+        x, y = self.move_position(x, y, 40/100 * p_width, 1)
         return self.fix_pos(x, y,  b_width)
 
 
+    def get_chip_pos(self, buffer, width, height):
+        x, y = self.move_position(self.x, self.y, buffer, 3)
+        return self.fix_pos(x, y, width, height)
+    
     def get_profile_pos(self, buffer, p_width):
         x, y = self.move_position(self.x, self.y, buffer, 4)
         return self.fix_pos(x, y, p_width)
 
-    def fix_pos(self, x, y, dimension):
+    def fix_pos(self, x, y, width, height = None):
         """Fixes the co-ordinates of images because images are blitted with the top left being the given co-ordinate"""
+
+        if height == None:
+            height = width
         pos = self.r_i + 1
         if pos in [3, 4, 5]:
-            x, y = self.move_position(x, y, dimension, 4)
+            x, y = self.move_position(x, y, height, 4)
         
-        x, y = self.move_position(x, y, dimension/2, 1 if pos <=3 else 2)
+        x, y = self.move_position(x, y, width/2, 1 if pos <=3 else 2)
         return x, y
 
 
@@ -364,6 +380,8 @@ class PlayerGUI:
         text_rect = text.get_rect(
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
+
+        screen.blit(self.chip_image, (self.CX, self.CY))
         # pygame.draw.rect(
         #     screen,
         #     (40, 40, 40),
