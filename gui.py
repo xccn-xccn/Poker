@@ -3,23 +3,22 @@ from main import start, Bot, Human
 
 pygame.init()
 
-# TODO make profiles at the top move upwards more
 # TODO show action better, change image for card back and card position
-# TODO create profile picture for players, show button / position by treating the button like another card
+# BUG double clicking bet breaks
 
-#Button, chips 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
 
 
-text_font = pygame.font.SysFont("Comic Sans", 35)
+
 
 dirname = os.path.dirname(__file__)
 SCREENSIZE = (1600, 900)
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
-
+text_font = pygame.font.SysFont("Comic Sans", 35)
+text_font = pygame.font.Font(fr"{dirname}\misc\JqkasWild-w1YD6.ttf", 35)
 BUTTONW = 150
 BUTTONH = 50
 BUTTONBUFFER = 40
@@ -110,6 +109,8 @@ class Button:
         if self.x <= bx <= self.x + self.BW and self.y <= by <= self.y + self.BH:
             self.pressed_action()
 
+    def set_text(self):
+        self.text = text_font.render("Check" if self.table.human_player.roundInvested == self.table.bets[-1] else "Call", True, WHITE)
 
 class DealButton(Button):
     pressed = False
@@ -254,7 +255,7 @@ def get_r_i(player, table):
 
 
 class PlayerGUI:
-    def __init__(self, player, table, profile="nature") -> None:
+    def __init__(self, player, table) -> None:
         self.r_i = get_r_i(player, table)
         self.x, self.y = player_coords[self.r_i]
         self.player = player
@@ -262,40 +263,60 @@ class PlayerGUI:
         self.action = None
         self.acted = True
 
-        
-        #TODO do this with the move_position function, then button, chips and face down cards?
+        # TODO do this with the move_position function, then button, chips and face down cards?
 
-        self.PX, self.PY = self.get_profile_pos(6/100 * table_image_size[0], PROFILE_SIZE[0])
+        self.PX, self.PY = self.get_profile_pos(
+            6 / 100 * table_image_size[0], PROFILE_SIZE[0]
+        )
 
         DBUTTONW = 30
         self.button_image = pygame.transform.smoothscale(
-            pygame.image.load(
-                rf"{dirname}\images\misc\Button.png"
-            ).convert_alpha(),
+            pygame.image.load(rf"{dirname}\images\misc\Button.png").convert_alpha(),
             (DBUTTONW, DBUTTONW),
         )
 
-        
         self.chip_image = pygame.transform.smoothscale(
+            pygame.image.load(rf"{dirname}\images\chips\red_chip.png").convert_alpha(),
+            (CHIPW, CHIPH),
+        )
+
+        self.chip_image2 = pygame.transform.smoothscale(
             pygame.image.load(
-                rf"{dirname}\images\chips\red_chip.png"
+                rf"{dirname}\images\chips\green_chip.png"
             ).convert_alpha(),
             (CHIPW, CHIPH),
         )
+
+        self.chip_image3 = pygame.transform.smoothscale(
+            pygame.image.load(
+                rf"{dirname}\images\chips\blue_chip1.png"
+            ).convert_alpha(),
+            (CHIPW, CHIPH),
+        )
+
+        self.chip_image4 = pygame.transform.smoothscale(
+            pygame.image.load(
+                rf"{dirname}\images\chips\white_chip.png"
+            ).convert_alpha(),
+            (CHIPW, CHIPH),
+        )
+
         self.BX, self.BY = self.get_button_pos(PROFILE_SIZE[0], DBUTTONW)
-        self.CX, self.CY = self.get_chip_pos(10/100 * table_image_size[0], CHIPW, CHIPH)
+        self.CX, self.CY = self.get_chip_pos(
+            10 / 100 * table_image_size[0], CHIPW, CHIPH
+        )
         self.CXB = [0]
         for _ in range(30):
-            self.CXB.append(self.CXB[-1] + random.randint(-2, 2))
+            self.CXB.append(self.CXB[-1] + random.randint(-1, 1))
 
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
             pygame.image.load(
-                rf"{dirname}\images\profile_pictures\{profile}.png"
+                rf"{dirname}\images\profile_pictures\{self.player.profile_picture}.png"
             ).convert_alpha(),
             PROFILE_SIZE,
         )
-    
+
     def move_position(self, x, y, distance, direction):
         """Moves a co-ordinate in a direction relative to the seat position 1: left, 2: right, 3:towards centre, 4: away"""
 
@@ -305,9 +326,9 @@ class PlayerGUI:
         co = -1 if pos <= 3 else 1
 
         if direction in [1, 2]:
-            i = int(not(i))
+            i = int(not (i))
         elif not pos % 3:
-            co *= -1 
+            co *= -1
 
         if direction in [2, 4]:
             co *= -1
@@ -317,26 +338,26 @@ class PlayerGUI:
 
         return coords
 
-
     def get_button_pos(self, p_width, b_width):
-        buffer = (13/100 if self.r_i != 5 else 12/100) * table_image_size[0]
-        ws = 74/100 if self.r_i != 5 else 55/100
-        x, y = self.move_position(self.x, self.y, (1.2 if self.r_i in [2, 5] else 1) * buffer, 3)
+        buffer = (13 / 100 if self.r_i != 5 else 12 / 100) * table_image_size[0]
+        ws = 74 / 100 if self.r_i != 5 else 55 / 100
+        x, y = self.move_position(
+            self.x, self.y, (1.3 if self.r_i in [2, 5] else 1) * buffer, 3
+        )
         x, y = self.move_position(x, y, ws * p_width, 1)
-        return self.fix_pos(x, y,  b_width)
-
+        return self.fix_pos(x, y, b_width)
 
     def get_chip_pos(self, buffer, width, height):
         x, y = self.move_position(self.x, self.y, buffer, 3)
         if self.r_i not in [2, 5]:
             x -= width * 1.2
         return self.fix_pos(x, y, width, height)
-    
+
     def get_profile_pos(self, buffer, p_width):
         x, y = self.move_position(self.x, self.y, buffer, 4)
         return self.fix_pos(x, y, p_width)
 
-    def fix_pos(self, x, y, width, height = None):
+    def fix_pos(self, x, y, width, height=None):
         """Fixes the co-ordinates of images because images are blitted with the top left being the given co-ordinate"""
 
         if height == None:
@@ -344,10 +365,9 @@ class PlayerGUI:
         pos = self.r_i + 1
         if pos in [3, 4, 5]:
             x, y = self.move_position(x, y, height, 4)
-        
-        x, y = self.move_position(x, y, width/2, 1 if pos <=3 else 2)
-        return x, y
 
+        x, y = self.move_position(x, y, width / 2, 1 if pos <= 3 else 2)
+        return x, y
 
     def add_cards(self):
         card_info = [
@@ -390,15 +410,21 @@ class PlayerGUI:
         )
 
         for a in range(30):
-            screen.blit(self.chip_image, self.move_position(self.CX + self.CXB[a], self.CY- a%10 * 36/100* CHIPH, ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.2 * (a//10)), 2 if self.r_i <=2 else 1))
-            
-            
+            screen.blit(
+                (self.chip_image, self.chip_image2, self.chip_image3, self.chip_image4)[
+                    a % 4
+                ],
+                self.move_position(
+                    self.CX + self.CXB[a],
+                    self.CY - a % 10 * 36 / 100 * CHIPH,
+                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * (a // 10)),
+                    2 if self.r_i <= 2 else 1,
+                ),
+            )
 
         # screen.blit(self.chip_image, (self.CX+ random.randint(-3, 3)/100* CHIPW, self.CY - 36/100* CHIPH))
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
-        pygame.draw.rect(screen, (255, 0, 0), (self.PX, self.PY, 2, 2))
-
 
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
@@ -413,8 +439,6 @@ class PlayerGUI:
         if self.player.fold == False:
             for c in self.cards:
                 c.draw()
-
-        pygame.draw.rect(screen, (255, 0, 0), (self.x, self.y, 2, 2))
 
 
 
@@ -507,6 +531,9 @@ class Main:
                 else:
                     pygame.time.wait(500)
 
+            else:
+                self.checkButton.set_text()
+
             if len(self.community_cards) < len(self.table.community):
                 for i, c in enumerate(self.table.community):
                     if i + 1 > len(self.community_cards):
@@ -531,9 +558,9 @@ class Main:
             b.draw()
 
         self.mouse = pygame.mouse.get_pos()
-        pygame.draw.rect(
-            screen, (255, 0, 0), (screen.get_width() / 2, screen.get_height() / 2, 4, 4)
-        )
+        # pygame.draw.rect(
+        #     screen, (255, 0, 0), (screen.get_width() / 2, screen.get_height() / 2, 4, 4)
+        # )
 
         pygame.display.flip()
 

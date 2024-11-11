@@ -4,6 +4,7 @@ from winner import get_winner
 
 # sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
+
 # BUG money appears out of now-where
 # TODO Skip positions when players have ran out of money
 # Main pot and side pots
@@ -17,9 +18,10 @@ class Player:
         6: "Button",
     }
 
-    def __init__(self, position, chips=1000) -> None:
+    def __init__(self, position, profile_picture, chips=1000):
         self.chips = chips
         self.position = position
+        self.profile_picture = profile_picture
 
     def new_hand(self, deck, blinds):
 
@@ -81,7 +83,7 @@ class Player:
             self.allIn = True
 
     def is_valid(self, bets, pot, community, action):
-    
+
         round_total = bets[-1]
 
         if len(action) == 2:
@@ -106,7 +108,8 @@ class Player:
         if self.action == 3:
 
             if (
-                self.roundInvested + self.extra < min(round_total + prev_raise, self.chips)
+                self.roundInvested + self.extra
+                < min(round_total + prev_raise, self.chips)
                 or self.extra > self.chips
             ):
                 return False
@@ -291,7 +294,6 @@ class Table:
 
             print(f"{name[self.r]} Cards {self.community}")
 
-
         self.currentPlayer = self.players[self.cPI]
 
     def start_hand(self):
@@ -347,11 +349,18 @@ class Table:
 
 def start():
     table1 = Table()
+    profile_pictures = ["calvin", "elliot", "teddy", "bot", "daniel_n"]
+    random.shuffle(profile_pictures)
+    for r, p in zip(range(5), profile_pictures):
+        table1.add_player(Bot(r + 1, p))
 
-    for r in range(5):
-        table1.add_player(Bot(r + 1))
-
-    table1.add_player(Human(6, chips=2000))
+    table1.add_player(
+        Human(
+            6,
+            "nature",
+            chips=2000,
+        )
+    )
     return table1
 
 
