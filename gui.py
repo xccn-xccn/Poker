@@ -4,7 +4,7 @@ from chips import get_chips
 
 pygame.init()
 
-# TODO Reset chips after each round
+# TODO Reset chips after each round and gather chips in middle - maybe do this by checking if the round ends after running a turn
 # TODO clean up code (168) EVERTHING IS SO MESSY
 # BUG double clicking bet breaks
 
@@ -190,7 +190,7 @@ class CBetButton(Button):
 
     def pressed_action(self):  # TODO improve
 
-        self.bet_button.pbet += self.table.blinds[-1] * self.co  # bad
+        self.bet_button.pbet += self.table.blinds[-1] * self.co * 2  # bad
         self.window.players[0].update(self.table.blinds[-1], extra = self.bet_button.pbet)
 
 
@@ -559,9 +559,6 @@ class Main:
             b.draw()
 
         self.mouse = pygame.mouse.get_pos()
-        # pygame.draw.rect(
-        #     screen, (255, 0, 0), (screen.get_width() / 2, screen.get_height() / 2, 4, 4)
-        # )
 
         pygame.display.flip()
 

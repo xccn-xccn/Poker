@@ -5,6 +5,7 @@ from winner import get_winner
 
 # BUG main player gets to act twice when other are all in sometimes
 # BUG money appears out of nowwhere, when main player puts other player all in they get another chance to act when the round should end
+# BUG BB sometimes folds when he can just check
 # TODO Skip positions when players have ran out of money
 # Main pot and side pots
 
