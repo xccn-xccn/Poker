@@ -2,12 +2,12 @@ import random, time
 from deck import deck
 from winner import get_winner
 
-# sb_i refers to the player who is the small blind in the list self.players self.postion refers to the position of the player 1 is sb
 
-
-# BUG money appears out of now-where
+# BUG main player gets to act twice when other are all in sometimes
+# BUG money appears out of nowwhere, when main player puts other player all in they get another chance to act when the round should end
 # TODO Skip positions when players have ran out of money
 # Main pot and side pots
+
 class Player:
     pos_names = {
         1: "Small blind",
@@ -26,7 +26,6 @@ class Player:
     def new_hand(self, deck, blinds):
 
         self.fold = False
-        self.allIn = False
         self.agg = False
         if self.chips <= 0:
             print("Player is Broke")
@@ -48,6 +47,7 @@ class Player:
         self.roundInvested = self.totalInvested
 
         self.chips -= self.roundInvested
+        self.allIn = not (bool(self.chips) or self.fold)
 
     def end_round(self):
         self.roundInvested = 0
@@ -82,9 +82,9 @@ class Player:
         if self.chips == 0:
             self.allIn = True
 
-    def is_valid(self, bets, pot, community, action):
+    def is_valid(self, table, action):
 
-        round_total = bets[-1]
+        round_total = table.bets[-1]
 
         if len(action) == 2:
             self.action, self.extra = action
@@ -94,16 +94,16 @@ class Player:
         print(self.action)
 
         if isinstance(self, Human):
-            if community:
-                end = f", Community Cards {community}"
+            if table.community:
+                end = f", Community Cards {table.community}"
             else:
                 end = ""
 
             print(f"Your cards are {self.holeCards}{end}")
 
-        prev_raise = 40
-        if len(bets) >= 2:
-            prev_raise = bets[-1] - bets[-2]
+        prev_raise = table.blinds[-1]
+        if len(table.bets) >= 2:
+            prev_raise = table.bets[-1] - table.bets[-2]
 
         if self.action == 3:
 
@@ -115,54 +115,58 @@ class Player:
                 return False
 
         return True
+    
+    def move(self, table, action):
+
+        valid = self.is_valid(table, action)
+
+        if not valid and isinstance(self, Bot):
+            print(table.bets, action)
+            raise Exception
+        elif not valid:
+            return False
+        self.move_action(table.bets[-1])
+
+        name = "(YOU)" if isinstance(self, Human) else "(BOT)"
+        print(
+            f"{self.positionName} {name} {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+        )
+
+        return True
 
 
 class Bot(Player):
-    def get_bet(self, bets):
+    def get_bet(self, bets, table):
 
-        prev_raise = 40
+        prev_raise = table.blinds[-1]
         if len(bets) >= 2:
             prev_raise = bets[-1] - bets[-2]
 
         extra = random.randint(
-            min(self.chips, bets[-1] - self.roundInvested + prev_raise), self.chips
+            min(self.chips, bets[-1] - self.roundInvested + prev_raise), min(int(table.pot * 2.5), self.chips)
         )  # BUG Int rounding not trustworthy TODO make max bet half chips
 
         return extra
 
-    def get_action(self, bets):
+    def get_action(self, table):
+        bets = table.bets
         round_total = bets[-1]
         l = 1
         h = 3
         if round_total == 0:
             l = 2
-        if round_total >= self.roundInvested + self.chips:
+        if table.bets[-1] >= self.roundInvested + self.chips:
             h = 2
 
         action = random.randint(l, h)
 
         if action == 3:
-            bet = self.get_bet(bets)
+            bet = self.get_bet(bets, table)
         else:
             bet = 0
         return action, bet
 
-    def move(self, bets, pot, community, action):
-
-        valid = self.is_valid(bets, pot, community, action)
-
-        if not valid:
-            print(bets, action)
-            raise Exception
-            return False
-
-        super().move_action(bets[-1])
-
-        print(
-            f"{self.positionName} {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
-        )
-
-        return True
+    
 
 
 class Human(Player):
@@ -189,21 +193,6 @@ class Human(Player):
 
             return self.extra  # bad practice?
 
-    def move(self, bets, pot, community, action):
-        valid = self.is_valid(bets, pot, community, action)
-
-        if not valid:
-            return False
-
-        super().move_action(bets[-1])
-
-        print(
-            f"{self.positionName} (YOU) {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
-        )
-        # Only printing for testing
-
-        return True
-
 
 class Table:
     # deck = ['🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂡', '🂢', '��', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍','🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃜', '🃝', '🃞']
@@ -211,7 +200,7 @@ class Table:
     def __init__(self) -> None:
         self.players = []
         self.deck = deck
-        self.blinds = [20, 40]
+        self.blinds = [10, 20]
         self.sb_i = 6
         self.running = False
         self.community = []
@@ -235,7 +224,7 @@ class Table:
 
     def single_move(self, action=None):
 
-        valid = self.currentPlayer.move(self.bets, self.pot, self.community, action)
+        valid = self.currentPlayer.move(self, action)
 
         if not valid:
             print("not valid")

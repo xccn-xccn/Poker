@@ -1,24 +1,25 @@
 import pygame, random, os
 from main import start, Bot, Human
+from chips import get_chips
 
 pygame.init()
 
-# TODO show action better, change image for card back and card position
+# TODO Reset chips after each round
+# TODO clean up code (168) EVERTHING IS SO MESSY
 # BUG double clicking bet breaks
+
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
 
 
-
-
 dirname = os.path.dirname(__file__)
-SCREENSIZE = (1600, 900)
+SCREENSIZE = (1400, 900)
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 text_font = pygame.font.SysFont("Comic Sans", 35)
-text_font = pygame.font.Font(fr"{dirname}\misc\JqkasWild-w1YD6.ttf", 35)
+text_font = pygame.font.Font(rf"{dirname}\misc\JqkasWild-w1YD6.ttf", 35)
 BUTTONW = 150
 BUTTONH = 50
 BUTTONBUFFER = 40
@@ -110,7 +111,16 @@ class Button:
             self.pressed_action()
 
     def set_text(self):
-        self.text = text_font.render("Check" if self.table.human_player.roundInvested == self.table.bets[-1] else "Call", True, WHITE)
+        self.text = text_font.render(
+            (
+                "Check"
+                if self.table.human_player.roundInvested == self.table.bets[-1]
+                else "Call"
+            ),
+            True,
+            WHITE,
+        )
+
 
 class DealButton(Button):
     pressed = False
@@ -130,11 +140,10 @@ class ActionButton(Button):
         if isinstance(self.table.currentPlayer, Bot):
             return
         self.table.single_move(action=(self.action, 0))
-        self.window.players[0].update()
+        self.window.players[0].update(self.table.blinds[-1])
 
 
 class BetButton(ActionButton):
-    pbet = 0
 
     def __init__(self, x, y, colour, text, action):
         super().__init__(x, y, colour, text, action)
@@ -144,6 +153,7 @@ class BetButton(ActionButton):
             (34, 140, 34),
             text_font.render("+", True, WHITE),
             1,
+            self
         )
         self.decrease = CBetButton(
             x,
@@ -151,17 +161,19 @@ class BetButton(ActionButton):
             (34, 140, 34),
             text_font.render("-", True, WHITE),
             -1,
+            self
         )
+        self.pbet = 0
 
     def pressed_action(self):
-        self.table.single_move(action=(3, BetButton.pbet))
-        BetButton.pbet = 0
-        self.window.players[0].update()  # TODO Change?
+        self.table.single_move(action=(3, self.pbet))
+        self.pbet = 0
+        self.window.players[0].update(self.table.blinds[-1])  # TODO Change?
 
     def draw(self):
         super().draw()
         draw_text(
-            str(BetButton.pbet),
+            str(self.pbet),
             text_font,
             BLACK,
             self.x,
@@ -170,14 +182,16 @@ class BetButton(ActionButton):
 
 
 class CBetButton(Button):
-    def __init__(self, x, y, colour, text, co):
+    def __init__(self, x, y, colour, text, co, bet_button):
         super().__init__(x, y, colour, text)
         self.co = co
         self.BW = BUTTONW / 4
+        self.bet_button = bet_button
 
-    def pressed_action(self):
+    def pressed_action(self):  # TODO improve
 
-        BetButton.pbet += 40 * self.co  # bad
+        self.bet_button.pbet += self.table.blinds[-1] * self.co  # bad
+        self.window.players[0].update(self.table.blinds[-1], extra = self.bet_button.pbet)
 
 
 class Card:
@@ -262,8 +276,7 @@ class PlayerGUI:
         self.showing = isinstance(self.player, Human)
         self.action = None
         self.acted = True
-
-        # TODO do this with the move_position function, then button, chips and face down cards?
+        self.set_chip_images(table.blinds[-1])
 
         self.PX, self.PY = self.get_profile_pos(
             6 / 100 * table_image_size[0], PROFILE_SIZE[0]
@@ -273,32 +286,6 @@ class PlayerGUI:
         self.button_image = pygame.transform.smoothscale(
             pygame.image.load(rf"{dirname}\images\misc\Button.png").convert_alpha(),
             (DBUTTONW, DBUTTONW),
-        )
-
-        self.chip_image = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\images\chips\red_chip.png").convert_alpha(),
-            (CHIPW, CHIPH),
-        )
-
-        self.chip_image2 = pygame.transform.smoothscale(
-            pygame.image.load(
-                rf"{dirname}\images\chips\green_chip.png"
-            ).convert_alpha(),
-            (CHIPW, CHIPH),
-        )
-
-        self.chip_image3 = pygame.transform.smoothscale(
-            pygame.image.load(
-                rf"{dirname}\images\chips\blue_chip1.png"
-            ).convert_alpha(),
-            (CHIPW, CHIPH),
-        )
-
-        self.chip_image4 = pygame.transform.smoothscale(
-            pygame.image.load(
-                rf"{dirname}\images\chips\white_chip.png"
-            ).convert_alpha(),
-            (CHIPW, CHIPH),
         )
 
         self.BX, self.BY = self.get_button_pos(PROFILE_SIZE[0], DBUTTONW)
@@ -349,8 +336,8 @@ class PlayerGUI:
 
     def get_chip_pos(self, buffer, width, height):
         x, y = self.move_position(self.x, self.y, buffer, 3)
-        if self.r_i not in [2, 5]:
-            x -= width * 1.2
+        # if self.r_i not in [2, 5]:
+        #     x -= width * 1.2
         return self.fix_pos(x, y, width, height)
 
     def get_profile_pos(self, buffer, p_width):
@@ -389,8 +376,21 @@ class PlayerGUI:
         for c in self.cards:
             c.show()
 
-    def update(self):
+    def update(self, bb, extra=0):
         self.action = self.player.actionText
+
+        self.set_chip_images(bb, extra=extra)
+
+    def set_chip_images(self, bb, extra=0):
+        self.chip_images = [
+            pygame.transform.smoothscale(
+                pygame.image.load(
+                    rf"{dirname}\images\chips\{c}_chip.png"
+                ).convert_alpha(),
+                (CHIPW, CHIPH),
+            )
+            for c in get_chips(bb, self.player.roundInvested + extra)
+        ]
 
     def showdown(self, table):
         self.showing = (
@@ -409,20 +409,20 @@ class PlayerGUI:
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
 
-        for a in range(30):
+
+        for i, c_image in enumerate(self.chip_images[:30]):
+            p = i // 10
+            p = -1 if p == 1 else 1 if p == 2 else 0
+
             screen.blit(
-                (self.chip_image, self.chip_image2, self.chip_image3, self.chip_image4)[
-                    a % 4
-                ],
+                c_image,
                 self.move_position(
-                    self.CX + self.CXB[a],
-                    self.CY - a % 10 * 36 / 100 * CHIPH,
-                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * (a // 10)),
+                    self.CX + self.CXB[i],
+                    self.CY - i % 10 * 36 / 100 * CHIPH,
+                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * (i // 10)),
                     2 if self.r_i <= 2 else 1,
                 ),
             )
-
-        # screen.blit(self.chip_image, (self.CX+ random.randint(-3, 3)/100* CHIPW, self.CY - 36/100* CHIPH))
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
@@ -439,7 +439,6 @@ class PlayerGUI:
         if self.player.fold == False:
             for c in self.cards:
                 c.draw()
-
 
 
 class Main:
@@ -519,20 +518,22 @@ class Main:
             cont = self.table.start_move()
 
             r_i = get_r_i(self.table.currentPlayer, self.table)
+            acted = False
             if cont and isinstance(self.table.currentPlayer, Bot):
+                acted = True
                 self.table.single_move(
-                    action=(self.table.currentPlayer.get_action(self.table.bets))
+                    action=(self.table.currentPlayer.get_action(self.table))
                 )
 
-                self.players[r_i].update()
+                self.checkButton.set_text()
 
+                self.players[r_i].update(self.table.blinds[-1]) #reset chips at the end of each round
+
+            if acted:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
                 else:
                     pygame.time.wait(500)
-
-            else:
-                self.checkButton.set_text()
 
             if len(self.community_cards) < len(self.table.community):
                 for i, c in enumerate(self.table.community):
