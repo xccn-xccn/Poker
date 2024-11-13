@@ -4,8 +4,9 @@ from chips import get_chips
 
 pygame.init()
 
-# TODO Reset chips after each round and gather chips in middle - maybe do this by checking if the round ends after running a turn
-# TODO clean up code (168) EVERTHING IS SO MESSY
+# TODO gather chips in middle, make chip relative position function, make p_pot (pre round pot) in main
+# TODO show action with letter and number under chips
+# TODO clean up code (168) everything is mess
 # BUG double clicking bet breaks
 
 
@@ -128,7 +129,7 @@ class DealButton(Button):
     def pressed_action(self):
         DealButton.pressed = True
         self.table.start_hand()
-        self.window.set_players()
+        self.window.start_hand()
 
 
 class ActionButton(Button):
@@ -153,7 +154,7 @@ class BetButton(ActionButton):
             (34, 140, 34),
             text_font.render("+", True, WHITE),
             1,
-            self
+            self,
         )
         self.decrease = CBetButton(
             x,
@@ -161,7 +162,7 @@ class BetButton(ActionButton):
             (34, 140, 34),
             text_font.render("-", True, WHITE),
             -1,
-            self
+            self,
         )
         self.pbet = 0
 
@@ -191,7 +192,7 @@ class CBetButton(Button):
     def pressed_action(self):  # TODO improve
 
         self.bet_button.pbet += self.table.blinds[-1] * self.co * 2  # bad
-        self.window.players[0].update(self.table.blinds[-1], extra = self.bet_button.pbet)
+        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
 class Card:
@@ -409,54 +410,58 @@ class PlayerGUI:
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
 
+        # Testing only
         c = pygame.transform.smoothscale(
-                pygame.image.load(
-                    rf"{dirname}\images\chips\green_chip.png"
-                ).convert_alpha(),
-                (CHIPW, CHIPH),
-            )
-        
+            pygame.image.load(
+                rf"{dirname}\images\chips\green_chip.png"
+            ).convert_alpha(),
+            (CHIPW, CHIPH),
+        )
+
         c1 = pygame.transform.smoothscale(
-                pygame.image.load(
-                    rf"{dirname}\images\chips\blue_chip.png"
-                ).convert_alpha(),
-                (CHIPW, CHIPH),
-            )
+            pygame.image.load(rf"{dirname}\images\chips\blue_chip.png").convert_alpha(),
+            (CHIPW, CHIPH),
+        )
 
-        n = list(range(30))
-        n[:10], n[10:20] = n[10:20], n[:10]
-        for a in n: #note must print stacks from left to right (or bring forwards chips on the right)
-            #Fix this by changing order of chpis list
-            # a = n[a]
-            p = a // 10
-            p = -1 if p == 1 else 1 if p == 2 else 0
-
-            # print(self.r_i, p, a)
-
-            ch = c if a <20 else c1
-            screen.blit(
-                ch,
-                self.move_position(
-                    self.CX + self.CXB[a],
-                    self.CY - ((a % 10) * 36 / 100 * CHIPH),
-                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
-                    2 if self.r_i <= 2 else 1,
-                ),
-            )
-
-        # for i, c_image in enumerate(self.chip_images[:30]): #account for more than 30?
+        # n = list(range(30))
+        # n[:10], n[10:20] = n[10:20], n[:10]
+        # for i in n: #note must print stacks from left to right (or bring forwards chips on the right)
+        #     #Fix this by changing order of chpis list
+        #     # a = n[a]
         #     p = i // 10
-        #     p = 1 if p == 1 else -1 if p == 2 else 0
+        #     p = -1 if p == 1 else 1 if p == 2 else 0
 
+        #     # print(self.r_i, p, a)
+
+        #     ch = c if i <20 else c1
         #     screen.blit(
-        #         c_image,
+        #         ch,
         #         self.move_position(
         #             self.CX + self.CXB[i],
-        #             self.CY - i % 10 * 36 / 100 * CHIPH,
+        #             self.CY - ((i % 10) * 36 / 100 * CHIPH),
         #             ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
         #             2 if self.r_i <= 2 else 1,
         #         ),
         #     )
+
+        chips = self.chip_images[:30]
+        chips[:10], chips[10:20] = chips[10:20], chips[:10]
+
+        for i, c_image in enumerate(self.chip_images[:30]):  # account for more than 30?
+            p = i // 10
+            p = -1 if p == 1 else 1 if p == 2 else 0
+
+            # print(self.r_i, p, a)
+
+            screen.blit(
+                c_image,
+                self.move_position(
+                    self.CX + self.CXB[i],
+                    self.CY - ((i % 10) * 36 / 100 * CHIPH),
+                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
+                    2 if self.r_i <= 2 else 1,
+                ),
+            )
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
@@ -522,14 +527,20 @@ class Main:
             b.add_table(self.table)
             b.add_window(self)
 
-    def set_players(self):
+    def start_hand(self):
         self.players = sorted(
             [PlayerGUI(p, self.table) for p in self.table.players],
             key=lambda x: get_r_i(x.player, self.table),
         )
 
+        self.r = 0
+
+    def draw_chips(self):
+        pass
+
     def single_frame(self):
         global screen
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -561,7 +572,9 @@ class Main:
 
                 self.checkButton.set_text()
 
-                self.players[r_i].update(self.table.blinds[-1]) #reset chips at the end of each round
+                self.players[r_i].update(
+                    self.table.blinds[-1]
+                )  
 
             if acted:
                 if self.table.human_player.fold == True:
@@ -581,6 +594,15 @@ class Main:
 
             for p in self.players:
                 p.draw()
+
+            if self.r != self.table.r:
+                self.r += 1
+
+                for p in self.players:
+                    p.set_chip_images(self.table.blinds[-1])
+
+                if self.r != self.table.r:
+                    raise Exception(self.r, self.table.r)
 
             if self.table.running == False:
                 for p in self.players:

@@ -259,7 +259,7 @@ class Table:
             self.r += 1
 
             for p in self.players:
-                p.roundInvested = 0
+                p.roundInvested = 0 #use function?
 
         for p in self.players:
             p.action = p.actionText = None
