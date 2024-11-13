@@ -327,7 +327,7 @@ class PlayerGUI:
 
     def get_button_pos(self, p_width, b_width):
         buffer = (13 / 100 if self.r_i != 5 else 12 / 100) * table_image_size[0]
-        ws = 74 / 100 if self.r_i != 5 else 55 / 100
+        ws = 77 / 100 if self.r_i != 5 else 55 / 100
         x, y = self.move_position(
             self.x, self.y, (1.3 if self.r_i in [2, 5] else 1) * buffer, 3
         )
@@ -336,8 +336,8 @@ class PlayerGUI:
 
     def get_chip_pos(self, buffer, width, height):
         x, y = self.move_position(self.x, self.y, buffer, 3)
-        # if self.r_i not in [2, 5]:
-        #     x -= width * 1.2
+        if self.r_i in [2, 5]:
+            y += height * 1.3
         return self.fix_pos(x, y, width, height)
 
     def get_profile_pos(self, buffer, p_width):
@@ -409,20 +409,54 @@ class PlayerGUI:
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
 
+        c = pygame.transform.smoothscale(
+                pygame.image.load(
+                    rf"{dirname}\images\chips\green_chip.png"
+                ).convert_alpha(),
+                (CHIPW, CHIPH),
+            )
+        
+        c1 = pygame.transform.smoothscale(
+                pygame.image.load(
+                    rf"{dirname}\images\chips\blue_chip.png"
+                ).convert_alpha(),
+                (CHIPW, CHIPH),
+            )
 
-        for i, c_image in enumerate(self.chip_images[:30]):
-            p = i // 10
+        n = list(range(30))
+        n[:10], n[10:20] = n[10:20], n[:10]
+        for a in n: #note must print stacks from left to right (or bring forwards chips on the right)
+            #Fix this by changing order of chpis list
+            # a = n[a]
+            p = a // 10
             p = -1 if p == 1 else 1 if p == 2 else 0
 
+            # print(self.r_i, p, a)
+
+            ch = c if a <20 else c1
             screen.blit(
-                c_image,
+                ch,
                 self.move_position(
-                    self.CX + self.CXB[i],
-                    self.CY - i % 10 * 36 / 100 * CHIPH,
-                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * (i // 10)),
+                    self.CX + self.CXB[a],
+                    self.CY - ((a % 10) * 36 / 100 * CHIPH),
+                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
                     2 if self.r_i <= 2 else 1,
                 ),
             )
+
+        # for i, c_image in enumerate(self.chip_images[:30]): #account for more than 30?
+        #     p = i // 10
+        #     p = 1 if p == 1 else -1 if p == 2 else 0
+
+        #     screen.blit(
+        #         c_image,
+        #         self.move_position(
+        #             self.CX + self.CXB[i],
+        #             self.CY - i % 10 * 36 / 100 * CHIPH,
+        #             ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
+        #             2 if self.r_i <= 2 else 1,
+        #         ),
+        #     )
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
