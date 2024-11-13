@@ -8,7 +8,7 @@ pygame.init()
 # TODO show action with letter and number under chips or maybe just print text at the top of the profile
 # TODO show cards used with winning hands (maybe show winning hand name)
 # TODO clean up code (168) everything is mess
-# BUG double clicking bet breaks
+# BUG double clicking bet breaks (think it submits bet for the bot/next player)
 
 
 def draw_text(text, font, text_colour, x, y):
