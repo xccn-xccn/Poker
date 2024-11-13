@@ -5,7 +5,8 @@ from chips import get_chips
 pygame.init()
 
 # TODO gather chips in middle, make chip relative position function, make p_pot (pre round pot) in main
-# TODO show action with letter and number under chips
+# TODO show action with letter and number under chips or maybe just print text at the top of the profile
+# TODO show cards used with winning hands (maybe show winning hand name)
 # TODO clean up code (168) everything is mess
 # BUG double clicking bet breaks
 
@@ -472,7 +473,8 @@ class PlayerGUI:
                 self.action,
                 text_font,
                 BLACK,
-                *self.move_position(self.PX, self.PY, PROFILE_SIZE[0] / 2, 4),
+                self.PX,
+                self.PY
             )
 
         if self.player.fold == False:
