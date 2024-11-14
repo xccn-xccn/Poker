@@ -302,7 +302,7 @@ class Table:
 
         for p in self.players:
             p.new_hand(self.deck, self.blinds)
-            self.pot += p.totalInvested
+            self.pot += p.round_invested
 
         self.players_remaining = sum([1 for p in self.players if not p.fold])  # Check
         self.communityCard_i = (

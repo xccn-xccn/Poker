@@ -9,6 +9,8 @@ pygame.init()
 # TODO show cards used with winning hands (maybe show winning hand name)
 # TODO clean up code (168) everything is mess
 # BUG double clicking bet breaks (think it submits bet for the bot/next player)
+# BUG check/call button displays wrong word sometimes
+# chip display bug for sides
 
 
 def draw_text(text, font, text_colour, x, y):
@@ -294,9 +296,7 @@ class PlayerGUI:
         self.CX, self.CY = self.get_chip_pos(
             10 / 100 * table_image_size[0], CHIPW, CHIPH
         )
-        self.CXB = [0]
-        for _ in range(30):
-            self.CXB.append(self.CXB[-1] + random.randint(-1, 1))
+        self.CXB = PlayerGUI.get_CXB()
 
         self.add_cards()
         self.profile = pygame.transform.smoothscale(
@@ -306,10 +306,18 @@ class PlayerGUI:
             PROFILE_SIZE,
         )
 
-    def move_position(self, x, y, distance, direction):
-        """Moves a co-ordinate in a direction relative to the seat position 1: left, 2: right, 3:towards centre, 4: away"""
+    @staticmethod
+    def get_CXB():
+        l = [0]
 
-        pos = self.r_i + 1
+        for _ in range(29):
+            l.append(l[-1] + random.randint(-1, 1))
+
+        return l
+
+    @staticmethod
+    def move_position(pos, x, y, distance, direction):
+        """Moves a co-ordinate in a direction relative to the seat position 1: left, 2: right, 3:towards centre, 4: away"""
 
         i = int(bool(pos % 3))
         co = -1 if pos <= 3 else 1
@@ -331,19 +339,19 @@ class PlayerGUI:
         buffer = (13 / 100 if self.r_i != 5 else 12 / 100) * table_image_size[0]
         ws = 77 / 100 if self.r_i != 5 else 55 / 100
         x, y = self.move_position(
-            self.x, self.y, (1.3 if self.r_i in [2, 5] else 1) * buffer, 3
+            self.r_i + 1, self.x, self.y, (1.3 if self.r_i in [2, 5] else 1) * buffer, 3
         )
-        x, y = self.move_position(x, y, ws * p_width, 1)
+        x, y = self.move_position(self.r_i + 1, x, y, ws * p_width, 1)
         return self.fix_pos(x, y, b_width)
 
     def get_chip_pos(self, buffer, width, height):
-        x, y = self.move_position(self.x, self.y, buffer, 3)
+        x, y = self.move_position(self.r_i + 1, self.x, self.y, buffer, 3)
         if self.r_i in [2, 5]:
             y += height * 1.3
         return self.fix_pos(x, y, width, height)
 
     def get_profile_pos(self, buffer, p_width):
-        x, y = self.move_position(self.x, self.y, buffer, 4)
+        x, y = self.move_position(self.r_i + 1, self.x, self.y, buffer, 4)
         return self.fix_pos(x, y, p_width)
 
     def fix_pos(self, x, y, width, height=None):
@@ -353,9 +361,9 @@ class PlayerGUI:
             height = width
         pos = self.r_i + 1
         if pos in [3, 4, 5]:
-            x, y = self.move_position(x, y, height, 4)
+            x, y = self.move_position(pos, x, y, height, 4)
 
-        x, y = self.move_position(x, y, width / 2, 1 if pos <= 3 else 2)
+        x, y = self.move_position(pos, x, y, width / 2, 1 if pos <= 3 else 2)
         return x, y
 
     def add_cards(self):
@@ -384,14 +392,18 @@ class PlayerGUI:
         self.set_chip_images(bb, extra=extra)
 
     def set_chip_images(self, bb, extra=0):
-        self.chip_images = [
+        self.chip_images = self.get_chip_images(self.player.round_invested + extra, bb)
+
+    @staticmethod
+    def get_chip_images(value, bb, extra=0):
+        return [
             pygame.transform.smoothscale(
                 pygame.image.load(
                     rf"{dirname}\images\chips\{c}_chip.png"
                 ).convert_alpha(),
                 (CHIPW, CHIPH),
             )
-            for c in get_chips(bb, self.player.round_invested + extra)
+            for c in get_chips(bb, value + extra)
         ]
 
     def showdown(self, table):
@@ -402,6 +414,25 @@ class PlayerGUI:
         for c in self.cards:
             c.showing = self.showing
 
+    @staticmethod
+    def s_chip_pos(x, y, buffer, i):
+        return x + buffer[i], y - ((i % 10) * 36 / 100 * CHIPH)
+
+    @staticmethod
+    def draw_chips(x, y, buffer, images, pos=1):
+        for i, c_image in enumerate(images):  # account for more than 30?
+            p = i // 10
+            p = -1 if p == 1 else 1 if p == 2 else 0
+
+            cx, cy = PlayerGUI.move_position(
+                pos,
+                *PlayerGUI.s_chip_pos(x, y, buffer, i),
+                ((CHIPW if pos not in [3, 6] else CHIPH) * 1.3 * p),
+                2 if pos <= 3 else 1,
+            )
+
+            screen.blit(c_image, (cx, cy))
+
     def draw(self):
 
         screen.blit(self.profile, (self.PX, self.PY))
@@ -411,71 +442,36 @@ class PlayerGUI:
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
 
-        # Testing only
-        c = pygame.transform.smoothscale(
-            pygame.image.load(
-                rf"{dirname}\images\chips\green_chip.png"
-            ).convert_alpha(),
-            (CHIPW, CHIPH),
+        chips = self.chip_images[:30]
+        chips[:10], chips[10:20] = chips[10:20], chips[:10]
+
+        PlayerGUI.draw_chips(
+            self.CX,
+            self.CY,
+            self.CXB,
+            chips,
+            self.r_i + 1,
         )
 
-        c1 = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\images\chips\blue_chip.png").convert_alpha(),
-            (CHIPW, CHIPH),
-        )
-
-        # n = list(range(30))
-        # n[:10], n[10:20] = n[10:20], n[:10]
-        # for i in n: #note must print stacks from left to right (or bring forwards chips on the right)
-        #     #Fix this by changing order of chpis list
-        #     # a = n[a]
+        # for i, c_image in enumerate(self.chip_images[:30]):  # account for more than 30?
         #     p = i // 10
         #     p = -1 if p == 1 else 1 if p == 2 else 0
 
-        #     # print(self.r_i, p, a)
-
-        #     ch = c if i <20 else c1
         #     screen.blit(
-        #         ch,
+        #         c_image,
         #         self.move_position(
-        #             self.CX + self.CXB[i],
-        #             self.CY - ((i % 10) * 36 / 100 * CHIPH),
+        #             PlayerGUI.s_chip_pos(self.CX, self.CY, self.CXB, i),
         #             ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
         #             2 if self.r_i <= 2 else 1,
         #         ),
         #     )
-
-        chips = self.chip_images[:30]
-        chips[:10], chips[10:20] = chips[10:20], chips[:10]
-
-        for i, c_image in enumerate(self.chip_images[:30]):  # account for more than 30?
-            p = i // 10
-            p = -1 if p == 1 else 1 if p == 2 else 0
-
-            # print(self.r_i, p, a)
-
-            screen.blit(
-                c_image,
-                self.move_position(
-                    self.CX + self.CXB[i],
-                    self.CY - ((i % 10) * 36 / 100 * CHIPH),
-                    ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
-                    2 if self.r_i <= 2 else 1,
-                ),
-            )
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
         if self.action:
-            draw_text(
-                self.action,
-                text_font,
-                BLACK,
-                self.PX,
-                self.PY
-            )
+            draw_text(self.action, text_font, BLACK, self.PX, self.PY)
 
         if self.player.fold == False:
             for c in self.cards:
@@ -536,9 +532,16 @@ class Main:
         )
 
         self.r = 0
+        self.chip_images = []
+        self.pot = 0
+        self.CXB = PlayerGUI.get_CXB()
 
-    def draw_chips(self):
-        pass
+    def draw_pot(self):
+        # pot = self.table.pot - sum(p.round_invested for p in self.table.players)
+
+        x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
+        PlayerGUI.draw_chips(x, y - CARDH / 4, self.CXB, self.chip_images)
+        draw_text(str(self.pot), text_font, BLACK, x, y)
 
     def single_frame(self):
         global screen
@@ -561,7 +564,7 @@ class Main:
         screen.blit(tableImage, (TableX, TableY))
 
         if self.table.running:
-
+            self.checkButton.set_text()
             cont = self.table.start_move()
 
             r_i = get_r_i(self.table.currentPlayer, self.table)
@@ -572,15 +575,12 @@ class Main:
                     action=(self.table.currentPlayer.get_action(self.table))
                 )
 
-                self.checkButton.set_text()
+                self.players[r_i].update(self.table.blinds[-1])
 
-                self.players[r_i].update(
-                    self.table.blinds[-1]
-                )  
             # elif cont and isinstance(self.table.currentPlayer, Human):
             #     self.table.single_move(
             #         action=(1, 0))
-                
+
             if acted:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
@@ -600,8 +600,16 @@ class Main:
             for p in self.players:
                 p.draw()
 
+            self.draw_pot()
             if self.r != self.table.r:
                 self.r += 1
+
+                self.CXB = PlayerGUI.get_CXB()
+
+                self.pot = self.table.pot
+                self.chip_images = PlayerGUI.get_chip_images(
+                    self.table.pot, self.table.blinds[-1]
+                )
 
                 for p in self.players:
                     p.set_chip_images(self.table.blinds[-1])
@@ -632,7 +640,7 @@ def main():
     window = Main()
     while running:
         running = window.single_frame()
-        clock.tick(60)
+        clock.tick(30)
 
     pygame.quit()
 
