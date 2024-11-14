@@ -434,9 +434,9 @@ class PlayerGUI:
         # images[:10], images[10:20] = images[10:20], images[:10]
         # images = [chip] * 30 test
         p = -1
-        if len(images) >10:
+        if len(images) > 10:
             p = -2
-            
+
         for i, c_image in enumerate(images):  # account for more than 30?
             if i % 10 == 0:
                 p += 1
@@ -460,7 +460,6 @@ class PlayerGUI:
         )
 
         chips = self.chip_images[:30]
-        
 
         PlayerGUI.draw_chips(
             self.CX,
@@ -470,25 +469,14 @@ class PlayerGUI:
             self.r_i + 1,
         )
 
-        # for i, c_image in enumerate(self.chip_images[:30]):  # account for more than 30?
-        #     p = i // 10
-        #     p = -1 if p == 1 else 1 if p == 2 else 0
-
-        #     screen.blit(
-        #         c_image,
-        #         self.move_position(
-        #             PlayerGUI.s_chip_pos(self.CX, self.CY, self.CXB, i),
-        #             ((CHIPW if self.r_i not in [2, 5] else CHIPH) * 1.3 * p),
-        #             2 if self.r_i <= 2 else 1,
-        #         ),
-        #     )
-
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
         if self.action:
-            draw_text(self.action, text_font, BLACK, self.PX, self.PY)
+            text = text_font.render(self.action, True, BLACK)
+            text_rect = text.get_rect()
+            screen.blit(text, (self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2, self.PY))
 
         if self.player.fold == False:
             for c in self.cards:
