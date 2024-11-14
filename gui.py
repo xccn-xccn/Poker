@@ -58,6 +58,17 @@ CARDW, CARDH, CARDB = (
     173 / 1000 * table_image_size[1],
     7 / 1000 * table_image_size[1],
 )
+
+chip = pygame.transform.smoothscale(
+    pygame.image.load(rf"{dirname}\images\chips\green_chip.png").convert_alpha(),
+    (CHIPW, CHIPH),
+)
+
+chip2 = pygame.transform.smoothscale(
+    pygame.image.load(rf"{dirname}\images\chips\black_chip.png").convert_alpha(),
+    (CHIPW, CHIPH),
+)
+
 TCard = pygame.transform.smoothscale(
     pygame.image.load(rf"{dirname}\images\cards\card_back.png").convert_alpha(),
     (CARDW, CARDH),
@@ -420,10 +431,15 @@ class PlayerGUI:
 
     @staticmethod
     def draw_chips(x, y, buffer, images, pos=1):
+
+        images = [chip] * 30 #testing
+        images[:10], images[10:20] = images[10:20], images[:10]
         for i, c_image in enumerate(images):  # account for more than 30?
             p = i // 10
             p = -1 if p == 1 else 1 if p == 2 else 0
 
+            if pos in [3, 6]:
+                p *= -1
             cx, cy = PlayerGUI.move_position(
                 pos,
                 *PlayerGUI.s_chip_pos(x, y, buffer, i),
@@ -443,7 +459,7 @@ class PlayerGUI:
         )
 
         chips = self.chip_images[:30]
-        chips[:10], chips[10:20] = chips[10:20], chips[:10]
+        
 
         PlayerGUI.draw_chips(
             self.CX,
@@ -537,10 +553,9 @@ class Main:
         self.CXB = PlayerGUI.get_CXB()
 
     def draw_pot(self):
-        # pot = self.table.pot - sum(p.round_invested for p in self.table.players)
-
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
-        PlayerGUI.draw_chips(x, y - CARDH / 4, self.CXB, self.chip_images)
+        self.chip_images = [chip] * 30 #testing
+        PlayerGUI.draw_chips(x - CHIPW / 2, y - CARDH / 4, self.CXB, self.chip_images)
         draw_text(str(self.pot), text_font, BLACK, x, y)
 
     def single_frame(self):
