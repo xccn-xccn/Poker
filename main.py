@@ -6,7 +6,7 @@ from winner import get_winner
 # BUG main player gets to act twice when other are all in sometimes
 # BUG money appears out of nowwhere, when main player puts other player all in they get another chance to act when the round should end
 # BUG BB sometimes folds when he can just check
-# TODO Skip positions when players have ran out of money
+# TODO Skip positions when players have ran out of money !!
 # Main pot and side pots
 
 class Player:
@@ -45,18 +45,18 @@ class Player:
             self.totalInvested = min(blinds[i], self.chips)
         else:
             self.totalInvested = 0
-        self.roundInvested = self.totalInvested
+        self.round_invested = self.totalInvested
 
-        self.chips -= self.roundInvested
+        self.chips -= self.round_invested
         self.allIn = not (bool(self.chips) or self.fold)
 
     def end_round(self):
-        self.roundInvested = 0
+        self.round_invested = 0
 
     def move_action(self, roundTotal):
         print("action", self.action)
         if self.action == 1:  # change maybe
-            self.actionText = "folds"
+            self.action_text = "folds"
             self.fold = True
             self.agg = False
             self.extra = 0
@@ -64,20 +64,20 @@ class Player:
         elif self.action == 2:
 
             self.agg = False
-            self.extra = roundTotal - self.roundInvested  # TODO Make side and main pots
+            self.extra = roundTotal - self.round_invested  # TODO Make side and main pots
 
-            self.actionText = "calls" if self.extra else "checks"
+            self.action_text = "calls" if self.extra else "checks"
 
-            if roundTotal >= self.roundInvested + self.chips:
+            if roundTotal >= self.round_invested + self.chips:
                 self.allIn = True
                 self.extra = self.chips
 
         else:
-            self.actionText = f"bets {self.extra}"
+            self.action_text = f"bets {self.extra}"
 
             self.agg = True
 
-        self.roundInvested += self.extra
+        self.round_invested += self.extra
         self.chips -= self.extra
 
         if self.chips == 0:
@@ -109,7 +109,7 @@ class Player:
         if self.action == 3:
 
             if (
-                self.roundInvested + self.extra
+                self.round_invested + self.extra
                 < min(round_total + prev_raise, self.chips)
                 or self.extra > self.chips
             ):
@@ -130,7 +130,7 @@ class Player:
 
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
         print(
-            f"{self.positionName} {name} {self.actionText} with {self.chips} chips behind {self.roundInvested} invested this round"
+            f"{self.positionName} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
         )
 
         return True
@@ -143,10 +143,15 @@ class Bot(Player):
         if len(bets) >= 2:
             prev_raise = bets[-1] - bets[-2]
 
-        extra = random.randint(
-            min(self.chips, bets[-1] - self.roundInvested + prev_raise), min(int(table.pot * 2.5), self.chips)
-        )  # BUG Int rounding not trustworthy TODO make max bet half chips
-
+        try:
+            extra = random.randint( #Check if this one works
+                min(self.chips, bets[-1] - self.round_invested + prev_raise), min(max(bets[-1] * 2, int(table.pot * 2.5)), self.chips)
+            )  
+        except:
+            print(self.chips, bets, self.round_invested, prev_raise, table.pot)
+            print(min(self.chips, bets[-1] - self.round_invested + prev_raise), min(int(table.pot * 2.5), self.chips))
+            raise Exception
+        
         return extra
 
     def get_action(self, table):
@@ -156,7 +161,7 @@ class Bot(Player):
         h = 3
         if round_total == 0:
             l = 2
-        if table.bets[-1] >= self.roundInvested + self.chips:
+        if table.bets[-1] >= self.round_invested + self.chips:
             h = 2
 
         action = random.randint(l, h)
@@ -182,7 +187,7 @@ class Human(Player):
 
         while True:
 
-            if self.roundInvested + self.extra < roundTotal:
+            if self.round_invested + self.extra < roundTotal:
                 # print("Bet is too small ")
                 time.sleep(1)
                 continue
@@ -244,7 +249,7 @@ class Table:
 
         if self.currentPlayer.agg:
             self.last_agg = self.cPI
-            self.bets.append(self.currentPlayer.roundInvested)
+            self.bets.append(self.currentPlayer.round_invested)
 
         self.cPI = (self.cPI + 1) % self.noPlayers
         self.currentPlayer = self.players[self.cPI]
@@ -259,10 +264,10 @@ class Table:
             self.r += 1
 
             for p in self.players:
-                p.roundInvested = 0 #use function?
+                p.round_invested = 0 #use function?
 
         for p in self.players:
-            p.action = p.actionText = None
+            p.action = p.action_text = None
 
         if self.r == 4:
             self.end_hand()

@@ -116,7 +116,7 @@ class Button:
         self.text = text_font.render(
             (
                 "Check"
-                if self.table.human_player.roundInvested == self.table.bets[-1]
+                if self.table.human_player.round_invested == self.table.bets[-1]
                 else "Call"
             ),
             True,
@@ -379,7 +379,7 @@ class PlayerGUI:
             c.show()
 
     def update(self, bb, extra=0):
-        self.action = self.player.actionText
+        self.action = self.player.action_text
 
         self.set_chip_images(bb, extra=extra)
 
@@ -391,7 +391,7 @@ class PlayerGUI:
                 ).convert_alpha(),
                 (CHIPW, CHIPH),
             )
-            for c in get_chips(bb, self.player.roundInvested + extra)
+            for c in get_chips(bb, self.player.round_invested + extra)
         ]
 
     def showdown(self, table):
@@ -577,7 +577,10 @@ class Main:
                 self.players[r_i].update(
                     self.table.blinds[-1]
                 )  
-
+            # elif cont and isinstance(self.table.currentPlayer, Human):
+            #     self.table.single_move(
+            #         action=(1, 0))
+                
             if acted:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
