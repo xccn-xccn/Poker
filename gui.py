@@ -4,13 +4,12 @@ from chips import get_chips
 
 pygame.init()
 
-# TODO gather chips in middle, make chip relative position function, make p_pot (pre round pot) in main
+# TODO button is covered by chips in middle sometimes
 # TODO show action with letter and number under chips or maybe just print text at the top of the profile
 # TODO show cards used with winning hands (maybe show winning hand name)
 # TODO clean up code (168) everything is mess
 # BUG double clicking bet breaks (think it submits bet for the bot/next player)
 # BUG check/call button displays wrong word sometimes
-# chip display bug for sides
 
 
 def draw_text(text, font, text_colour, x, y):
@@ -432,14 +431,16 @@ class PlayerGUI:
     @staticmethod
     def draw_chips(x, y, buffer, images, pos=1):
 
-        images = [chip] * 30 #testing
-        images[:10], images[10:20] = images[10:20], images[:10]
+        # images[:10], images[10:20] = images[10:20], images[:10]
+        # images = [chip] * 30 test
+        p = -1
+        if len(images) >10:
+            p = -2
+            
         for i, c_image in enumerate(images):  # account for more than 30?
-            p = i // 10
-            p = -1 if p == 1 else 1 if p == 2 else 0
+            if i % 10 == 0:
+                p += 1
 
-            if pos in [3, 6]:
-                p *= -1
             cx, cy = PlayerGUI.move_position(
                 pos,
                 *PlayerGUI.s_chip_pos(x, y, buffer, i),
@@ -554,9 +555,12 @@ class Main:
 
     def draw_pot(self):
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
-        self.chip_images = [chip] * 30 #testing
+        # self.chip_images = [chip] * 30 #testing
         PlayerGUI.draw_chips(x - CHIPW / 2, y - CARDH / 4, self.CXB, self.chip_images)
-        draw_text(str(self.pot), text_font, BLACK, x, y)
+        # draw_text(str(self.pot), text_font, BLACK, x, y)
+        text = text_font.render(str(self.pot), True, BLACK)
+        text_rect = text.get_rect()
+        screen.blit(text, (x - text_rect.width / 2, y))
 
     def single_frame(self):
         global screen
