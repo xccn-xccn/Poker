@@ -180,9 +180,10 @@ class BetButton(ActionButton):
         self.pbet = 0
 
     def pressed_action(self):
-        self.table.single_move(action=(3, self.pbet))
-        self.pbet = 0
-        self.window.players[0].update(self.table.blinds[-1])  # TODO Change?
+        if isinstance(self.window.table.currentPlayer, Human):
+            self.table.single_move(action=(3, self.pbet))
+            self.pbet = 0
+            self.window.players[0].update(self.table.blinds[-1])  # TODO Change?
 
     def draw(self):
         super().draw()
