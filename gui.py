@@ -124,17 +124,6 @@ class Button:
         if self.x <= bx <= self.x + self.BW and self.y <= by <= self.y + self.BH:
             self.pressed_action()
 
-    def set_text(self):
-        self.text = text_font.render(
-            (
-                "Check"
-                if self.table.human_player.round_invested == self.table.bets[-1]
-                else "Call"
-            ),
-            True,
-            WHITE,
-        )
-
 
 class DealButton(Button):
     pressed = False
@@ -155,6 +144,21 @@ class ActionButton(Button):
             return
         self.table.single_move(action=(self.action, 0))
         self.window.players[0].update(self.table.blinds[-1])
+
+
+class CheckButton(ActionButton):
+    def set_text(self):
+
+        # print(self.table.human_player.round_invested, self.table.bets)
+        self.text = text_font.render(
+            (
+                "Check"
+                if self.table.human_player.round_invested == self.table.bets[-1]
+                else "Call"
+            ),
+            True,
+            WHITE,
+        )
 
 
 class BetButton(ActionButton):
@@ -317,6 +321,10 @@ class PlayerGUI:
             PROFILE_SIZE,
         )
 
+        self.rect_image = pygame.Surface(self.profile.get_size(), pygame.SRCALPHA)
+        size = self.rect_image.get_size()
+        pygame.draw.rect(self.rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0]//3)
+        self.profile.blit(self.rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN) 
     @staticmethod
     def get_CXB():
         l = [0]
@@ -454,6 +462,8 @@ class PlayerGUI:
     def draw(self):
 
         screen.blit(self.profile, (self.PX, self.PY))
+        
+
 
         text = text_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
@@ -477,7 +487,9 @@ class PlayerGUI:
         if self.action:
             text = text_font.render(self.action, True, BLACK)
             text_rect = text.get_rect()
-            screen.blit(text, (self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2, self.PY))
+            screen.blit(
+                text, (self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2, self.PY)
+            )
 
         if self.player.fold == False:
             for c in self.cards:
@@ -503,7 +515,7 @@ class Main:
             text_font.render("Fold", True, WHITE),
             1,
         )
-        self.checkButton = ActionButton(
+        self.checkButton = CheckButton(
             screen.get_width() - (BUTTONW + BUTTONBUFFER) * 2,
             screen.get_height() - (BUTTONH + BUTTONBUFFER),
             (169, 169, 169),
