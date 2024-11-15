@@ -170,6 +170,7 @@ class Bot(Player):
             bet = self.get_bet(bets, table)
         else:
             bet = 0
+
         return action, bet
 
     

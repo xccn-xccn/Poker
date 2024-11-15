@@ -8,7 +8,6 @@ pygame.init()
 # TODO show action with letter and number under chips or maybe just print text at the top of the profile
 # TODO show cards used with winning hands (maybe show winning hand name)
 # TODO clean up code (168) everything is mess
-# BUG double clicking bet breaks (think it submits bet for the bot/next player)
 # BUG check/call button displays wrong word sometimes
 
 
@@ -106,7 +105,7 @@ class Button:
         self.BW = BUTTONW
         self.BH = BUTTONH
 
-    def draw(self):
+    def draw(self): 
         pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
         pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
         text_rect = self.text.get_rect(
@@ -234,11 +233,6 @@ class Card:
             (CARDW, CARDH),
         )
 
-        # self.card_back = pygame.transform.smoothscale(
-        #     pygame.image.load(rf"{dirname}\images\cards\layered_cardback.png").convert_alpha(),
-        #     (CARDW/3, CARDH/3),
-        # )
-
     def draw(self):
         difference = self.get_difference()
 
@@ -323,7 +317,11 @@ class PlayerGUI:
 
         self.rect_image = pygame.Surface(self.profile.get_size(), pygame.SRCALPHA)
         size = self.rect_image.get_size()
-        pygame.draw.rect(self.rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0]//3)
+        pygame.draw.rect(self.rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0]//2)
+        pygame.draw.rect(self.rect_image, (0, 0, 0), (0, 0, *size), border_radius=size[0]//2, width=3)
+
+        # pygame.draw.circle(self.profile, (0, 0, 200), (size[0]//2, size[1]//2), radius=  1/2*size[0], width=2) #why doesnt this work
+
         self.profile.blit(self.rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN) 
     @staticmethod
     def get_CXB():
@@ -462,7 +460,8 @@ class PlayerGUI:
     def draw(self):
 
         screen.blit(self.profile, (self.PX, self.PY))
-        
+        # size = self.rect_image.get_size()
+        # pygame.draw.circle(self.profile, (0, 0, 150), (size[0]/2, size[1]/2), radius=size[0]/2, width=2)
 
 
         text = text_font.render(str(self.player.chips), True, (255, 215, 0))
@@ -488,7 +487,7 @@ class PlayerGUI:
             text = text_font.render(self.action, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(
-                text, (self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2, self.PY)
+                text, (self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2, self.PY - text_rect.height)
             )
 
         if self.player.fold == False:
@@ -579,6 +578,9 @@ class Main:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     pass
+                
+                if event.key == pygame.K_d:
+                    self.dealButton.pressed_action()
 
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
