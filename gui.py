@@ -4,6 +4,7 @@ from chips import get_chips
 
 pygame.init()
 
+# TODO auto start deal pygame.time.set_timer
 # TODO button is covered by chips in middle sometimes
 # TODO show action with letter and number under chips or maybe just print text at the top of the profile
 # TODO show cards used with winning hands (maybe show winning hand name)
@@ -105,13 +106,17 @@ class Button:
         self.BW = BUTTONW
         self.BH = BUTTONH
 
-    def draw(self): 
+        # self.image = pygame.Rect(self.colour, (self.x, self.y, self.BW, self.BH))
+        # pygame.draw.rect(self.image, BLACK, (self.x, self.y, self.BW, self.BH), 3)
+
+    def draw(self):
         pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
         pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
         text_rect = self.text.get_rect(
             center=(self.x + self.BW / 2, self.y + self.BH / 2)
         )
         screen.blit(self.text, text_rect)
+        # screen.blit(self.image)
 
     def add_table(self, table):
         self.table = table
@@ -317,12 +322,21 @@ class PlayerGUI:
 
         self.rect_image = pygame.Surface(self.profile.get_size(), pygame.SRCALPHA)
         size = self.rect_image.get_size()
-        pygame.draw.rect(self.rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0]//2)
-        pygame.draw.rect(self.rect_image, (0, 0, 0), (0, 0, *size), border_radius=size[0]//2, width=3)
+        pygame.draw.rect(
+            self.rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0] // 2
+        )
+        pygame.draw.rect(
+            self.rect_image,
+            (0, 0, 0),
+            (0, 0, *size),
+            border_radius=size[0] // 2,
+            width=3,
+        )
 
         # pygame.draw.circle(self.profile, (0, 0, 200), (size[0]//2, size[1]//2), radius=  1/2*size[0], width=2) #why doesnt this work
 
-        self.profile.blit(self.rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN) 
+        self.profile.blit(self.rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN)
+
     @staticmethod
     def get_CXB():
         l = [0]
@@ -463,7 +477,6 @@ class PlayerGUI:
         # size = self.rect_image.get_size()
         # pygame.draw.circle(self.profile, (0, 0, 150), (size[0]/2, size[1]/2), radius=size[0]/2, width=2)
 
-
         text = text_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
@@ -487,7 +500,11 @@ class PlayerGUI:
             text = text_font.render(self.action, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(
-                text, (self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2, self.PY - text_rect.height)
+                text,
+                (
+                    self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2,
+                    self.PY - text_rect.height,
+                ),
             )
 
         if self.player.fold == False:
@@ -496,11 +513,11 @@ class PlayerGUI:
 
 
 class Main:
-    def __init__(self) -> None:
+    def __init__(self, frame_rate) -> None:
         self.running = True
         self.table = start()
         self.community_cards = []
-
+        self.frame_rate = frame_rate
         self.dealButton = DealButton(
             screen.get_width() / 2 - (BUTTONW / 2),
             screen.get_height() / 6 - BUTTONH / 2,
@@ -538,6 +555,8 @@ class Main:
             self.betButton.decrease,
         ]
 
+        self.deal_tick = pygame.time.get_ticks()
+
         for b in self.buttons:
             b.add_table(self.table)
             b.add_window(self)
@@ -564,6 +583,7 @@ class Main:
 
     def single_frame(self):
         global screen
+        current_tick = pygame.time.get_ticks()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -578,7 +598,7 @@ class Main:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_f:
                     pass
-                
+
                 if event.key == pygame.K_d:
                     self.dealButton.pressed_action()
 
@@ -617,6 +637,15 @@ class Main:
             elif len(self.community_cards) > len(self.table.community):
                 self.community_cards = []
 
+            if self.table.running == False:
+                self.deal_tick = current_tick + self.frame_rate * 100
+
+        elif self.dealButton.pressed:
+
+            print(current_tick, self.deal_tick)
+            if current_tick >= self.deal_tick:
+                self.dealButton.pressed_action()
+
         if self.dealButton.pressed:
 
             for p in self.players:
@@ -653,16 +682,19 @@ class Main:
 
         pygame.display.flip()
 
+        if self.dealButton.pressed == False:
+            self.dealButton.pressed_action()
+
         return True
 
 
 def main():
     running = True
-
-    window = Main()
+    FRAME_RATE = 30
+    window = Main(FRAME_RATE)
     while running:
         running = window.single_frame()
-        clock.tick(30)
+        clock.tick(FRAME_RATE)
 
     pygame.quit()
 

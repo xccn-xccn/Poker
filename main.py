@@ -147,10 +147,15 @@ class Bot(Player):
             extra = random.randint( #Check if this one works
                 min(self.chips, bets[-1] - self.round_invested + prev_raise), min(max(bets[-1] * 2, int(table.pot * 2.5)), self.chips)
             )  
+
+            if extra < 0:
+                raise Exception
+
         except:
             print(self.chips, bets, self.round_invested, prev_raise, table.pot)
             print(min(self.chips, bets[-1] - self.round_invested + prev_raise), min(int(table.pot * 2.5), self.chips))
             raise Exception
+        
         
         return extra
 
@@ -252,10 +257,13 @@ class Table:
             self.last_agg = self.cPI
             self.bets.append(self.currentPlayer.round_invested)
 
+
+        print("cPI", self.cPI, self.last_agg)
+
         self.cPI = (self.cPI + 1) % self.noPlayers
         self.currentPlayer = self.players[self.cPI]
 
-        print(self.cPI)
+        print("cPI", self.cPI, self.last_agg)
 
         if self.last_agg == self.cPI:
             self.end_round()
