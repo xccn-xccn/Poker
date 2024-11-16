@@ -1,4 +1,6 @@
 import pygame, random, os
+
+import pygame.image
 from main import start, Bot, Human
 from chips import get_chips
 
@@ -133,6 +135,10 @@ class DealButton(Button):
 
     def pressed_action(self):
         DealButton.pressed = True
+
+        if self.table.running == True:
+            return
+        
         self.table.start_hand()
         self.window.start_hand()
 
@@ -558,6 +564,10 @@ class Main:
 
         self.deal_tick = pygame.time.get_ticks()
 
+        self.e_j = pygame.transform.scale(
+            pygame.image.load(rf"{dirname}\images\misc\e_j.jpg").convert_alpha(),
+            (screen.get_width(), screen.get_height()),
+        )
         for b in self.buttons:
             b.add_table(self.table)
             b.add_window(self)
@@ -565,6 +575,7 @@ class Main:
     def set_test(self):
         self.deal_c = 0
         self.testing = True
+
     def start_hand(self):
         self.players = sorted(
             [PlayerGUI(p, self.table) for p in self.table.players],
@@ -606,6 +617,11 @@ class Main:
                 if event.key == pygame.K_d:
                     self.dealButton.pressed_action()
 
+                if event.key == pygame.K_j:
+                    screen.blit(self.e_j, (0, 0))
+                    pygame.display.flip()
+                    pygame.time.wait(500)
+
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
 
@@ -624,8 +640,7 @@ class Main:
                 self.players[r_i].update(self.table.blinds[-1])
 
             elif cont and isinstance(self.table.currentPlayer, Human) and self.testing:
-                self.table.single_move(
-                    action=(1, 0))
+                self.table.single_move(action=(1, 0))
 
             if acted and not self.testing:
                 if self.table.human_player.fold == True:
@@ -641,12 +656,8 @@ class Main:
             elif len(self.community_cards) > len(self.table.community):
                 self.community_cards = []
 
-            if self.table.running == False:
-                self.deal_tick = current_tick + self.frame_rate * self.deal_c
-
         elif self.dealButton.pressed:
 
-            print(current_tick, self.deal_tick)
             if current_tick >= self.deal_tick:
                 self.dealButton.pressed_action()
 
@@ -672,9 +683,12 @@ class Main:
                 if self.r != self.table.r:
                     raise Exception(self.r, self.table.r)
 
-            if self.table.running == False:
-                for p in self.players:
-                    p.showdown(self.table)
+                if self.table.running == False:
+                    for p in self.players:
+                        p.showdown(self.table)
+
+                    self.deal_tick = current_tick + self.frame_rate * self.deal_c
+
 
         for CCard in self.community_cards:
             CCard.draw()
