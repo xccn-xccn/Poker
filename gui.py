@@ -12,7 +12,8 @@ pygame.init()
 # TODO clean up code (168) everything is mess
 # BUG check/call button displays wrong word sometimes
 
-#TODO magnify button, slider for bets
+
+# TODO magnify button, slider for bets
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
@@ -46,7 +47,9 @@ pygame.display.set_caption("Poker Game")
 
 clock = pygame.time.Clock()
 
-tableImage = pygame.image.load(rf"{dirname}\images\misc\PokerTable.png").convert_alpha()
+tableImage = pygame.image.load(
+    rf"{dirname}\images\misc\poker-table.png"
+).convert_alpha()
 TIS = 1
 table_image_size = (868 * TIS, 423 * TIS)
 tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
@@ -109,9 +112,6 @@ class Button:
         self.BW = BUTTONW
         self.BH = BUTTONH
 
-        # self.image = pygame.Rect(self.colour, (self.x, self.y, self.BW, self.BH))
-        # pygame.draw.rect(self.image, BLACK, (self.x, self.y, self.BW, self.BH), 3)
-
     def draw(self):
         pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
         pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
@@ -119,7 +119,6 @@ class Button:
             center=(self.x + self.BW / 2, self.y + self.BH / 2)
         )
         screen.blit(self.text, text_rect)
-        # screen.blit(self.image)
 
     def add_table(self, table):
         self.table = table
@@ -130,6 +129,40 @@ class Button:
     def check_press(self, bx, by):
         if self.x <= bx <= self.x + self.BW and self.y <= by <= self.y + self.BH:
             self.pressed_action()
+
+
+class Zoom(Button):
+    def __init__(self, x, y, width):
+
+        self.x = x
+        self.y = y
+        self.current = 0
+
+        self.BW = self.BH = width
+        self.zoom_in = pygame.transform.smoothscale(
+            pygame.image.load(rf"{dirname}\images\misc\zoom-in.png").convert_alpha(),
+            (width, width),
+        )
+
+        self.zoom_out = pygame.transform.smoothscale(
+            pygame.image.load(rf"{dirname}\images\misc\zoom-out.png").convert_alpha(),
+            (width, width),
+        )
+
+    def draw(self):
+        image = self.zoom_in if self.current < 2 else self.zoom_out
+        screen.blit(image, (self.x, self.y))
+
+    def pressed_action(self):
+        global CARDW, CARDH, CARDB  # bad?
+
+        print("zoom pressed")
+        CARDW = [1.5, 2/1.5, 1 / 2][self.current] * CARDW
+        CARDH = [1.5, 2/1.5, 1 / 2][self.current] * CARDH
+        CARDB = [0, 0, 7 / 1000 * table_image_size[1]][self.current]
+        self.current = (self.current + 1) % 3
+
+        self.window.reset_cards()
 
 
 class DealButton(Button):
@@ -220,7 +253,7 @@ class CBetButton(Button):
 
     def pressed_action(self):  # TODO improve
 
-        self.bet_button.pbet += self.table.blinds[-1] * self.co * 1   # bad
+        self.bet_button.pbet += self.table.blinds[-1] * self.co * 1  # bad
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
@@ -283,8 +316,10 @@ class HoleCard(Card):
 
 
 class CommunityCard(Card):
-    STARTING_X = screen.get_width() / 2 - 5 / 2 * CARDW - 2 * CARDB
-    STARTING_Y = screen.get_height() / 2 - 1 / 2 * CARDH
+    def __init__(self, value, order, showing=True):
+        super().__init__(value, order, showing)
+        self.STARTING_X = screen.get_width() / 2 - 5 / 2 * CARDW - 2 * CARDB
+        self.STARTING_Y = screen.get_height() / 2 - 1 / 2 * CARDH
 
 
 def get_r_i(player, table):
@@ -319,7 +354,7 @@ class PlayerGUI:
         )
         self.CXB = PlayerGUI.get_CXB()
 
-        self.add_cards()
+        self.set_cards()
         self.profile = pygame.transform.smoothscale(
             pygame.image.load(
                 rf"{dirname}\images\profile_pictures\{self.player.profile_picture}.png"
@@ -404,7 +439,7 @@ class PlayerGUI:
         x, y = self.move_position(pos, x, y, width / 2, 1 if pos <= 3 else 2)
         return x, y
 
-    def add_cards(self):
+    def set_cards(self):
         card_info = [
             self.player.holeCards[0],
             1,
@@ -415,7 +450,7 @@ class PlayerGUI:
         ]
 
         self.cards = []
-        for r in range(2):
+        for r in range(2):  # TODO account for more than 2 cards?
             self.cards.append(HoleCard(*card_info))
             card_info[0] = self.player.holeCards[1]
             card_info[1] += 1
@@ -517,8 +552,13 @@ class PlayerGUI:
 
         screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
+        if self.player.fold == False:
+            for c in self.cards:
+                c.draw()
+
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
+
         if self.action_text:
             text = text_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
@@ -529,10 +569,6 @@ class PlayerGUI:
                     self.PY - text_rect.height,
                 ),
             )
-
-        if self.player.fold == False:
-            for c in self.cards:
-                c.draw()
 
 
 class Main:
@@ -576,6 +612,8 @@ class Main:
             3,
         )
 
+        zbw = 45
+        self.zoom = Zoom(screen.get_width() - zbw * 2.1, 1.1 * zbw, zbw)
         self.buttons = [
             self.dealButton,
             self.foldButton,
@@ -583,11 +621,12 @@ class Main:
             self.betButton,
             self.betButton.increase,
             self.betButton.decrease,
+            self.zoom,
         ]
 
         self.deal_tick = 0
         self.e_j = pygame.transform.scale(
-            pygame.image.load(rf"{dirname}\images\misc\e_j.jpg").convert_alpha(),
+            pygame.image.load(rf"{dirname}\images\misc\e-j.jpg").convert_alpha(),
             (screen.get_width(), screen.get_height()),
         )
         for b in self.buttons:
@@ -619,6 +658,17 @@ class Main:
         text_rect = text.get_rect()
         screen.blit(text, (x - text_rect.width / 2, y))
 
+    def set_community_cards(self):
+        self.community_cards = [
+            CommunityCard(c, i + 1) for i, c in enumerate(self.table.community)
+        ]
+
+    def reset_cards(self):
+        for p in self.players:
+            p.set_cards()
+
+        self.set_community_cards()
+
     def single_frame(self):
         global screen
 
@@ -639,9 +689,7 @@ class Main:
             if self.r != self.table.r:
                 self.r += 1
 
-                for i, c in enumerate(self.table.community):
-                    if i + 1 > len(self.community_cards):
-                        self.community_cards.append(CommunityCard(c, i + 1))
+                self.set_community_cards()
 
                 self.pot = self.table.pot
                 self.chip_images = PlayerGUI.get_chip_images(
@@ -673,7 +721,7 @@ class Main:
 
         if skip:
             return True
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -730,12 +778,10 @@ class Main:
                     self.dealButton.pressed_action()
                 else:
                     self.w_for_deal = True
-                    self.deal_tick = current_tick + self.frame_rate * self.deal_c 
+                    self.deal_tick = current_tick + self.frame_rate * self.deal_c
 
         if self.human_acted == True:
             self.human_acted = False
-
-        
 
         if self.dealButton.pressed == False:
             self.dealButton.pressed_action()
