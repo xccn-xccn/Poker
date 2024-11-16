@@ -56,7 +56,7 @@ class Player:
         self.extra = 0
 
     def move_action(self, roundTotal):
-        if self.action == 1:  # change maybe
+        if self.action == 1:
             self.action_text = "folds"
             self.fold = True
             self.agg = False
@@ -98,14 +98,13 @@ class Player:
             else:
                 end = ""
 
-            print(f"Your cards are {self.holeCards}{end}")
+            print(f"\n Your cards are {self.holeCards}{end}")
 
         prev_raise = table.blinds[-1]
         if len(table.bets) >= 2:
             prev_raise = table.bets[-1] - table.bets[-2]
 
         if action == 3:
-
             if (
                 self.round_invested + extra < min(round_total + prev_raise, self.chips)
                 or extra > self.chips
@@ -131,7 +130,7 @@ class Player:
 
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
         print(
-            f"{self.positionName} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
+            f"\n {self.positionName} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
         )
 
         return True
