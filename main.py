@@ -186,29 +186,7 @@ class Bot(Player):
 
 
 class Human(Player):
-
-    def get_bet(self, roundTotal):
-
-        self.extra = -1
-
-        while self.extra < 0:
-            # print("Invalid Bet")
-            time.sleep(1)
-
-        while True:
-
-            if self.round_invested + self.extra < roundTotal:
-                # print("Bet is too small ")
-                time.sleep(1)
-                continue
-
-            if self.extra > self.chips:
-                # print(("Bet is too large "))
-                time.sleep(1)
-                continue
-
-            return self.extra  # bad practice?
-
+    pass
 
 class Table:
     # deck = ['🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂡', '🂢', '��', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍','🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃜', '🃝', '🃞']
