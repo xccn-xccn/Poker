@@ -153,8 +153,14 @@ class ActionButton(Button):
     def pressed_action(self):
         if isinstance(self.table.currentPlayer, Bot):
             return
+
+        bet = 0
+        if isinstance(self, BetButton):
+            bet = self.pbet
+            self.pbet = 0
+
         self.window.human_acted = self.window.acted = True  # TODO change
-        self.window.end = self.table.single_move(action=(self.action, 0))
+        self.window.end = self.table.single_move(action=(self.action, bet))
         self.window.players[0].update(self.table.blinds[-1])
 
 
@@ -193,13 +199,6 @@ class BetButton(ActionButton):
             self,
         )
         self.pbet = 0
-
-    def pressed_action(self):
-        if isinstance(self.window.table.currentPlayer, Human):
-            self.window.human_acted = self.window.acted = True  # TODO change
-            self.window.end = self.table.single_move(action=(3, self.pbet))
-            self.pbet = 0
-            self.window.players[0].update(self.table.blinds[-1])
 
     def draw(self):
         super().draw()
