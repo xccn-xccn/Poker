@@ -7,13 +7,12 @@ from chips import get_chips
 pygame.init()
 
 # TODO button is covered by chips in middle sometimes
-# TODO show action with letter and number under chips or maybe just print text at the top of the profile
-# TODO show cards used with winning hands (maybe show winning hand name), darken players who have folded
+# TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # TODO clean up code (168) everything is mess
-# BUG check/call button displays wrong word sometimes
+# BUG check/call button displays wrong word sometimes?
 
+# TODO scale window, slider for bets
 
-# TODO magnify button, slider for bets
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
@@ -156,7 +155,6 @@ class Zoom(Button):
     def pressed_action(self):
         global CARDW, CARDH, CARDB  # bad?
 
-        print("zoom pressed")
         CARDW = [1.5, 2/1.5, 1 / 2][self.current] * CARDW
         CARDH = [1.5, 2/1.5, 1 / 2][self.current] * CARDH
         CARDB = [0, 0, 7 / 1000 * table_image_size[1]][self.current]

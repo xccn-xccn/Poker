@@ -3,10 +3,11 @@ from deck import deck
 from winner import get_winner
 
 
-# BUG money appears out of nowwhere
-# BUG BB sometimes folds when he can just check
+# BUG money appears out of nowwhere?
+# BUG BB sometimes folds when he can just check?
 # TODO Skip positions when players have ran out of money !!
 # Main pot and side pots
+
 
 class Player:
     pos_names = {
@@ -55,7 +56,6 @@ class Player:
         self.extra = 0
 
     def move_action(self, roundTotal):
-        print("action", self.action)
         if self.action == 1:  # change maybe
             self.action_text = "folds"
             self.fold = True
@@ -65,7 +65,9 @@ class Player:
         elif self.action == 2:
 
             self.agg = False
-            self.extra = roundTotal - self.round_invested  # TODO Make side and main pots
+            self.extra = (
+                roundTotal - self.round_invested
+            )  # TODO Make side and main pots
 
             self.action_text = "calls" if self.extra else "checks"
 
@@ -90,8 +92,6 @@ class Player:
 
         round_total = table.bets[-1]
 
-        print(action)
-
         if isinstance(self, Human):
             if table.community:
                 end = f", Community Cards {table.community}"
@@ -107,17 +107,15 @@ class Player:
         if action == 3:
 
             if (
-                self.round_invested + extra
-                < min(round_total + prev_raise, self.chips)
+                self.round_invested + extra < min(round_total + prev_raise, self.chips)
                 or extra > self.chips
             ):
                 return False
 
         return True
-    
+
     def move(self, table, action):
 
-        print(action)
         if len(action) != 2:
             raise Exception
         valid = self.is_valid(table, action)
@@ -127,7 +125,7 @@ class Player:
             raise Exception
         elif not valid:
             return False
-        
+
         self.action, self.extra = action
         self.move_action(table.bets[-1])
 
@@ -147,19 +145,22 @@ class Bot(Player):
             prev_raise = bets[-1] - bets[-2]
 
         try:
-            extra = random.randint( #Check if this one works
-                min(self.chips, bets[-1] - self.round_invested + prev_raise), min(max(bets[-1] * 2, int(table.pot * 2.5)), self.chips)
-            )  
+            extra = random.randint(  # Check if this one works
+                min(self.chips, bets[-1] - self.round_invested + prev_raise),
+                min(max(bets[-1] * 2, int(table.pot * 2.5)), self.chips),
+            )
 
             if extra < 0:
                 raise Exception
 
         except:
             print(self.chips, bets, self.round_invested, prev_raise, table.pot)
-            print(min(self.chips, bets[-1] - self.round_invested + prev_raise), min(int(table.pot * 2.5), self.chips))
+            print(
+                min(self.chips, bets[-1] - self.round_invested + prev_raise),
+                min(int(table.pot * 2.5), self.chips),
+            )
             raise Exception
-        
-        
+
         return extra
 
     def get_action(self, table):
@@ -182,11 +183,10 @@ class Bot(Player):
         # return 2, 0
         return action, bet
 
-    
-
 
 class Human(Player):
     pass
+
 
 class Table:
     # deck = ['🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂡', '🂢', '��', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍','🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃜', '🃝', '🃞']
@@ -207,14 +207,13 @@ class Table:
 
     def start_move(self):
         if self.currentPlayer.allIn == True or self.currentPlayer.fold == True:
-            print(
-                f"{self.currentPlayer.positionName} is all in / folded so turn is skipped {self.currentPlayer.chips} behind (should be 0)"
-            )
 
             self.currentPlayer.agg = False  # Bad?
             end = self.end_move()  # skip move
+
             return False, end
-        return True, None #bad?
+
+        return True, None  # bad?
 
     def single_move(self, action=None):
 
@@ -236,7 +235,6 @@ class Table:
             self.end_hand()
 
         if self.currentPlayer.agg:
-            print("agg")
             self.last_agg = self.cPI
             self.bets.append(self.currentPlayer.round_invested)
 
@@ -247,6 +245,7 @@ class Table:
             return True
 
         return False
+
     def end_round(self, start=False):
         if not start:
             self.r += 1
@@ -261,7 +260,6 @@ class Table:
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         if self.r == 0:
-            print("Pre Flop")
             self.cPI = self.last_agg = (self.sb_i + 2) % self.noPlayers
             self.bets = [self.blinds[1]]
             self.community = []
@@ -272,7 +270,7 @@ class Table:
                 self.communityCard_i : self.communityCard_i + self.r + 2
             ]
 
-            print(f"{name[self.r]} Cards {self.community}")
+            print(f"{name[self.r]} Cards {self.community} pot {self.pot}")
 
         self.currentPlayer = self.players[self.cPI]
 
@@ -290,9 +288,7 @@ class Table:
             self.pot += p.round_invested
 
         self.players_remaining = sum([1 for p in self.players if not p.fold])  # Check
-        self.communityCard_i = (
-            self.noPlayers * 2
-        )   
+        self.communityCard_i = self.noPlayers * 2
 
         self.end_round(start=True)
 
@@ -300,8 +296,6 @@ class Table:
         self.running = False
 
         c_players = [p for p in self.players if not p.fold]
-
-        print([x.positionName for x in c_players])
 
         if self.players_remaining > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
@@ -319,6 +313,8 @@ class Table:
             end = f"with {wHand}"
         else:
             end = ""
+
+        print([x.positionName for x in c_players])
 
         print(
             f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.positionName for p in winners])} wins {self.pot} chips {end}"
