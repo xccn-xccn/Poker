@@ -3,8 +3,7 @@ from deck import deck
 from winner import get_winner
 
 
-# BUG main player gets to act twice when other are all in sometimes
-# BUG money appears out of nowwhere, when main player puts other player all in they get another chance to act when the round should end
+# BUG money appears out of nowwhere
 # BUG BB sometimes folds when he can just check
 # TODO Skip positions when players have ran out of money !!
 # Main pot and side pots
@@ -29,7 +28,6 @@ class Player:
         self.fold = False
         self.agg = False
         if self.chips <= 0:
-            print("Player is Broke")
             self.fold = True
 
         self.position = self.position - 1
@@ -228,9 +226,9 @@ class Table:
             print(
                 f"{self.currentPlayer.positionName} is all in / folded so turn is skipped {self.currentPlayer.chips} behind (should be 0)"
             )
-            self.end_move()  # skip move
 
             self.currentPlayer.agg = False  # Bad?
+            self.end_move()  # skip move
             return False
         return True
 
@@ -254,6 +252,7 @@ class Table:
             self.end_hand()
 
         if self.currentPlayer.agg:
+            print("agg")
             self.last_agg = self.cPI
             self.bets.append(self.currentPlayer.round_invested)
 

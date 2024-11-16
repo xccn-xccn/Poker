@@ -4,7 +4,6 @@ from chips import get_chips
 
 pygame.init()
 
-# TODO auto start deal pygame.time.set_timer
 # TODO button is covered by chips in middle sometimes
 # TODO show action with letter and number under chips or maybe just print text at the top of the profile
 # TODO show cards used with winning hands (maybe show winning hand name)
@@ -518,6 +517,8 @@ class Main:
         self.table = start()
         self.community_cards = []
         self.frame_rate = frame_rate
+        self.deal_c = 75
+        self.testing = False
         self.dealButton = DealButton(
             screen.get_width() / 2 - (BUTTONW / 2),
             screen.get_height() / 6 - BUTTONH / 2,
@@ -561,6 +562,9 @@ class Main:
             b.add_table(self.table)
             b.add_window(self)
 
+    def set_test(self):
+        self.deal_c = 0
+        self.testing = True
     def start_hand(self):
         self.players = sorted(
             [PlayerGUI(p, self.table) for p in self.table.players],
@@ -619,11 +623,11 @@ class Main:
 
                 self.players[r_i].update(self.table.blinds[-1])
 
-            # elif cont and isinstance(self.table.currentPlayer, Human):
-            #     self.table.single_move(
-            #         action=(1, 0))
+            elif cont and isinstance(self.table.currentPlayer, Human) and self.testing:
+                self.table.single_move(
+                    action=(1, 0))
 
-            if acted:
+            if acted and not self.testing:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
                 else:
@@ -638,7 +642,7 @@ class Main:
                 self.community_cards = []
 
             if self.table.running == False:
-                self.deal_tick = current_tick + self.frame_rate * 100
+                self.deal_tick = current_tick + self.frame_rate * self.deal_c
 
         elif self.dealButton.pressed:
 
@@ -692,6 +696,8 @@ def main():
     running = True
     FRAME_RATE = 30
     window = Main(FRAME_RATE)
+    # window.set_test()
+
     while running:
         running = window.single_frame()
         clock.tick(FRAME_RATE)
