@@ -179,7 +179,7 @@ class Bot(Player):
         else:
             bet = 0
 
-        return 2, 0
+        # return 2, 0
         return action, bet
 
     

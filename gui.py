@@ -8,11 +8,11 @@ pygame.init()
 
 # TODO button is covered by chips in middle sometimes
 # TODO show action with letter and number under chips or maybe just print text at the top of the profile
-# TODO show cards used with winning hands (maybe show winning hand name)
+# TODO show cards used with winning hands (maybe show winning hand name), darken players who have folded
 # TODO clean up code (168) everything is mess
 # BUG check/call button displays wrong word sometimes
 
-
+#TODO magnify button, slider for bets
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
     screen.blit(img, (x, y))
@@ -220,7 +220,7 @@ class CBetButton(Button):
 
     def pressed_action(self):  # TODO improve
 
-        self.bet_button.pbet += int(self.table.blinds[-1] * self.co * 1 / 4)  # bad
+        self.bet_button.pbet += self.table.blinds[-1] * self.co * 1   # bad
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
