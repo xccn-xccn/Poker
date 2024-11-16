@@ -48,8 +48,11 @@ class Player:
         self.chips -= self.round_invested
         self.allIn = not (bool(self.chips) or self.fold)
 
-    def end_round(self):
-        self.round_invested = 0
+    def end_round(self, start=False):
+        if not start:
+            self.round_invested = 0
+        self.action = self.action_text = None
+        self.extra = 0
 
     def move_action(self, roundTotal):
         print("action", self.action)
@@ -83,14 +86,11 @@ class Player:
 
     def is_valid(self, table, action):
 
+        action, extra = action
+
         round_total = table.bets[-1]
 
-        if len(action) == 2:
-            self.action, self.extra = action
-        else:
-            self.action, self.extra = action, 0
-
-        print(self.action)
+        print(action)
 
         if isinstance(self, Human):
             if table.community:
@@ -104,12 +104,12 @@ class Player:
         if len(table.bets) >= 2:
             prev_raise = table.bets[-1] - table.bets[-2]
 
-        if self.action == 3:
+        if action == 3:
 
             if (
-                self.round_invested + self.extra
+                self.round_invested + extra
                 < min(round_total + prev_raise, self.chips)
-                or self.extra > self.chips
+                or extra > self.chips
             ):
                 return False
 
@@ -117,6 +117,9 @@ class Player:
     
     def move(self, table, action):
 
+        print(action)
+        if len(action) != 2:
+            raise Exception
         valid = self.is_valid(table, action)
 
         if not valid and isinstance(self, Bot):
@@ -124,6 +127,8 @@ class Player:
             raise Exception
         elif not valid:
             return False
+        
+        self.action, self.extra = action
         self.move_action(table.bets[-1])
 
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
@@ -174,6 +179,7 @@ class Bot(Player):
         else:
             bet = 0
 
+        return 2, 0
         return action, bet
 
     
@@ -228,9 +234,9 @@ class Table:
             )
 
             self.currentPlayer.agg = False  # Bad?
-            self.end_move()  # skip move
-            return False
-        return True
+            end = self.end_move()  # skip move
+            return False, end
+        return True, None #bad?
 
     def single_move(self, action=None):
 
@@ -245,7 +251,7 @@ class Table:
         if self.currentPlayer.fold == True:
             self.players_remaining -= 1
 
-        self.end_move()
+        return self.end_move()
 
     def end_move(self):
         if self.players_remaining == 1:
@@ -256,26 +262,19 @@ class Table:
             self.last_agg = self.cPI
             self.bets.append(self.currentPlayer.round_invested)
 
-
-        print("cPI", self.cPI, self.last_agg)
-
         self.cPI = (self.cPI + 1) % self.noPlayers
         self.currentPlayer = self.players[self.cPI]
 
-        print("cPI", self.cPI, self.last_agg)
-
         if self.last_agg == self.cPI:
-            self.end_round()
+            return True
 
+        return False
     def end_round(self, start=False):
         if not start:
             self.r += 1
 
-            for p in self.players:
-                p.round_invested = 0 #use function?
-
         for p in self.players:
-            p.action = p.action_text = None
+            p.end_round(start)
 
         if self.r == 4:
             self.end_hand()
@@ -315,7 +314,7 @@ class Table:
         self.players_remaining = sum([1 for p in self.players if not p.fold])  # Check
         self.communityCard_i = (
             self.noPlayers * 2
-        )  # the index of the first card to be drawn in the flop
+        )   
 
         self.end_round(start=True)
 

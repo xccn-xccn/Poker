@@ -53,10 +53,12 @@ tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
 TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
 TableY = (screen.get_height() / 2) - (table_image_size[1] / 2)
 
+CARD_S = 1
+BUFFER_S = 1
 CARDW, CARDH, CARDB = (
-    59 / 1000 * table_image_size[0],
-    173 / 1000 * table_image_size[1],
-    7 / 1000 * table_image_size[1],
+    59 / 1000 * table_image_size[0] * CARD_S,
+    173 / 1000 * table_image_size[1] * CARD_S,
+    7 / 1000 * table_image_size[1] * BUFFER_S,
 )
 
 chip = pygame.transform.smoothscale(
@@ -138,7 +140,7 @@ class DealButton(Button):
 
         if self.table.running == True:
             return
-        
+
         self.table.start_hand()
         self.window.start_hand()
 
@@ -151,14 +153,14 @@ class ActionButton(Button):
     def pressed_action(self):
         if isinstance(self.table.currentPlayer, Bot):
             return
-        self.table.single_move(action=(self.action, 0))
+        self.window.human_acted = self.window.acted = True  # TODO change
+        self.window.end = self.table.single_move(action=(self.action, 0))
         self.window.players[0].update(self.table.blinds[-1])
 
 
 class CheckButton(ActionButton):
     def set_text(self):
 
-        # print(self.table.human_player.round_invested, self.table.bets)
         self.text = text_font.render(
             (
                 "Check"
@@ -194,9 +196,10 @@ class BetButton(ActionButton):
 
     def pressed_action(self):
         if isinstance(self.window.table.currentPlayer, Human):
-            self.table.single_move(action=(3, self.pbet))
+            self.window.human_acted = self.window.acted = True  # TODO change
+            self.window.end = self.table.single_move(action=(3, self.pbet))
             self.pbet = 0
-            self.window.players[0].update(self.table.blinds[-1])  # TODO Change?
+            self.window.players[0].update(self.table.blinds[-1])
 
     def draw(self):
         super().draw()
@@ -218,7 +221,7 @@ class CBetButton(Button):
 
     def pressed_action(self):  # TODO improve
 
-        self.bet_button.pbet += self.table.blinds[-1] * self.co * 2  # bad
+        self.bet_button.pbet += int(self.table.blinds[-1] * self.co * 1 / 4)  # bad
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
@@ -294,11 +297,11 @@ def get_r_i(player, table):
 class PlayerGUI:
     def __init__(self, player, table) -> None:
         self.r_i = get_r_i(player, table)
+        self.table = table
         self.x, self.y = player_coords[self.r_i]
         self.player = player
         self.showing = isinstance(self.player, Human)
-        self.action = None
-        self.acted = True
+        self.action_text = None
         self.set_chip_images(table.blinds[-1])
 
         self.PX, self.PY = self.get_profile_pos(
@@ -422,10 +425,28 @@ class PlayerGUI:
         for c in self.cards:
             c.show()
 
+    def get_action(self):
+        action = self.player.action
+        bets = self.table.bets
+
+        if action == None:
+            return None
+        if action == 1:
+            return "Fold"
+        if action == 2:
+            return "Call" if self.player.extra else "Check"
+        else:
+            word = (
+                "All In"
+                if self.player.chips == 0
+                else "Bet" if len(bets) == 2 else "Raise"
+            )
+            return f"{word} {bets[-1]}"
+
     def update(self, bb, extra=0):
-        self.action = self.player.action_text
 
         self.set_chip_images(bb, extra=extra)
+        self.action_text = self.get_action()
 
     def set_chip_images(self, bb, extra=0):
         self.chip_images = self.get_chip_images(self.player.round_invested + extra, bb)
@@ -443,9 +464,7 @@ class PlayerGUI:
         ]
 
     def showdown(self, table):
-        self.showing = (
-            self.showing or not self.player.fold
-        ) and table.players_remaining > 1
+        self.showing = not self.player.fold and table.players_remaining > 1
 
         for c in self.cards:
             c.showing = self.showing
@@ -501,8 +520,8 @@ class PlayerGUI:
 
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
-        if self.action:
-            text = text_font.render(self.action, True, BLACK)
+        if self.action_text:
+            text = text_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(
                 text,
@@ -523,8 +542,13 @@ class Main:
         self.table = start()
         self.community_cards = []
         self.frame_rate = frame_rate
+
         self.deal_c = 75
+        self.w_for_deal = False
         self.testing = False
+        self.acted = False
+        self.human_acted = False
+
         self.dealButton = DealButton(
             screen.get_width() / 2 - (BUTTONW / 2),
             screen.get_height() / 6 - BUTTONH / 2,
@@ -562,8 +586,7 @@ class Main:
             self.betButton.decrease,
         ]
 
-        self.deal_tick = pygame.time.get_ticks()
-
+        self.deal_tick = 0
         self.e_j = pygame.transform.scale(
             pygame.image.load(rf"{dirname}\images\misc\e_j.jpg").convert_alpha(),
             (screen.get_width(), screen.get_height()),
@@ -584,22 +607,74 @@ class Main:
 
         self.r = 0
         self.chip_images = []
+        self.community_cards = []
         self.pot = 0
         self.CXB = PlayerGUI.get_CXB()
+        self.w_for_deal = False
 
     def draw_pot(self):
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
         # self.chip_images = [chip] * 30 #testing
         PlayerGUI.draw_chips(x - CHIPW / 2, y - CARDH / 4, self.CXB, self.chip_images)
-        # draw_text(str(self.pot), text_font, BLACK, x, y)
         text = text_font.render(str(self.pot), True, BLACK)
         text_rect = text.get_rect()
         screen.blit(text, (x - text_rect.width / 2, y))
 
     def single_frame(self):
         global screen
-        current_tick = pygame.time.get_ticks()
 
+        screen.fill((0, 119, 8))
+        screen.blit(tableImage, (TableX, TableY))
+        current_tick = pygame.time.get_ticks()
+        self.mouse = pygame.mouse.get_pos()
+        skip = False
+
+        if self.dealButton.pressed:
+
+            for p in self.players:
+                p.draw()
+
+            for card in self.community_cards:
+                card.draw()
+            self.draw_pot()
+            if self.r != self.table.r:
+                self.r += 1
+
+                for i, c in enumerate(self.table.community):
+                    if i + 1 > len(self.community_cards):
+                        self.community_cards.append(CommunityCard(c, i + 1))
+
+                self.pot = self.table.pot
+                self.chip_images = PlayerGUI.get_chip_images(
+                    self.table.pot, self.table.blinds[-1]
+                )
+
+                for p in self.players:
+                    p.update(self.table.blinds[-1])
+
+                skip = True
+
+                if self.table.running == False:
+                    for p in self.players:
+                        p.showdown(self.table)
+
+        for b in self.buttons:
+            b.draw()
+
+        pygame.display.flip()
+
+        if self.acted:
+            if not self.testing:
+                if self.table.human_player.fold == True:
+                    pygame.time.wait(100)
+                else:
+                    pygame.time.wait(500)
+
+            self.acted = False
+
+        if skip:
+            return True
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -607,6 +682,7 @@ class Main:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for b in self.buttons:
                     b.check_press(*self.mouse)
+
             if event.type == pygame.VIDEORESIZE:
                 screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
 
@@ -622,83 +698,45 @@ class Main:
                     pygame.display.flip()
                     pygame.time.wait(500)
 
-        screen.fill((0, 119, 8))
-        screen.blit(tableImage, (TableX, TableY))
-
         if self.table.running:
-            self.checkButton.set_text()
-            cont = self.table.start_move()
 
-            r_i = get_r_i(self.table.currentPlayer, self.table)
-            acted = False
-            if cont and isinstance(self.table.currentPlayer, Bot):
-                acted = True
-                self.table.single_move(
-                    action=(self.table.currentPlayer.get_action(self.table))
-                )
+            if not self.human_acted:
+                self.checkButton.set_text()
+                cont, self.end = self.table.start_move()
 
-                self.players[r_i].update(self.table.blinds[-1])
+                r_i = get_r_i(self.table.currentPlayer, self.table)
+                if cont == True and isinstance(self.table.currentPlayer, Bot):
+                    self.acted = True
+                    self.end = self.table.single_move(
+                        action=(self.table.currentPlayer.get_action(self.table))
+                    )
 
-            elif cont and isinstance(self.table.currentPlayer, Human) and self.testing:
-                self.table.single_move(action=(1, 0))
+                    self.players[r_i].update(self.table.blinds[-1])
 
-            if acted and not self.testing:
-                if self.table.human_player.fold == True:
-                    pygame.time.wait(100)
-                else:
-                    pygame.time.wait(500)
+                elif (
+                    cont
+                    and isinstance(self.table.currentPlayer, Human)
+                    and self.testing
+                ):
+                    self.end = self.table.single_move(action=(1, 0))
 
-            if len(self.community_cards) < len(self.table.community):
-                for i, c in enumerate(self.table.community):
-                    if i + 1 > len(self.community_cards):
-                        self.community_cards.append(CommunityCard(c, i + 1))
+            if self.end:
+                self.table.end_round()
 
-            elif len(self.community_cards) > len(self.table.community):
-                self.community_cards = []
+        if not self.table.running and self.dealButton.pressed:
 
-        elif self.dealButton.pressed:
-
+            # print(current_tick, self.deal_tick, self.w_for_deal)
             if current_tick >= self.deal_tick:
-                self.dealButton.pressed_action()
+                if self.w_for_deal:
+                    self.dealButton.pressed_action()
+                else:
+                    self.w_for_deal = True
+                    self.deal_tick = current_tick + self.frame_rate * self.deal_c 
 
-        if self.dealButton.pressed:
+        if self.human_acted == True:
+            self.human_acted = False
 
-            for p in self.players:
-                p.draw()
-
-            self.draw_pot()
-            if self.r != self.table.r:
-                self.r += 1
-
-                self.CXB = PlayerGUI.get_CXB()
-
-                self.pot = self.table.pot
-                self.chip_images = PlayerGUI.get_chip_images(
-                    self.table.pot, self.table.blinds[-1]
-                )
-
-                for p in self.players:
-                    p.set_chip_images(self.table.blinds[-1])
-
-                if self.r != self.table.r:
-                    raise Exception(self.r, self.table.r)
-
-                if self.table.running == False:
-                    for p in self.players:
-                        p.showdown(self.table)
-
-                    self.deal_tick = current_tick + self.frame_rate * self.deal_c
-
-
-        for CCard in self.community_cards:
-            CCard.draw()
-
-        for b in self.buttons:
-            b.draw()
-
-        self.mouse = pygame.mouse.get_pos()
-
-        pygame.display.flip()
+        
 
         if self.dealButton.pressed == False:
             self.dealButton.pressed_action()
