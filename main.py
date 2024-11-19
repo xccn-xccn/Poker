@@ -24,6 +24,14 @@ class Player:
         self.position = position
         self.profile_picture = profile_picture
 
+    def set_pos_names(self, players):
+        self.pos_names = {}
+        for i, pos in enumerate([*["UTG" + (f" +{n}" if n != 0 else "") for n in range(max(players-5, 0))], "Lojack", "Hijack", "Cutoff", "Button", "Small blind", "Big blind"][-players:]):
+            self.pos_names[i + 1] = pos
+
+        
+
+
     def new_hand(self, deck, blinds):
 
         self.fold = False
