@@ -7,6 +7,7 @@ from winner import get_winner
 # BUG BB sometimes folds when he can just check?
 # TODO Skip positions when players have ran out of money !!
 # Main pot and side pots
+# BUG if multiple players run out of money in the same round several player can reset to index 0
 
 
 class Player:
@@ -286,7 +287,7 @@ class Table:
             print(f"{name[self.r]} Cards {self.community} pot {self.pot}")
 
         self.currentPlayer = self.active_players[self.cPI]
-
+        print(self.r, self.currentPlayer.position, self.cPI)
     def start_hand(self):
         self.running = True
         old = self.active_players
