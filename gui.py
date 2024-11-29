@@ -321,7 +321,7 @@ class CommunityCard(Card):
 
 
 def get_r_i(player, table):
-    return (len(table.players) + player.position - table.human_player.position) % len(
+    return (len(table.players) + player.table_position - table.human_player.table_position) % len(
         table.players
     )
 
@@ -557,7 +557,7 @@ class PlayerGUI:
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
 
-        if self.action_text:
+        if self.action_text and not self.player.inactive:
             text = text_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(

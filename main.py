@@ -11,18 +11,20 @@ from winner import get_winner
 
 class Player:
     pos_names = {
-        1: "Small blind",
-        2: "Big blind",
-        3: "UTG",
-        4: "Hijack",
-        5: "Cutoff",
-        6: "Button",
+        1: "Button",
+        2: "Small blind",
+        3: "Big blind",
+        4: "UTG",
+        5: "Hijack",
+        6: "Cutoff",
+        
     }
 
     def __init__(self, position, profile_picture, chips=1000):
         self.chips = chips
-        self.position = position
+        self.position = self.table_position = position
         self.profile_picture = profile_picture
+        self.inactive = False
 
     def set_pos_names(self, players):
         self.pos_names = {}
@@ -32,7 +34,7 @@ class Player:
         
 
 
-    def new_hand(self, deck, blinds):
+    def new_hand(self, deck, blinds, no_players):
 
         self.fold = False
         self.agg = False
@@ -41,15 +43,15 @@ class Player:
 
         self.position = self.position - 1
         self.position = (
-            6 if self.position == 0 else self.position
-        )  # TODO change this to be dynamic
+            no_players if self.position == 0 else self.position
+        ) 
 
         i = self.position - 1
         self.positionName = Player.pos_names[self.position]
         self.holeCards = deck[i * 2 : i * 2 + 2]
 
-        if self.position <= 2:  # One of the blinds
-            self.totalInvested = min(blinds[i], self.chips)
+        if self.position in [2, 3]:  # One of the blinds
+            self.totalInvested = min(blinds[i-1], self.chips)
         else:
             self.totalInvested = 0
         self.round_invested = self.totalInvested
@@ -200,17 +202,21 @@ class Table:
 
     def __init__(self) -> None:
         self.players = []
+        self.active_players = []
         self.deck = deck
         self.blinds = [10, 20]
-        self.sb_i = 6
+        self.sb_i = 1
         self.running = False
         self.community = []
+        # self.active_players = 0
 
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
+        self.active_players.append(newPlayer)
 
         if isinstance(newPlayer, Human):
             self.human_player = newPlayer
+
 
     def start_move(self):
         if self.currentPlayer.allIn == True or self.currentPlayer.fold == True:
@@ -245,8 +251,8 @@ class Table:
             self.last_agg = self.cPI
             self.bets.append(self.currentPlayer.round_invested)
 
-        self.cPI = (self.cPI + 1) % self.noPlayers
-        self.currentPlayer = self.players[self.cPI]
+        self.cPI = (self.cPI + 1) % self.no_players
+        self.currentPlayer = self.active_players[self.cPI]
 
         if self.last_agg == self.cPI:
             return True
@@ -257,7 +263,7 @@ class Table:
         if not start:
             self.r += 1
 
-        for p in self.players:
+        for p in self.active_players:
             p.end_round(start)
 
         if self.r == 4:
@@ -267,7 +273,7 @@ class Table:
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         if self.r == 0:
-            self.cPI = self.last_agg = (self.sb_i + 2) % self.noPlayers
+            self.cPI = self.last_agg = (self.sb_i + 2) % self.no_players
             self.bets = [self.blinds[1]]
             self.community = []
         else:
@@ -279,30 +285,41 @@ class Table:
 
             print(f"{name[self.r]} Cards {self.community} pot {self.pot}")
 
-        self.currentPlayer = self.players[self.cPI]
+        self.currentPlayer = self.active_players[self.cPI]
 
     def start_hand(self):
         self.running = True
-        self.sb_i = (self.sb_i + 1) % 6
-        self.noPlayers = len(self.players)
+        old = self.active_players
+        self.active_players = []
+
+        for p in old:
+            if p.chips:
+                self.active_players.append(p)
+            else:
+                p.inactive = True
+
+
+        self.no_players = len(self.active_players)
+
+        self.sb_i = (self.sb_i + 1) % self.no_players
         self.pot = 0
         self.r = 0
 
         random.shuffle(self.deck)
 
-        for p in self.players:
-            p.new_hand(self.deck, self.blinds)
+        for p in self.active_players:
+            p.new_hand(self.deck, self.blinds, self.no_players)
             self.pot += p.round_invested
 
-        self.players_remaining = sum([1 for p in self.players if not p.fold])  # Check
-        self.communityCard_i = self.noPlayers * 2
+        self.players_remaining = sum([1 for p in self.active_players if not p.fold])  #have to do this because possible that one of the blinds is put all in by the blinds
+        self.communityCard_i = self.no_players * 2
 
         self.end_round(start=True)
 
     def end_hand(self):
         self.running = False
 
-        c_players = [p for p in self.players if not p.fold]
+        c_players = [p for p in self.active_players if not p.fold]
 
         if self.players_remaining > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
@@ -335,7 +352,11 @@ def start():
     profile_pictures = ["calvin", "elliot", "teddy", "bot", "daniel_n"]
     random.shuffle(profile_pictures)
     for r, p in zip(range(5), profile_pictures):
-        table1.add_player(Bot(r + 1, p))
+        if r == 0:
+            chips = 20
+        else:
+            chips = 1000
+        table1.add_player(Bot(r + 1, p, chips=chips))
 
     table1.add_player(
         Human(
