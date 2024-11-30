@@ -4,11 +4,7 @@ from winner import get_winner
 
 
 # BUG money appears out of nowwhere?
-# BUG BB sometimes folds when he can just check?
-# TODO Skip positions when players have ran out of money !!
-# Main pot and side pots
-# BUG Button moves 2 positions when a player busts
-
+# TODO Main pot and side pots
 class Player:
     pos_i_names = {
         0: "Button",
@@ -52,6 +48,8 @@ class Player:
 
         if self.position_i in [1, 2]:  # One of the blinds maybe change to name
             self.totalInvested = min(self.table.blinds[self.position_i-1], self.chips)
+        elif a_player_count == 2 and self.position_i == 0:
+            self.totalInvested = min(self.table.blinds[1], self.chips)
         else:
             self.totalInvested = 0
         self.round_invested = self.totalInvested
@@ -292,17 +290,21 @@ class Table:
         self.running = True
         old = self.active_players
         self.active_players = []
+        button_bust = False
 
         for p in old:
             if p.chips:
                 self.active_players.append(p)
             else:
                 p.inactive = True
+                if p.position_i == 0:
+                    button_bust = True
 
 
         self.no_players = len(self.active_players)
 
-        self.sb_i = (self.sb_i + 1) % self.no_players #possible error if multiple players bust at once
+        if not button_bust:
+            self.sb_i = (self.sb_i + 1) % self.no_players 
         self.pot = 0
         self.r = 0
 
