@@ -10,8 +10,10 @@ pygame.init()
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # TODO clean up code (168) everything is mess
 # BUG check/call button displays wrong word sometimes?
+# BUG when changing bet action text changed (once)
 
 # TODO scale window, slider for bets
+
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
@@ -155,8 +157,8 @@ class Zoom(Button):
     def pressed_action(self):
         global CARDW, CARDH, CARDB  # bad?
 
-        CARDW = [1.5, 2/1.5, 1 / 2][self.current] * CARDW
-        CARDH = [1.5, 2/1.5, 1 / 2][self.current] * CARDH
+        CARDW = [1.5, 2 / 1.5, 1 / 2][self.current] * CARDW
+        CARDH = [1.5, 2 / 1.5, 1 / 2][self.current] * CARDH
         CARDB = [0, 0, 7 / 1000 * table_image_size[1]][self.current]
         self.current = (self.current + 1) % 3
 
@@ -321,9 +323,9 @@ class CommunityCard(Card):
 
 
 def get_r_i(player, table):
-    return (len(table.players) + player.table_position - table.human_player.table_position) % len(
-        table.players
-    )
+    return (
+        len(table.players) + player.table_position - table.human_player.table_position
+    ) % len(table.players)
 
 
 class PlayerGUI:
@@ -541,7 +543,7 @@ class PlayerGUI:
 
         if self.player.inactive:
             return
-        
+
         chips = self.chip_images[:30]
 
         PlayerGUI.draw_chips(
@@ -551,7 +553,6 @@ class PlayerGUI:
             chips,
             self.r_i + 1,
         )
-
 
         if self.player.fold == False:
             for c in self.cards:

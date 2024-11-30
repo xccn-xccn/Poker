@@ -13,7 +13,6 @@ class Player:
         3: "UTG",
         4: "Hijack",
         5: "Cutoff",
-        
     }
 
     def __init__(self, position_i, profile_picture, table, chips=1000):
@@ -25,14 +24,23 @@ class Player:
 
     def set_pos_names(self, players):
         self.pos_names = {}
-        for i, pos in enumerate([*["UTG" + (f" +{n}" if n != 0 else "") for n in range(max(players-5, 0))], "Lojack", "Hijack", "Cutoff", "Button", "Small blind", "Big blind"][-players:]):
+        for i, pos in enumerate(
+            [
+                *[
+                    "UTG" + (f" +{n}" if n != 0 else "")
+                    for n in range(max(players - 5, 0))
+                ],
+                "Lojack",
+                "Hijack",
+                "Cutoff",
+                "Button",
+                "Small blind",
+                "Big blind",
+            ][-players:]
+        ):
             self.pos_names[i + 1] = pos
 
-        
-
-
     def new_hand(self, i):
-        
 
         self.fold = False
         self.agg = False
@@ -47,7 +55,7 @@ class Player:
         self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
         if self.position_i in [1, 2]:  # One of the blinds maybe change to name
-            self.totalInvested = min(self.table.blinds[self.position_i-1], self.chips)
+            self.totalInvested = min(self.table.blinds[self.position_i - 1], self.chips)
         elif a_player_count == 2 and self.position_i == 0:
             self.totalInvested = min(self.table.blinds[1], self.chips)
         else:
@@ -187,7 +195,7 @@ class Bot(Player):
         else:
             bet = 0
 
-        return 2, 0
+        # return 2, 0
         return action, bet
 
 
@@ -214,7 +222,6 @@ class Table:
 
         if isinstance(newPlayer, Human):
             self.human_player = newPlayer
-
 
     def start_move(self):
         if self.currentPlayer.allIn == True or self.currentPlayer.fold == True:
@@ -300,11 +307,10 @@ class Table:
                 if p.position_i == 0:
                     button_bust = True
 
-
         self.no_players = len(self.active_players)
 
         if not button_bust:
-            self.sb_i = (self.sb_i + 1) % self.no_players 
+            self.sb_i = (self.sb_i + 1) % self.no_players
         self.pot = 0
         self.r = 0
 
@@ -314,7 +320,9 @@ class Table:
             p.new_hand(i)
             self.pot += p.round_invested
 
-        self.players_remaining = sum([1 for p in self.active_players if not p.fold])  #have to do this because possible that one of the blinds is put all in by the blinds
+        self.players_remaining = sum(
+            [1 for p in self.active_players if not p.fold]
+        )  # have to do this because possible that one of the blinds is put all in by the blinds
         self.communityCard_i = self.no_players * 2
 
         self.end_round(start=True)
