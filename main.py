@@ -7,25 +7,25 @@ from winner import get_winner
 # BUG BB sometimes folds when he can just check?
 # TODO Skip positions when players have ran out of money !!
 # Main pot and side pots
-# BUG if multiple players run out of money in the same round several player can reset to index 0
-
+# BUG Button moves 2 positions when a player busts
 
 class Player:
-    pos_names = {
-        1: "Button",
-        2: "Small blind",
-        3: "Big blind",
-        4: "UTG",
-        5: "Hijack",
-        6: "Cutoff",
+    pos_i_names = {
+        0: "Button",
+        1: "Small blind",
+        2: "Big blind",
+        3: "UTG",
+        4: "Hijack",
+        5: "Cutoff",
         
     }
 
-    def __init__(self, position, profile_picture, chips=1000):
+    def __init__(self, position_i, profile_picture, table, chips=1000):
         self.chips = chips
-        self.position = self.table_position = position
+        self.position_i = self.table_position = position_i
         self.profile_picture = profile_picture
         self.inactive = False
+        self.table = table
 
     def set_pos_names(self, players):
         self.pos_names = {}
@@ -35,24 +35,23 @@ class Player:
         
 
 
-    def new_hand(self, deck, blinds, no_players):
+    def new_hand(self, i):
+        
 
         self.fold = False
         self.agg = False
         if self.chips <= 0:
             self.fold = True
 
-        self.position = self.position - 1
-        self.position = (
-            no_players if self.position == 0 else self.position
-        ) 
+        # self.position_i = (self.position_i - 1) % self.table.active_players
 
-        i = self.position - 1
-        self.positionName = Player.pos_names[self.position]
-        self.holeCards = deck[i * 2 : i * 2 + 2]
+        a_player_count = len(self.table.active_players)
+        self.position_i = ((i - self.table.sb_i) % a_player_count + 1) % a_player_count
+        self.positionName = Player.pos_i_names[self.position_i]
+        self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
-        if self.position in [2, 3]:  # One of the blinds
-            self.totalInvested = min(blinds[i-1], self.chips)
+        if self.position_i in [1, 2]:  # One of the blinds maybe change to name
+            self.totalInvested = min(self.table.blinds[self.position_i-1], self.chips)
         else:
             self.totalInvested = 0
         self.round_invested = self.totalInvested
@@ -190,7 +189,7 @@ class Bot(Player):
         else:
             bet = 0
 
-        # return 2, 0
+        return 2, 0
         return action, bet
 
 
@@ -206,7 +205,7 @@ class Table:
         self.active_players = []
         self.deck = deck
         self.blinds = [10, 20]
-        self.sb_i = 1
+        self.sb_i = 0
         self.running = False
         self.community = []
         # self.active_players = 0
@@ -287,7 +286,8 @@ class Table:
             print(f"{name[self.r]} Cards {self.community} pot {self.pot}")
 
         self.currentPlayer = self.active_players[self.cPI]
-        print(self.r, self.currentPlayer.position, self.cPI)
+        print(self.r, self.currentPlayer.position_i, self.cPI)
+
     def start_hand(self):
         self.running = True
         old = self.active_players
@@ -302,14 +302,14 @@ class Table:
 
         self.no_players = len(self.active_players)
 
-        self.sb_i = (self.sb_i + 1) % self.no_players
+        self.sb_i = (self.sb_i + 1) % self.no_players #possible error if multiple players bust at once
         self.pot = 0
         self.r = 0
 
         random.shuffle(self.deck)
 
-        for p in self.active_players:
-            p.new_hand(self.deck, self.blinds, self.no_players)
+        for i, p in enumerate(self.active_players):
+            p.new_hand(i)
             self.pot += p.round_invested
 
         self.players_remaining = sum([1 for p in self.active_players if not p.fold])  #have to do this because possible that one of the blinds is put all in by the blinds
@@ -352,17 +352,18 @@ def start():
     table1 = Table()
     profile_pictures = ["calvin", "elliot", "teddy", "bot", "daniel_n"]
     random.shuffle(profile_pictures)
-    for r, p in zip(range(5), profile_pictures):
+    for r, p in enumerate(profile_pictures):
         if r == 0:
-            chips = 20
+            chips = 200
         else:
             chips = 1000
-        table1.add_player(Bot(r + 1, p, chips=chips))
+        table1.add_player(Bot(r, p, table1, chips=chips))
 
     table1.add_player(
         Human(
-            6,
+            5,
             "nature",
+            table1,
             chips=2000,
         )
     )

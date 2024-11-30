@@ -537,7 +537,11 @@ class PlayerGUI:
         text_rect = text.get_rect(
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
+        screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
+        if self.player.inactive:
+            return
+        
         chips = self.chip_images[:30]
 
         PlayerGUI.draw_chips(
@@ -548,7 +552,6 @@ class PlayerGUI:
             self.r_i + 1,
         )
 
-        screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
         if self.player.fold == False:
             for c in self.cards:
@@ -557,7 +560,7 @@ class PlayerGUI:
         if self.player.positionName == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
 
-        if self.action_text and not self.player.inactive:
+        if self.action_text:
             text = text_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(
@@ -742,6 +745,12 @@ class Main:
                     screen.blit(self.e_j, (0, 0))
                     pygame.display.flip()
                     pygame.time.wait(500)
+
+                if event.key == pygame.K_t:
+                    for p in self.table.players:
+                        if p.chips:
+                            p.chips = 0
+                            break
 
         if self.table.running:
 
