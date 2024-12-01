@@ -11,7 +11,7 @@ pygame.init()
 # TODO clean up code (168) everything is mess
 # BUG check/call button displays wrong word sometimes?
 # BUG when changing bet action text changed (once)
-
+# TODO CHange check button press for slider and get it to slide
 # TODO scale window, slider for bets
 
 
@@ -28,7 +28,9 @@ text_font = pygame.font.SysFont("Comic Sans", 35)
 text_font = pygame.font.Font(rf"{dirname}\misc\JqkasWild-w1YD6.ttf", 35)
 BUTTONW = 150
 BUTTONH = 50
-BUTTONBUFFER = 40
+BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW
+BUTTON_BUFFER_X = 80
+BUTTON_BUFFER_Y = 20
 
 CS = 20
 CHIPW, CHIPH = (2 * CS, 1 * CS)
@@ -105,13 +107,13 @@ player_coords = [
 
 
 class Button:
-    def __init__(self, x, y, colour, text):
+    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH):
         self.x = x
         self.y = y
         self.colour = colour
         self.text = text
-        self.BW = BUTTONW
-        self.BH = BUTTONH
+        self.BW = BW
+        self.BH = BH
 
     def draw(self):
         pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
@@ -127,9 +129,47 @@ class Button:
     def add_window(self, window):
         self.window = window
 
-    def check_press(self, bx, by):
-        if self.x <= bx <= self.x + self.BW and self.y <= by <= self.y + self.BH:
-            self.pressed_action()
+    def check_press(self, mx, my):
+        if self.x <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
+            if not isinstance(self, Slider):
+                self.pressed_action()
+            else:
+                self.pressed_action(mx, my)
+
+
+class Slider(Button):
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        bet_button,
+        l_colour=BLACK,
+        l_height=10,
+        SW=BUTTONW / 6,
+    ):
+        super().__init__(x, y, colour, text)
+        self.l_colour = l_colour
+        self.l_height = l_height
+        self.bet_button = bet_button
+        self.s_x = x
+        self.SW = SW
+
+    def draw(self):
+        pygame.draw.rect(
+            screen,
+            self.l_colour,
+            (self.x, self.y + self.BH / 2 - self.l_height, self.BW, self.l_height),
+        )
+        pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
+
+    def pressed_action(self, mx, my):
+        self.s_x = mx
+        self.bet_button.pbet = (
+            int((mx - self.x) / (self.BW - self.SW) * self.table.human_player.chips)
+        )
+        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
 class Zoom(Button):
@@ -216,19 +256,26 @@ class BetButton(ActionButton):
     def __init__(self, x, y, colour, text, action):
         super().__init__(x, y, colour, text, action)
         self.increase = CBetButton(
-            x + self.BW - screen.get_width() / 40,  # TODO Bad
-            screen.get_height() - (BUTTONH + BUTTONBUFFER) * 2,
+            x + self.BW,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
             text_font.render("+", True, WHITE),
             1,
             self,
         )
         self.decrease = CBetButton(
-            x,
-            screen.get_height() - (BUTTONH + BUTTONBUFFER) * 2,
+            x - BUTTONW / 4,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
             text_font.render("-", True, WHITE),
             -1,
+            self,
+        )
+        self.slider = Slider(
+            x,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            (169, 169, 169),
+            "",
             self,
         )
         self.pbet = 0
@@ -240,15 +287,14 @@ class BetButton(ActionButton):
             text_font,
             BLACK,
             self.x,
-            self.y - (BUTTONH + BUTTONBUFFER) * 2,
+            self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2,
         )
 
 
 class CBetButton(Button):
     def __init__(self, x, y, colour, text, co, bet_button):
-        super().__init__(x, y, colour, text)
+        super().__init__(x, y, colour, text, BW=BUTTONW / 4)
         self.co = co
-        self.BW = BUTTONW / 4
         self.bet_button = bet_button
 
     def pressed_action(self):  # TODO improve
@@ -593,22 +639,28 @@ class Main:
             text_font.render("Deal", True, WHITE),
         )
         self.foldButton = ActionButton(
-            screen.get_width() - (BUTTONW + BUTTONBUFFER) * 2,
-            screen.get_height() - (BUTTONH + BUTTONBUFFER) * 2,
+            screen.get_width()
+            - (BUTTONW + BUTTON_BUFFER_X) * 2
+            - BUTTON_EDGE_BUFFER
+            + BUTTON_BUFFER_X,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (255, 0, 0),
             text_font.render("Fold", True, WHITE),
             1,
         )
         self.checkButton = CheckButton(
-            screen.get_width() - (BUTTONW + BUTTONBUFFER) * 2,
-            screen.get_height() - (BUTTONH + BUTTONBUFFER),
+            screen.get_width()
+            - (BUTTONW + BUTTON_BUFFER_X) * 2
+            - BUTTON_EDGE_BUFFER
+            + BUTTON_BUFFER_X,
+            screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
             text_font.render("Check", True, WHITE),
             2,
         )
         self.betButton = BetButton(
-            screen.get_width() - (BUTTONW + BUTTONBUFFER) * 1,
-            screen.get_height() - (BUTTONH + BUTTONBUFFER),
+            screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
+            screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
             text_font.render("Bet ", True, WHITE),
             3,
@@ -623,6 +675,7 @@ class Main:
             self.betButton,
             self.betButton.increase,
             self.betButton.decrease,
+            self.betButton.slider,
             self.zoom,
         ]
 
