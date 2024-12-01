@@ -161,7 +161,7 @@ class Slider(Button):
         pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
 
     def check_press(self, mx, my):
-        if self.x <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
+        if self.x - self.BW / 4 <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
             self.pressed_action(mx)
 
 
@@ -170,8 +170,8 @@ class Slider(Button):
         self.s_x = self.x + extra_p * (self.BW - self.SW)
 
     def pressed_action(self, mx):
-        self.s_x = min(mx, self.x + self.BW - self.SW)
-        percentage = min((mx - self.x) / (self.BW - self.SW), 1)
+        self.s_x = self.x if mx < self.x else min(mx, self.x + self.BW - self.SW)
+        percentage = 0 if mx < self.x else min((mx - self.x) / (self.BW - self.SW), 1)
         self.bet_button.pbet = int(
             percentage * self.table.human_player.chips
         )
@@ -699,6 +699,8 @@ class Main:
             b.add_table(self.table)
             b.add_window(self)
 
+        self.count = 0
+
     def set_test(self):
         self.deal_c = 0
         self.testing = True
@@ -715,6 +717,7 @@ class Main:
         self.pot = 0
         self.CXB = PlayerGUI.get_CXB()
         self.w_for_deal = False
+
 
     def draw_pot(self):
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
@@ -806,6 +809,12 @@ class Main:
                 if event.key == pygame.K_d:
                     self.dealButton.pressed_action()
 
+                if event.key == pygame.K_q: #TODO
+                    print("q")
+                    self.table.blinds = [n * 2 for n in self.table.blinds]
+
+                    print(self.table.blinds)
+
                 if event.key == pygame.K_j:
                     screen.blit(self.e_j, (0, 0))
                     pygame.display.flip()
@@ -816,6 +825,10 @@ class Main:
                         if p.chips:
                             p.chips = 0
                             break
+                    
+        self.count += 1
+        if pygame.mouse.get_pressed()[0]:
+            self.betButton.slider.check_press(*self.mouse)
 
         if self.table.running:
 
