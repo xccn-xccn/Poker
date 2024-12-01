@@ -6,13 +6,12 @@ from chips import get_chips
 
 pygame.init()
 
-# TODO button is covered by chips in middle sometimes
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # TODO clean up code (168) everything is mess
-# BUG check/call button displays wrong word sometimes?
 # BUG when changing bet action text changed (once)
+# BUG when player folds pre flop, flop is shown, handle when only 1 player left
 # TODO CHange check button press for slider and get it to slide
-# TODO scale window, slider for bets
+# TODO scale window, slider for bets, speed button
 
 
 def draw_text(text, font, text_colour, x, y):
@@ -131,10 +130,7 @@ class Button:
 
     def check_press(self, mx, my):
         if self.x <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
-            if not isinstance(self, Slider):
-                self.pressed_action()
-            else:
-                self.pressed_action(mx, my)
+            self.pressed_action()
 
 
 class Slider(Button):
@@ -160,14 +156,24 @@ class Slider(Button):
         pygame.draw.rect(
             screen,
             self.l_colour,
-            (self.x, self.y + self.BH / 2 - self.l_height, self.BW, self.l_height),
+            (self.x, self.y + (self.BH - self.l_height)/2, self.BW, self.l_height),
         )
         pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
 
-    def pressed_action(self, mx, my):
-        self.s_x = mx
-        self.bet_button.pbet = (
-            int((mx - self.x) / (self.BW - self.SW) * self.table.human_player.chips)
+    def check_press(self, mx, my):
+        if self.x <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
+            self.pressed_action(mx)
+
+
+    def update_slider(self):
+        extra_p = 0 if not self.table.human_player.chips else min(1, self.bet_button.pbet / self.table.human_player.chips)
+        self.s_x = self.x + extra_p * (self.BW - self.SW)
+
+    def pressed_action(self, mx):
+        self.s_x = min(mx, self.x + self.BW - self.SW)
+        percentage = min((mx - self.x) / (self.BW - self.SW), 1)
+        self.bet_button.pbet = int(
+            percentage * self.table.human_player.chips
         )
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
@@ -235,6 +241,7 @@ class ActionButton(Button):
         self.window.human_acted = self.window.acted = True  # TODO change
         self.window.end = self.table.single_move(action=(self.action, bet))
         self.window.players[0].update(self.table.blinds[-1])
+        self.window.betButton.slider.update_slider()
 
 
 class CheckButton(ActionButton):
@@ -299,8 +306,12 @@ class CBetButton(Button):
 
     def pressed_action(self):  # TODO improve
 
-        self.bet_button.pbet += self.table.blinds[-1] * self.co * 1  # bad
+        val = int(self.bet_button.pbet + self.table.blinds[-1] * self.co * 0.5)  # bad
+
+        val = 0 if val < 0 else min(self.table.human_player.chips, val)
+        self.bet_button.pbet = val 
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
+        self.bet_button.slider.update_slider()
 
 
 class Card:
@@ -839,7 +850,7 @@ class Main:
                     self.dealButton.pressed_action()
                 else:
                     self.w_for_deal = True
-                    self.deal_tick = current_tick + self.frame_rate * self.deal_c
+                    self.deal_tick = current_tick + self.frame_rate * self.deal_c *(1 if not self.table.human_player.inactive else 0.2)
 
         if self.human_acted == True:
             self.human_acted = False
