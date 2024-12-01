@@ -7,9 +7,9 @@ from chips import get_chips
 pygame.init()
 
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
-# TODO clean up code (168) everything is mess
+# TODO clean up code (168) try to remove global variables
 # BUG when changing bet action text changed (once)
-# BUG when player folds pre flop, flop is shown, handle when only 1 player left
+# BUG when player folds pre flop flop is shown, handle when only 1 player left
 # TODO CHange check button press for slider and get it to slide
 # TODO scale window, slider for bets, speed button
 
