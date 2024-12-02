@@ -161,7 +161,7 @@ class Slider(Button):
         pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
 
     def check_press(self, mx, my):
-        if self.x - self.BW / 4 <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
+        if self.x - self.BW / 20 <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
             self.pressed_action(mx)
 
 
@@ -235,12 +235,13 @@ class ActionButton(Button):
 
         bet = 0
         if isinstance(self, BetButton):
-            bet = self.pbet
-            self.pbet = 0
+            bet = self.pbet - self.table.human_player.round_invested
+            # bet = self.pbet
 
         self.window.human_acted = self.window.acted = True  # TODO change
         self.window.end = self.table.single_move(action=(self.action, bet))
         self.window.players[0].update(self.table.blinds[-1])
+        self.window.betButton.pbet = 0
         self.window.betButton.slider.update_slider()
 
 

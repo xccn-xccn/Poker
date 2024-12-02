@@ -279,7 +279,7 @@ class Table:
 
         if self.r == 0:
             self.cPI = self.last_agg = (self.sb_i + 2) % self.no_players
-            self.bets = [self.blinds[1]]
+            self.bets = [*self.blinds]
             self.community = []
         else:
             self.cPI = self.last_agg = self.sb_i
