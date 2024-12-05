@@ -541,7 +541,8 @@ class PlayerGUI:
         self.action_text = self.get_action()
 
     def set_chip_images(self, bb, extra=0):
-        self.chip_images = self.get_chip_images(self.player.round_invested + extra, bb)
+        chips = max(self.player.round_invested, extra)
+        self.chip_images = self.get_chip_images(chips, bb)
 
     @staticmethod
     def get_chip_images(value, bb, extra=0):

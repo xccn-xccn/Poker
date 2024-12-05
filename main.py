@@ -1,4 +1,5 @@
 import random, time
+from collections import deque
 from deck import deck
 from winner import get_winner
 
@@ -183,9 +184,9 @@ class Bot(Player):
         round_total = bets[-1]
         l = 1
         h = 3
-        if round_total == 0:
+        if round_total == self.round_invested:
             l = 2
-        if table.bets[-1] >= self.round_invested + self.chips:
+        if round_total >= self.round_invested + self.chips:
             h = 2
 
         action = random.randint(l, h)
