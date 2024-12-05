@@ -312,14 +312,15 @@ class Table:
 
         if not button_bust:
             self.sb_i = (self.sb_i + 1) % self.no_players
-        self.pot = 0
+        self.pot = [[[0, 0], []]]
         self.r = 0
 
         random.shuffle(self.deck)
 
-        for i, p in enumerate(self.active_players):
+        for i, p in enumerate(self.active_players): #TODO maybe make a function f(round_invested, pot)
             p.new_hand(i)
-            self.pot += p.round_invested
+            self.pot[0][0][1] += p.round_invested
+            self.pot[0][0][0] = max(self.pot[0][0][0], p.round_invested)
 
         self.players_remaining = sum(
             [1 for p in self.active_players if not p.fold]
