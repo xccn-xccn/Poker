@@ -230,7 +230,7 @@ class ActionButton(Button):
         self.action = action
 
     def pressed_action(self):
-        if isinstance(self.table.currentPlayer, Bot):
+        if isinstance(self.table.current_player, Bot):
             return
 
         bet = 0
@@ -762,9 +762,9 @@ class Main:
 
                 self.set_community_cards()
 
-                self.pot = self.table.pot
+                self.pot = self.table.get_total_pot()
                 self.chip_images = PlayerGUI.get_chip_images(
-                    self.table.pot, self.table.blinds[-1]
+                    self.table.get_total_pot(), self.table.blinds[-1]
                 )
 
                 for p in self.players:
@@ -838,18 +838,18 @@ class Main:
                 self.checkButton.set_text()
                 cont, self.end = self.table.start_move()
 
-                r_i = get_r_i(self.table.currentPlayer, self.table)
-                if cont == True and isinstance(self.table.currentPlayer, Bot):
+                r_i = get_r_i(self.table.current_player, self.table)
+                if cont == True and isinstance(self.table.current_player, Bot):
                     self.acted = True
                     self.end = self.table.single_move(
-                        action=(self.table.currentPlayer.get_action(self.table))
+                        action=(self.table.current_player.get_action(self.table))
                     )
 
                     self.players[r_i].update(self.table.blinds[-1])
 
                 elif (
                     cont
-                    and isinstance(self.table.currentPlayer, Human)
+                    and isinstance(self.table.current_player, Human)
                     and self.testing
                 ):
                     self.end = self.table.single_move(action=(1, 0))

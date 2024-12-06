@@ -1,4 +1,5 @@
 from collections import Counter
+from functools import cache
 
 cardValues = {1: "A"}
 for v, k in enumerate("23456789TJQKA", 2):
@@ -39,7 +40,6 @@ def get_winner(hands, community):
 
     return best
 
-
 def compare_hand(hand1, hand2):
     for c1, c2 in zip(hand1, hand2):
         v1, v2 = c1[0], c2[0]
@@ -54,7 +54,7 @@ def compare_hand(hand1, hand2):
 def cardValue_sort(x):
     return sorted(x, key=lambda y: cardValues[y[0]], reverse=True)
 
-
+# @cache
 def get_hand(cards, f):
     used = f(cards)
     if used == False:
