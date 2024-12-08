@@ -290,13 +290,9 @@ class BetButton(ActionButton):
 
     def draw(self):
         super().draw()
-        draw_text(
-            str(self.pbet),
-            text_font,
-            BLACK,
-            self.x,
-            self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2,
-        )
+        text = text_font.render(str(self.pbet), True, BLACK)
+        text_rect = text.get_rect(center=(self.x + self.BW / 2, 0))
+        screen.blit(text, (text_rect[0], self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2))
 
 
 class CBetButton(Button):

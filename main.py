@@ -11,6 +11,10 @@ from winner import get_winner
 # TODO Main pot and side pots
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
+# TODO auto call when all in
+# TODO button should be sb heads up (not bb) fix this
+# BUG negative pot 
+
 class Player:
     pos_i_names = {
         0: "Button",
@@ -70,10 +74,10 @@ class Player:
         self.position_name = Player.pos_i_names[self.position_i]
         self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
-        if self.position_i in [1, 2]:  # One of the blinds maybe change to name
+        if a_player_count == 2:
+            self.total_invested = min(self.table.blinds[self.position_i], self.chips)
+        elif self.position_i in [1, 2]:  # One of the blinds maybe change to name
             self.total_invested = min(self.table.blinds[self.position_i - 1], self.chips)
-        elif a_player_count == 2 and self.position_i == 0:
-            self.total_invested = min(self.table.blinds[1], self.chips)
         else:
             self.total_invested = 0
         self.round_invested = self.total_invested
@@ -215,8 +219,8 @@ class Bot(Player):
         else:
             bet = 0
 
-        # return 2, 0
-        return action, bet
+        return 2, 0
+        # return action, bet
 
 
 class Human(Player):
@@ -484,7 +488,7 @@ def start():
         if r == 0:
             chips = 200
         else:
-            chips = 1000
+            chips = 1
         table1.add_player(Bot(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
