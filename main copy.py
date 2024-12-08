@@ -17,13 +17,23 @@ class Player:
         5: "Cutoff",
     }
 
-    def __init__(self, position_i, profile_picture, table, chips=1000):
+    def __init__(self, position_i, profile_picture, table, id, chips=1000):
         self.chips = chips
         self.position_i = self.table_position = position_i
         self.profile_picture = profile_picture
         self.inactive = False
         self.table = table
+        self.id = id
 
+
+    def __eq__(self, other):
+        if not isinstance(other, Player):
+            return False
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
+    
     def set_pos_names(self, players):
         self.pos_names = {}
         for i, pos in enumerate(
@@ -53,7 +63,7 @@ class Player:
 
         a_player_count = len(self.table.active_players)
         self.position_i = ((i - self.table.sb_i) % a_player_count + 1) % a_player_count
-        self.positionName = Player.pos_i_names[self.position_i]
+        self.position_name = Player.pos_i_names[self.position_i]
         self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
         if self.position_i in [1, 2]:  # One of the blinds maybe change to name
@@ -149,10 +159,13 @@ class Player:
 
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
         print(
-            f"\n {self.positionName} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
+            f"\n {self.position_name} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
         )
 
         return True
+    
+    def add_chips(self, extra):
+        self.chips += extra
 
 
 class Bot(Player):
@@ -304,10 +317,12 @@ class Table:
         if player.fold == False:
             remaining = player.total_invested
             extra = player.extra
+            p_name = player
             copy_pot = deepcopy(self.pot)
             new_pot = []
             c_call = c_pot = saved = 0
             # print('copy', copy_pot, self.pot)
+            print(p_name, remaining, extra)
             for p in copy_pot:
                 print('extra', extra)
                 to_call = p[0]
@@ -316,7 +331,7 @@ class Table:
                 if not remaining:
                     new_pot.append(p)
                 elif to_call > remaining:
-                    new = [remaining, remaining * (len(p[3]) + 1), player.all_in, p[3] | {player}]
+                    new = [remaining, remaining * (len(p[3]) + 1), player.all_in, p[3] | {p_name}]
                     p[0] -= remaining
                     p[1] -= len(p[3]) * remaining + (remaining - extra)
                     new_pot.append(new)
@@ -324,12 +339,15 @@ class Table:
                     remaining = 0
                     
                 else:
-                    # print('in1', remaining, to_call)
+                    print('in1', remaining, to_call)
                     remaining -= to_call
                     if p[2] or remaining == 0: #do need to worry about smaller False pot before?
                         # print('in', remaining, p)
-                        if player in p[3]:
+                        print('in2')
+                        if p_name in p[3]:
+                            new_pot.append(p)
                             continue
+                        print('in3')
                         # p[0] += c_call
                         if remaining == 0:
                             p[1] += extra
@@ -339,18 +357,21 @@ class Table:
 
                         extra -= to_call
                         # p[1] += to_call
-                        p[3].add(player)
+                        p[3].add(p_name)
                         new_pot.append(p)
                         # c_call = c_pot = 0
                     else: #BUG smaller bet
-                        extra -= to_call
+                        
                         c_call += to_call
                         c_pot += p[1]
-                        if player not in p[3]:
+                        if p_name not in p[3]:
+                            print('not in')
                             saved += to_call
+                            extra -= to_call
 
             if remaining:
-                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {player}])
+                print('remaining', extra, to_call)
+                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {p_name}])
 
             self.pot = new_pot
         else:
@@ -391,6 +412,7 @@ class Table:
             if p.total_invested > self.pot[0][0]:
                 self.pot[0][0] = p.total_invested
                 self.pot[0][3] = {p}
+                # self.pot[0][3] = {p.position_name}
 
             self.pot[0][1] += p.total_invested
             self.pot[0][2] = self.pot[0][2] or p.all_in
@@ -417,11 +439,11 @@ class Table:
 
         for w_p in winners:
             print(w_p.chips, pot[1])
-            w_p.chips += pot[1] // len(winners)
+            w_p.chips += pot[1] // len(winners) #why does this not give the chips
             print(w_p.chips)
 
             for p in self.players:
-                if p == w_p:
+                if p == w_p: 
                     print(p, p.chips)
 
         if wHand:
@@ -429,10 +451,10 @@ class Table:
         else:
             end = ""
 
-        print([x.positionName for x in c_players])
+        print([x.position_name for x in c_players])
 
         print(
-            f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.positionName for p in winners])} wins {pot} chips {end}"
+            f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.position_name for p in winners])} wins {pot} chips {end}"
         )
 
         print("Testing", [x.holeCards for x in c_players], self.community)
@@ -440,8 +462,8 @@ class Table:
     def end_hand(self):
         self.running = False
 
-        for p in self.pot[::-1]:
-            self.give_pot(p)
+        for i in range(len(self.pot) - 1, -1, -1):
+            self.give_pot(self.pot[i])
 
 def start():
     table1 = Table()
@@ -452,14 +474,16 @@ def start():
             chips = 200
         else:
             chips = 1000
-        table1.add_player(Bot(r, p, table1, chips=chips))
+        table1.add_player(Bot(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
         Human(
             5,
             "nature",
             table1,
+            str(5),
             chips=2000,
+            
         )
     )
     return table1
@@ -475,6 +499,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-
+    # main()
+    p1 = Bot(0, 0, 0)
+    p2 = Bot(0, 0, 0)
+    # a = set()
+    # a.add(p1)
+    # a.add(p2)
+    for x in (p1, p2):
+        x.chips = 0
+    print(p1.chips)
+    p1.chips = 100
+    # a.add(p1)
+    # print(a)
     pass

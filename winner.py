@@ -27,13 +27,13 @@ def get_winner(hands, community):
             finalHand = get_hand(player, f)
             if finalHand:
                 if best == [[]]:
-                    best = [[finalHand, i + 1]]
+                    best = [[finalHand, i]]
                 else:
                     best_player = compare_hand(finalHand, best[0][0])
                     if best_player == 1:
-                        best = [[finalHand, i + 1]]
+                        best = [[finalHand, i]]
                     if best_player == 3:  # draw
-                        best.append([finalHand, i + 1])
+                        best.append([finalHand, i])
 
         if best != [[]]:
             break

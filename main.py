@@ -17,21 +17,22 @@ class Player:
         5: "Cutoff",
     }
 
-    def __init__(self, position_i, profile_picture, table, chips=1000):
+    def __init__(self, position_i, profile_picture, table, id, chips=1000):
         self.chips = chips
         self.position_i = self.table_position = position_i
         self.profile_picture = profile_picture
         self.inactive = False
         self.table = table
+        self.id = id
 
 
     def __eq__(self, other):
         if not isinstance(other, Player):
             return False
-        return self.position_name == other.position_name
+        return self.id == other.id
 
     def __hash__(self):
-        return hash(self.position_name)
+        return hash(self.id)
     
     def set_pos_names(self, players):
         self.pos_names = {}
@@ -162,6 +163,9 @@ class Player:
         )
 
         return True
+    
+    def add_chips(self, extra):
+        self.chips += extra
 
 
 class Bot(Player):
@@ -314,12 +318,12 @@ class Table:
             remaining = player.total_invested
             extra = player.extra
             p_name = player
-            copy_pot = deepcopy(self.pot)
+            copy_pot = self.pot
             new_pot = []
             c_call = c_pot = saved = 0
             # print('copy', copy_pot, self.pot)
             print(p_name, remaining, extra)
-            for p in copy_pot:
+            for index, p in enumerate(copy_pot):
                 print('extra', extra)
                 to_call = p[0]
 
@@ -352,10 +356,15 @@ class Table:
                             p[1] += to_call
 
                         extra -= to_call
+                        if extra < 0 and index != len(self.pot) - 1:
+                            p[1] -= extra #subtracting negative
+                            self.pot[-1][1] += extra
+                            
                         # p[1] += to_call
                         p[3].add(p_name)
                         new_pot.append(p)
                         # c_call = c_pot = 0
+                            
                     else: #BUG smaller bet
                         
                         c_call += to_call
@@ -430,17 +439,13 @@ class Table:
             wInfo = [[None, 1]]
 
         wHand = wInfo[0][0]
-        wPIs = [x[1] - 1 for x in wInfo]
+        wPIs = [x[1] for x in wInfo]
         winners = [p for i, p in enumerate(c_players) if i in wPIs]
 
         for w_p in winners:
-            print(w_p.chips, pot[1])
+            print(w_p.chips, pot)
             w_p.chips += pot[1] // len(winners)
             print(w_p.chips)
-
-            for p in self.players:
-                if p == w_p:
-                    print(p, p.chips)
 
         if wHand:
             end = f"with {wHand}"
@@ -458,8 +463,8 @@ class Table:
     def end_hand(self):
         self.running = False
 
-        for p in self.pot[::-1]:
-            self.give_pot(p)
+        for i in range(len(self.pot) - 1, -1, -1):
+            self.give_pot(self.pot[i])
 
 def start():
     table1 = Table()
@@ -470,14 +475,16 @@ def start():
             chips = 200
         else:
             chips = 1000
-        table1.add_player(Bot(r, p, table1, chips=chips))
+        table1.add_player(Bot(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
         Human(
             5,
             "nature",
             table1,
+            str(5),
             chips=2000,
+            
         )
     )
     return table1
