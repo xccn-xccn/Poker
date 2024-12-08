@@ -6,7 +6,11 @@ from winner import get_winner
 
 
 # BUG money appears out of nowwhere?
+# TODO test valid bets on raises
+# TODO account for sb or bb all in with blinds
 # TODO Main pot and side pots
+# TODO skip and show hands if only one player left
+# TODO stop showing next round when everyone folds
 class Player:
     pos_i_names = {
         0: "Button",
@@ -133,9 +137,9 @@ class Player:
         if len(table.bets) >= 2:
             prev_raise = table.bets[-1] - table.bets[-2]
 
-        if action == 3:
+        if action == 3: #BUG wrong
             if (
-                self.round_invested + extra < min(round_total + prev_raise, self.chips)
+                (self.round_invested + extra < round_total + prev_raise and extra < self.chips)
                 or extra > self.chips
             ):
                 return False
@@ -211,8 +215,8 @@ class Bot(Player):
         else:
             bet = 0
 
-        return 2, 0
-        # return action, bet
+        # return 2, 0
+        return action, bet
 
 
 class Human(Player):
@@ -333,7 +337,12 @@ class Table:
                 elif to_call > remaining:
                     new = [remaining, remaining * (len(p[3]) + 1), player.all_in, p[3] | {p_name}]
                     p[0] -= remaining
-                    p[1] -= len(p[3]) * remaining + (remaining - extra)
+                    p[1] -= len(p[3]) * remaining #think about this
+
+                    if index == len(self.pot) -1:
+                        p[1] -= remaining - extra #have to take away any collected pot that needs to be in this one
+                    else:
+                        self.pot[-1][1] -= remaining - extra
                     new_pot.append(new)
                     new_pot.append(p)
                     remaining = 0
@@ -357,6 +366,7 @@ class Table:
 
                         extra -= to_call
                         if extra < 0 and index != len(self.pot) - 1:
+                            print('extra < 0', extra)
                             p[1] -= extra #subtracting negative
                             self.pot[-1][1] += extra
                             
@@ -436,7 +446,7 @@ class Table:
         if self.players_remaining > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
         else:
-            wInfo = [[None, 1]]
+            wInfo = [[None, 0]]
 
         wHand = wInfo[0][0]
         wPIs = [x[1] for x in wInfo]

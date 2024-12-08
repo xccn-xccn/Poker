@@ -11,7 +11,7 @@ pygame.init()
 # BUG when changing bet action text changed (once)
 # BUG when player folds pre flop flop is shown, handle when only 1 player left
 # TODO CHange check button press for slider and get it to slide
-# TODO scale window, slider for bets, speed button
+# TODO scale window, all in button, speed button
 
 
 def draw_text(text, font, text_colour, x, y):
@@ -786,7 +786,7 @@ class Main:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
                 else:
-                    pygame.time.wait(500) * 0.01
+                    pygame.time.wait(500) 
 
             self.acted = False
 
