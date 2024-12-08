@@ -617,7 +617,7 @@ class PlayerGUI:
             for c in self.cards:
                 c.draw()
 
-        if self.player.positionName == "Button":
+        if self.player.position_name == "Button":
             screen.blit(self.button_image, (self.BX, self.BY))
 
         if self.action_text:
@@ -786,7 +786,7 @@ class Main:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
                 else:
-                    pygame.time.wait(500)
+                    pygame.time.wait(500) * 0.01
 
             self.acted = False
 

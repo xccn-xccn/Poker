@@ -24,15 +24,6 @@ class Player:
         self.inactive = False
         self.table = table
 
-
-    def __eq__(self, other):
-        if not isinstance(other, Player):
-            return False
-        return self.position_name == other.position_name
-
-    def __hash__(self):
-        return hash(self.position_name)
-    
     def set_pos_names(self, players):
         self.pos_names = {}
         for i, pos in enumerate(
@@ -62,7 +53,7 @@ class Player:
 
         a_player_count = len(self.table.active_players)
         self.position_i = ((i - self.table.sb_i) % a_player_count + 1) % a_player_count
-        self.position_name = Player.pos_i_names[self.position_i]
+        self.positionName = Player.pos_i_names[self.position_i]
         self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
         if self.position_i in [1, 2]:  # One of the blinds maybe change to name
@@ -158,7 +149,7 @@ class Player:
 
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
         print(
-            f"\n {self.position_name} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
+            f"\n {self.positionName} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
         )
 
         return True
@@ -313,12 +304,10 @@ class Table:
         if player.fold == False:
             remaining = player.total_invested
             extra = player.extra
-            p_name = player
             copy_pot = deepcopy(self.pot)
             new_pot = []
             c_call = c_pot = saved = 0
             # print('copy', copy_pot, self.pot)
-            print(p_name, remaining, extra)
             for p in copy_pot:
                 print('extra', extra)
                 to_call = p[0]
@@ -327,7 +316,7 @@ class Table:
                 if not remaining:
                     new_pot.append(p)
                 elif to_call > remaining:
-                    new = [remaining, remaining * (len(p[3]) + 1), player.all_in, p[3] | {p_name}]
+                    new = [remaining, remaining * (len(p[3]) + 1), player.all_in, p[3] | {player}]
                     p[0] -= remaining
                     p[1] -= len(p[3]) * remaining + (remaining - extra)
                     new_pot.append(new)
@@ -335,15 +324,12 @@ class Table:
                     remaining = 0
                     
                 else:
-                    print('in1', remaining, to_call)
+                    # print('in1', remaining, to_call)
                     remaining -= to_call
                     if p[2] or remaining == 0: #do need to worry about smaller False pot before?
                         # print('in', remaining, p)
-                        print('in2')
-                        if p_name in p[3]:
-                            new_pot.append(p)
+                        if player in p[3]:
                             continue
-                        print('in3')
                         # p[0] += c_call
                         if remaining == 0:
                             p[1] += extra
@@ -353,21 +339,18 @@ class Table:
 
                         extra -= to_call
                         # p[1] += to_call
-                        p[3].add(p_name)
+                        p[3].add(player)
                         new_pot.append(p)
                         # c_call = c_pot = 0
                     else: #BUG smaller bet
-                        
+                        extra -= to_call
                         c_call += to_call
                         c_pot += p[1]
-                        if p_name not in p[3]:
-                            print('not in')
+                        if player not in p[3]:
                             saved += to_call
-                            extra -= to_call
 
             if remaining:
-                print('remaining', extra, to_call)
-                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {p_name}])
+                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {player}])
 
             self.pot = new_pot
         else:
@@ -408,7 +391,6 @@ class Table:
             if p.total_invested > self.pot[0][0]:
                 self.pot[0][0] = p.total_invested
                 self.pot[0][3] = {p}
-                # self.pot[0][3] = {p.position_name}
 
             self.pot[0][1] += p.total_invested
             self.pot[0][2] = self.pot[0][2] or p.all_in
@@ -447,10 +429,10 @@ class Table:
         else:
             end = ""
 
-        print([x.position_name for x in c_players])
+        print([x.positionName for x in c_players])
 
         print(
-            f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.position_name for p in winners])} wins {pot} chips {end}"
+            f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.positionName for p in winners])} wins {pot} chips {end}"
         )
 
         print("Testing", [x.holeCards for x in c_players], self.community)
@@ -493,16 +475,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    p1 = Bot(0, 0, 0)
-    p2 = Bot(0, 0, 0)
-    # a = set()
-    # a.add(p1)
-    # a.add(p2)
-    for x in (p1, p2):
-        x.chips = 0
-    print(p1.chips)
-    p1.chips = 100
-    # a.add(p1)
-    # print(a)
+    main()
+
     pass
