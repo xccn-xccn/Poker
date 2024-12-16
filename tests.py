@@ -1,3 +1,2 @@
-import os
-
-print(os.path.dirname(__file__))
+a = {1: 3, 2: 4}
+b = {1: 4, 2:2, 3: 4}

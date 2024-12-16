@@ -1,8 +1,9 @@
 import random, time
-from collections import deque
+from collections import deque, defaultdict
 from copy import deepcopy
 from deck import deck
 from winner import get_winner
+
 
 
 # BUG money appears out of nowwhere?
@@ -328,12 +329,13 @@ class Table:
             p_name = player
             copy_pot = self.pot
             new_pot = []
-            c_call = c_pot = saved = 0
+            # c_call = c_pot = saved = 0
+            c_pot = defaultdict(lambda:0)
             # print('copy', copy_pot, self.pot)
             print(p_name, remaining, extra)
             for index, p in enumerate(copy_pot):
                 print('extra', extra)
-                to_call = p[0]
+                to_call, invested = p[:2]
 
                 # print('start', p, to_call, remaining)
                 if not remaining:
@@ -380,17 +382,17 @@ class Table:
                         # c_call = c_pot = 0
                             
                     else: #BUG smaller bet
-                        
-                        c_call += to_call
-                        c_pot += p[1]
-                        if p_name not in p[3]: 
-                            print('not in')
-                            saved += to_call
-                            extra -= to_call #extra less than 0 if player is taken out of pot
+                        for x, val in invested.items():
+                            c_pot[x] += val
+                        # if p_name not in p[3]: 
+                        #     print('not in')
+                        #     saved += to_call
+                        #     extra -= to_call #extra less than 0 if player is taken out of pot
 
             if remaining:
                 print('remaining', extra, to_call)
-                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {p_name}])
+                c_pot[player] += remaining
+                new_pot.append([max(c_pot.values()), c_pot , player.all_in, {p_name}])
 
             self.pot = new_pot
         else:
