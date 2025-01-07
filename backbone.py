@@ -329,75 +329,26 @@ class Table:
             p_name = player
             copy_pot = self.pot
             new_pot = []
-            # c_call = c_pot = saved = 0
-            c_pot = defaultdict(lambda:0)
-            # print('copy', copy_pot, self.pot)
-            print(p_name, remaining, extra)
-            for index, p in enumerate(copy_pot):
-                print('extra', extra)
-                to_call, invested = p[:2]
+            c_call = c_pot = saved = 0
 
-                # print('start', p, to_call, remaining)
-                if not remaining:
+            for p in self.pot:
+                to_call = p[0]
+                #subtract from remaining here?
+                if not remaining: #no chips remaining (just keep it the same)
                     new_pot.append(p)
+                elif to_call == remaining: #think because could playter already be part invested in the pot
+                    pass
                 elif to_call > remaining:
-                    new = [remaining, remaining * (len(p[3]) + 1), player.all_in, p[3] | {p_name}]
-                    p[0] -= remaining
-                    p[1] -= len(p[3]) * remaining #think about this
-
-                    if index == len(self.pot) -1:
-                        p[1] -= remaining - extra #have to take away any collected pot that needs to be in this one
-                    else:
-                        self.pot[-1][1] -= remaining - extra
-                    new_pot.append(new)
-                    new_pot.append(p)
-                    remaining = 0
-                    
+                    pass
+                elif p[1]:
+                    pass
                 else:
-                    print('in1', remaining, to_call)
-                    remaining -= to_call
-                    if p[2] or remaining == 0: #do need to worry about smaller False pot before?
-                        # print('in', remaining, p)
-                        print('in2')
-                        if p_name in p[3]:
-                            new_pot.append(p)
-                            continue
-                        print('in3')
-                        # p[0] += c_call
-                        if remaining == 0:
-                            p[1] += extra
-                            print(extra - to_call, 'extra - to_call')
-                        else:
-                            p[1] += to_call
-
-                        extra -= to_call
-                        if extra < 0 and index != len(self.pot) - 1:
-                            print('extra < 0', extra)
-                            p[1] -= extra #subtracting negative
-                            self.pot[-1][1] += extra
-                            
-                        # p[1] += to_call
-                        p[3].add(p_name)
-                        new_pot.append(p)
-                        # c_call = c_pot = 0
-                            
-                    else: #BUG smaller bet
-                        for x, val in invested.items():
-                            c_pot[x] += val
-                        # if p_name not in p[3]: 
-                        #     print('not in')
-                        #     saved += to_call
-                        #     extra -= to_call #extra less than 0 if player is taken out of pot
+                    pass
 
             if remaining:
-                print('remaining', extra, to_call)
-                c_pot[player] += remaining
-                new_pot.append([max(c_pot.values()), c_pot , player.all_in, {p_name}])
+                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {p_name}])
 
             self.pot = new_pot
-        else:
-            for i in range(len(self.pot)):
-                self.pot[i][3] = {x for x in self.pot[i][3] if x != player}
 
 
     def get_total_pot(self):
@@ -421,7 +372,7 @@ class Table:
 
         if not button_bust:
             self.sb_i = (self.sb_i + 1) % self.no_players
-        self.pot = [[  0, 0, False, set()  ]] #to_call, pot_value, 1 or more players all in, players in pot
+        self.pot = [[ 0, False, defaultdict(int) ]] #to_call, 1 or more players all in, each player invested in pot
         self.r = 0
 
         random.shuffle(self.deck)
@@ -516,16 +467,16 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    p1 = Bot(0, 0, 0)
-    p2 = Bot(0, 0, 0)
-    # a = set()
-    # a.add(p1)
-    # a.add(p2)
-    for x in (p1, p2):
-        x.chips = 0
-    print(p1.chips)
-    p1.chips = 100
-    # a.add(p1)
-    # print(a)
-    pass
+    main()
+    # p1 = Bot(0, 0, 0)
+    # p2 = Bot(0, 0, 0)
+    # # a = set()
+    # # a.add(p1)
+    # # a.add(p2)
+    # for x in (p1, p2):
+    #     x.chips = 0
+    # print(p1.chips)
+    # p1.chips = 100
+    # # a.add(p1)
+    # # print(a)
+    # pass

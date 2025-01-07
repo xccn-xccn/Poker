@@ -321,7 +321,7 @@ class Table:
     def set_pot(self, player=None):
         if player == None:
             player = self.current_player
-
+        
         if player.fold == False:
             remaining = player.total_invested
             extra = player.extra

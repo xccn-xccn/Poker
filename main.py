@@ -1,7 +1,8 @@
 import pygame, random, os
 
 import pygame.image
-from backbone import start, Bot, Human
+# from backbone import start, Bot, Human
+from backbone_copy import start, Bot, Human
 from chips import get_chips
 
 pygame.init()
@@ -20,11 +21,11 @@ def draw_text(text, font, text_colour, x, y):
 
 
 dirname = os.path.dirname(__file__)
-SCREENSIZE = (1400, 900)
+SCREENSIZE = (3000, 1400)
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 text_font = pygame.font.SysFont("Comic Sans", 35)
-text_font = pygame.font.Font(rf"{dirname}\misc\JqkasWild-w1YD6.ttf", 35)
+text_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
 BUTTONW = 150
 BUTTONH = 50
 BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW
@@ -50,7 +51,7 @@ pygame.display.set_caption("Poker Game")
 clock = pygame.time.Clock()
 
 tableImage = pygame.image.load(
-    rf"{dirname}\images\misc\poker-table.png"
+    rf"{dirname}/images/misc/poker-table.png"
 ).convert_alpha()
 TIS = 1
 table_image_size = (868 * TIS, 423 * TIS)
@@ -67,17 +68,17 @@ CARDW, CARDH, CARDB = (
 )
 
 chip = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}\images\chips\green_chip.png").convert_alpha(),
+    pygame.image.load(rf"{dirname}/images/chips/green_chip.png").convert_alpha(),
     (CHIPW, CHIPH),
 )
 
 chip2 = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}\images\chips\black_chip.png").convert_alpha(),
+    pygame.image.load(rf"{dirname}/images/chips/black_chip.png").convert_alpha(),
     (CHIPW, CHIPH),
 )
 
 TCard = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}\images\cards\card_back.png").convert_alpha(),
+    pygame.image.load(rf"{dirname}/images/cards/card_back.png").convert_alpha(),
     (CARDW, CARDH),
 )
 
@@ -187,12 +188,12 @@ class Zoom(Button):
 
         self.BW = self.BH = width
         self.zoom_in = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\images\misc\zoom-in.png").convert_alpha(),
+            pygame.image.load(rf"{dirname}/images/misc/zoom-in.png").convert_alpha(),
             (width, width),
         )
 
         self.zoom_out = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\images\misc\zoom-out.png").convert_alpha(),
+            pygame.image.load(rf"{dirname}/images/misc/zoom-out.png").convert_alpha(),
             (width, width),
         )
 
@@ -321,14 +322,14 @@ class Card:
 
     def set_image(self):
         card_path = f"{valFilename[self.value[0]]}_of_{suitFilename[self.value[1]]}"
-        imagePath = rf"{dirname}\images\cards\{card_path}.png"
+        imagePath = rf"{dirname}/images/cards/{card_path}.png"
 
         self.image = pygame.transform.smoothscale(
             pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
         )
 
         self.card_back = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\images\cards\card_back.png").convert_alpha(),
+            pygame.image.load(rf"{dirname}/images/cards/card_back.png").convert_alpha(),
             (CARDW, CARDH),
         )
 
@@ -398,7 +399,7 @@ class PlayerGUI:
 
         DBUTTONW = 30
         self.button_image = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}\images\misc\Button.png").convert_alpha(),
+            pygame.image.load(rf"{dirname}/images/misc/Button.png").convert_alpha(),
             (DBUTTONW, DBUTTONW),
         )
 
@@ -411,7 +412,7 @@ class PlayerGUI:
         self.set_cards()
         self.profile = pygame.transform.smoothscale(
             pygame.image.load(
-                rf"{dirname}\images\profile_pictures\{self.player.profile_picture}.png"
+                rf"{dirname}/images/profile_pictures/{self.player.profile_picture}.png"
             ).convert_alpha(),
             PROFILE_SIZE,
         )
@@ -545,7 +546,7 @@ class PlayerGUI:
         return [
             pygame.transform.smoothscale(
                 pygame.image.load(
-                    rf"{dirname}\images\chips\{c}_chip.png"
+                    rf"{dirname}/images/chips/{c}_chip.png"
                 ).convert_alpha(),
                 (CHIPW, CHIPH),
             )
@@ -690,7 +691,7 @@ class Main:
 
         self.deal_tick = 0
         self.e_j = pygame.transform.scale(
-            pygame.image.load(rf"{dirname}\images\misc\e-j.jpg").convert_alpha(),
+            pygame.image.load(rf"{dirname}/images/misc/e-j.jpg").convert_alpha(),
             (screen.get_width(), screen.get_height()),
         )
         for b in self.buttons:
