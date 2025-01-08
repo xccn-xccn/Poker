@@ -326,30 +326,47 @@ class Table:
         if player.fold == False:
             remaining = player.total_invested
             new_pot = []
-            c_call = c_pot  = 0
+            end = False
 
             for p in self.pot:
+
+                if end:
+                    raise Exception(self.pot, p, end) #be aware of list error
+
                 to_call, required, contents = p
                 #subtract from remaining here?
-                if not remaining: #no chips remaining (just keep it the same)
+                if remaining <= 0: #no chips remaining (just keep it the same)
                     new_pot.append(p)
                     continue
 
-                if to_call > remaining + contents[player]: #make it subtract from the other pot
-                    remaining += contents[player]
-                    new_pot.append([remaining, player.all_in, {}])
-
-
-                if to_call == remaining: #think because could playter already be part invested in the pot
-                    pass
+                rem_after = remaining + contents[player] - to_call 
                 
-                elif required:
-                    pass
+                if rem_after < 0: #make it subtract from the current pot 
+                    remaining += contents[player] 
+                    n_contents = []
+                    for k, v in contents.items():
+                        n_contents[k] = min(remaining, v)
+                        contents[k] = max(0, v - remaining)
+
+                    n_contents[k] = remaining
+                    new_pot.append([remaining, player.all_in, n_contents])
+                    new_pot.append([to_call - remaining, required, contents])
+                    
+
+                if rem_after == 0 or required: #think because could playter already be part invested in the pot
+                    contents[player] = to_call
+                    new_pot.append([to_call, required or player.all_in, contents])
                 else:
+                    if rem_after <= 0:
+                        raise Exception(rem_after)
+                    end = True
                     pass
+
+                remaining = rem_after
 
             if remaining:
-                new_pot.append([c_call + remaining, player.all_in, {player: remaining + c_call}])
+                contents[player] += to_call + remaining
+                new_pot.append([to_call + remaining, player.all_in, contents])
 
             self.pot = new_pot
 
@@ -380,16 +397,15 @@ class Table:
 
         random.shuffle(self.deck)
 
-        for i, p in enumerate(self.active_players): #TODO account for if small blind is all in
+        for i, p in enumerate(self.active_players): #TODO account for if small blind is all in treat as bet?
             p.new_hand(i)
             # if p.round_invested:
             #     self.set_pot(p)
             if p.total_invested > self.pot[0][0]:
                 self.pot[0][0] = p.total_invested
-                self.pot[0][3] = {p}
+            self.pot[0][2][p] = p.total_invested
                 # self.pot[0][3] = {p.position_name}
 
-            self.pot[0][1] += p.total_invested
             self.pot[0][2] = self.pot[0][2] or p.all_in
 
         print('pot', self.pot)
