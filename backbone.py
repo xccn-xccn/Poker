@@ -325,28 +325,31 @@ class Table:
 
         if player.fold == False:
             remaining = player.total_invested
-            extra = player.extra
-            p_name = player
-            copy_pot = self.pot
             new_pot = []
-            c_call = c_pot = saved = 0
+            c_call = c_pot  = 0
 
             for p in self.pot:
-                to_call = p[0]
+                to_call, required, contents = p
                 #subtract from remaining here?
                 if not remaining: #no chips remaining (just keep it the same)
                     new_pot.append(p)
-                elif to_call == remaining: #think because could playter already be part invested in the pot
+                    continue
+
+                if to_call > remaining + contents[player]: #make it subtract from the other pot
+                    remaining += contents[player]
+                    new_pot.append([remaining, player.all_in, {}])
+
+
+                if to_call == remaining: #think because could playter already be part invested in the pot
                     pass
-                elif to_call > remaining:
-                    pass
-                elif p[1]:
+                
+                elif required:
                     pass
                 else:
                     pass
 
             if remaining:
-                new_pot.append([extra + c_call, extra + c_pot + saved, player.all_in, {p_name}])
+                new_pot.append([c_call + remaining, player.all_in, {player: remaining + c_call}])
 
             self.pot = new_pot
 
