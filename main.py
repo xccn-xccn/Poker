@@ -1,8 +1,8 @@
 import pygame, random, os
 
 import pygame.image
-# from backbone import start, Bot, Human
-from backbone_copy import start, Bot, Human
+from backbone import start, Bot, Human
+# from backbone_copy import start, Bot, Human
 from chips import get_chips
 
 pygame.init()
@@ -21,7 +21,7 @@ def draw_text(text, font, text_colour, x, y):
 
 
 dirname = os.path.dirname(__file__)
-SCREENSIZE = (3000, 1400)
+SCREENSIZE = (1400, 900)
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 text_font = pygame.font.SysFont("Comic Sans", 35)

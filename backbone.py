@@ -347,7 +347,7 @@ class Table:
 
                 if rem_after < 0:  # make it subtract from the current pot
                     remaining += contents[player]
-                    n_contents = []
+                    n_contents = defaultdict(int)
                     for k, v in contents.items():
                         n_contents[k] = min(remaining, v)
                         contents[k] = max(0, v - remaining)
@@ -356,7 +356,7 @@ class Table:
                     new_pot.append([remaining, player.all_in, n_contents])
                     new_pot.append([to_call - remaining, required, contents])
 
-                if (
+                elif (
                     rem_after == 0 or required
                 ):  # think because could player already be part invested in the pot
                     contents[player] = to_call
@@ -365,7 +365,6 @@ class Table:
                     if rem_after <= 0:
                         raise Exception(rem_after)
                     end = True
-                    pass
 
                 remaining = rem_after
 
@@ -386,7 +385,7 @@ class Table:
             
 
     def get_total_pot(self):
-        return sum(p[1] for p in self.pot)
+        return sum(sum(p[2].values()) for p in self.pot)
 
     def start_hand(self):
         self.running = True
@@ -436,7 +435,7 @@ class Table:
         self.end_round(start=True)
 
     def give_pot(self, pot):
-        c_players = pot[3]
+        c_players = [x for x in pot[2].keys() if not x.fold]
 
         if self.players_remaining > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
@@ -448,8 +447,7 @@ class Table:
         winners = [p for i, p in enumerate(c_players) if i in wPIs]
 
         for w_p in winners:
-            print(w_p.chips, pot)
-            w_p.chips += pot[1] // len(winners)
+            w_p.chips += sum(pot[2].values()) // len(winners)
             print(w_p.chips)
 
         if wHand:
@@ -480,7 +478,7 @@ def start():
         if r == 0:
             chips = 2000
         else:
-            chips = 1
+            chips = 2000
         table1.add_player(Bot(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
