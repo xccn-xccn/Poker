@@ -11,7 +11,6 @@ pygame.init()
 # TODO clean up code (168) try to remove global variables
 # BUG when changing bet action text changed (once)
 # BUG when player folds pre flop flop is shown, handle when only 1 player left
-# TODO CHange check button press for slider and get it to slide
 # TODO scale window, all in button, speed button
 
 
@@ -870,7 +869,7 @@ class Main:
         if self.dealButton.pressed == False:
             self.dealButton.pressed_action()
 
-        return True
+        return True and self.table.no_players != 1
 
 
 def main():

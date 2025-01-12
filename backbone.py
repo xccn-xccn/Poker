@@ -5,15 +5,13 @@ from deck import deck
 from winner import get_winner
 
 
-# BUG money appears out of nowwhere?
+# BUG illegal bet amounts when player has 0 invested
 # TODO test valid bets on raises
-# TODO account for sb or bb all in with blinds
-# TODO Main pot and side pots
+# BUG index error on players
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # TODO auto call when all in
 # TODO button should be sb heads up (not bb) fix this
-# BUG negative pot
 
 
 class Player:
@@ -74,7 +72,7 @@ class Player:
         self.position_name = Player.pos_i_names[self.position_i]
         self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
-        if a_player_count == 2: #heads up
+        if a_player_count == 2:  # heads up
             self.total_invested = min(self.table.blinds[self.position_i], self.chips)
         elif self.position_i in [1, 2]:  # One of the blinds maybe change to name
             self.total_invested = min(
@@ -84,6 +82,7 @@ class Player:
             self.total_invested = 0
 
         self.round_invested = self.extra = self.total_invested
+        # print("total invested", self.total_invested)
 
         self.chips -= self.round_invested
         self.all_in = not (bool(self.chips) or self.fold)
@@ -181,7 +180,7 @@ class Player:
 
 class Bot(Player):
     def get_bet(self, bets, table):
-
+        print("bets", bets)
         prev_raise = table.blinds[-1]
         if len(bets) >= 2:
             prev_raise = bets[-1] - bets[-2]
@@ -189,7 +188,7 @@ class Bot(Player):
         try:
             extra = random.randint(  # Check if this one works
                 min(self.chips, bets[-1] - self.round_invested + prev_raise),
-                min(max(bets[-1] * 2, int(table.get_total_pot() * 2.5)), self.chips),
+                min(max(bets[-1] * 2 + prev_raise, int(table.get_total_pot() * 2.5)), self.chips),
             )
 
             if extra < 0:
@@ -243,12 +242,16 @@ class Table:
         self.community = []
         # self.active_players = 0
 
+        self.correct_total_chips = 0
+
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
         self.active_players.append(newPlayer)
 
         if isinstance(newPlayer, Human):
             self.human_player = newPlayer
+
+        self.correct_total_chips += newPlayer.chips
 
     def start_move(self):
         if self.current_player.all_in == True or self.current_player.fold == True:
@@ -265,13 +268,13 @@ class Table:
         valid = self.current_player.move(self, action)
 
         if not valid:
-            print("not valid")
+            print("not valid", action)
             return False
 
         if self.current_player.fold == True:
             self.players_remaining -= 1
 
-        print("pre", self.pot)
+        print("pre", self.pot, "\n")
         self.set_pot()
         print("pot", self.pot)
         return self.end_move()
@@ -279,6 +282,7 @@ class Table:
     def end_move(self):
         if self.players_remaining == 1:
             self.end_hand()
+            return False
 
         if self.current_player.agg:
             self.last_agg = self.cPI
@@ -309,7 +313,7 @@ class Table:
             self.cPI = self.last_agg = (
                 self.sb_i + (2 if self.no_players != 2 else 1)
             ) % self.no_players
-            self.bets = [*self.blinds]
+            self.bets = [max(x.round_invested for x in self.active_players)]
             self.community = []
         else:
             self.cPI = self.last_agg = self.sb_i
@@ -318,11 +322,14 @@ class Table:
                 self.communityCard_i : self.communityCard_i + self.r + 2
             ]
 
-            print(f"{name[self.r]} Cards {self.community} pot {self.pot}")
+            print(f"\n{name[self.r]} Cards {self.community} pot {self.pot}")
 
-        self.current_player = self.active_players[self.cPI]
-        print(self.r, self.current_player.position_i, self.cPI)
-
+        try:
+            self.current_player = self.active_players[self.cPI]
+            print(self.r, self.current_player.position_i, self.cPI)
+        except:
+            print(self.cPI, self.active_players)
+            raise Exception
     def set_pot(self, player=None):
         if player == None:
             player = self.current_player
@@ -332,12 +339,13 @@ class Table:
             new_pot = []
             end = False
 
+            p_before = deepcopy(self.pot)
             for p in self.pot:
 
                 if end:
-                    raise Exception(self.pot, p, end)  # be aware of list error
+                    raise Exception(p_before, "\n", p, end)  # be aware of list error
 
-                to_call, required, contents = p
+                to_call, required, contents = p.copy()
                 # subtract from remaining here?
                 if remaining <= 0:  # no chips remaining (just keep it the same)
                     new_pot.append(p)
@@ -352,21 +360,25 @@ class Table:
                         n_contents[k] = min(remaining, v)
                         contents[k] = max(0, v - remaining)
 
-                    n_contents[k] = remaining
+                    n_contents[player] = remaining
                     new_pot.append([remaining, player.all_in, n_contents])
                     new_pot.append([to_call - remaining, required, contents])
+
+                    remaining = 0
 
                 elif (
                     rem_after == 0 or required
                 ):  # think because could player already be part invested in the pot
                     contents[player] = to_call
                     new_pot.append([to_call, required or player.all_in, contents])
+                    remaining = rem_after
+
                 else:
                     if rem_after <= 0:
                         raise Exception(rem_after)
                     end = True
 
-                remaining = rem_after
+                    remaining = rem_after
 
                 if remaining < 0:
                     raise Exception(self.pot, p, remaining)
@@ -377,12 +389,10 @@ class Table:
                     to_call = 0
                     contents = defaultdict(int)
 
-                contents[player] += to_call + remaining
+                contents[player] = to_call + remaining
                 new_pot.append([to_call + remaining, player.all_in, contents])
 
             self.pot = new_pot
-
-            
 
     def get_total_pot(self):
         return sum(sum(p[2].values()) for p in self.pot)
@@ -418,7 +428,10 @@ class Table:
             p.new_hand(i)
             # if p.round_invested:
             #     self.set_pot(p)
+        for p in sorted(self.active_players, key=lambda x: x.total_invested)[-2:]:
+            print("pre", self.pot, p.round_invested)
             self.set_pot(p)
+            print("post", self.pot)
             # if p.total_invested > self.pot[0][0]:
             #     self.pot[0][0] = p.total_invested
             # self.pot[0][2][p] = p.total_invested
@@ -435,19 +448,26 @@ class Table:
         self.end_round(start=True)
 
     def give_pot(self, pot):
-        c_players = [x for x in pot[2].keys() if not x.fold]
-
-        if self.players_remaining > 1:
+        c_players = [p for p, v in pot[2].items() if not p.fold and v == pot[0]]
+        t_chips = sum(pot[2].values())
+        # print(c_players, [(x.fold, x.])
+        if len(c_players) > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
         else:
             wInfo = [[None, 0]]
 
+        print("winfo", wInfo)
         wHand = wInfo[0][0]
         wPIs = [x[1] for x in wInfo]
         winners = [p for i, p in enumerate(c_players) if i in wPIs]
 
-        for w_p in winners:
-            w_p.chips += sum(pot[2].values()) // len(winners)
+
+        for i, w_p in enumerate(sorted(
+            winners, key=lambda x: (x.position_i - 1) % (len(self.active_players) + 1)
+        )):
+            w_p.chips += t_chips // len(winners)
+            if i < t_chips % len(winners):
+                w_p.chips += 1
             print(w_p.chips)
 
         if wHand:
@@ -464,10 +484,20 @@ class Table:
         print("Testing", [x.holeCards for x in c_players], self.community)
 
     def end_hand(self):
+        print(self.r)
         self.running = False
 
         for i in range(len(self.pot) - 1, -1, -1):
+            print(i)
             self.give_pot(self.pot[i])
+
+        print(
+            "total_chips",
+            sum(p.chips for p in self.players),
+            len([1 for x in self.players if x.chips]),
+        )
+        if sum(p.chips for p in self.players) != self.correct_total_chips:
+            raise Exception([p.chips for p in self.players])
 
 
 def start():
@@ -487,7 +517,7 @@ def start():
             "nature",
             table1,
             str(5),
-            chips=2000,
+            chips=3000,
         )
     )
     return table1
