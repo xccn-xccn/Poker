@@ -11,7 +11,7 @@ from winner import get_winner
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # TODO auto call when all in
-# TODO button should be sb heads up (not bb) fix this
+# TODO main player could do an uneccessary fold and make chips disappear
 
 
 class Player:
@@ -65,8 +65,6 @@ class Player:
         if self.chips <= 0:
             self.fold = True
 
-        # self.position_i = (self.position_i - 1) % self.table.active_players
-
         a_player_count = len(self.table.active_players)
         self.position_i = ((i - self.table.sb_i) % a_player_count + 1) % a_player_count
         self.position_name = Player.pos_i_names[self.position_i]
@@ -82,8 +80,6 @@ class Player:
             self.total_invested = 0
 
         self.round_invested = self.extra = self.total_invested
-        # print("total invested", self.total_invested)
-
         self.chips -= self.round_invested
         self.all_in = not (bool(self.chips) or self.fold)
 
@@ -103,10 +99,7 @@ class Player:
         elif self.action == 2:
 
             self.agg = False
-            self.extra = (
-                roundTotal - self.round_invested
-            )  # TODO Make side and main pots
-
+            self.extra = roundTotal - self.round_invested
             self.action_text = "calls" if self.extra else "checks"
 
             if roundTotal >= self.round_invested + self.chips:
@@ -143,7 +136,7 @@ class Player:
         if len(table.bets) >= 2:
             prev_raise = table.bets[-1] - table.bets[-2]
 
-        if action == 3:  # BUG wrong
+        if action == 3:
             if (
                 self.round_invested + extra < round_total + prev_raise
                 and extra < self.chips
@@ -186,9 +179,12 @@ class Bot(Player):
             prev_raise = bets[-1] - bets[-2]
 
         try:
-            extra = random.randint(  # Check if this one works
+            extra = random.randint(
                 min(self.chips, bets[-1] - self.round_invested + prev_raise),
-                min(max(bets[-1] * 2 + prev_raise, int(table.get_total_pot() * 2.5)), self.chips),
+                min(
+                    max(bets[-1] * 2 + prev_raise, int(table.get_total_pot() * 2.5)),
+                    self.chips,
+                ),
             )
 
             if extra < 0:
@@ -240,8 +236,6 @@ class Table:
         self.sb_i = 0
         self.running = False
         self.community = []
-        # self.active_players = 0
-
         self.correct_total_chips = 0
 
     def add_player(self, newPlayer):
@@ -330,6 +324,7 @@ class Table:
         except:
             print(self.cPI, self.active_players)
             raise Exception
+
     def set_pot(self, player=None):
         if player == None:
             player = self.current_player
@@ -343,10 +338,9 @@ class Table:
             for p in self.pot:
 
                 if end:
-                    raise Exception(p_before, "\n", p, end)  # be aware of list error
+                    raise Exception(p_before, "\n", p, end)
 
                 to_call, required, contents = p.copy()
-                # subtract from remaining here?
                 if remaining <= 0:  # no chips remaining (just keep it the same)
                     new_pot.append(p)
                     continue
@@ -415,34 +409,23 @@ class Table:
 
         if not button_bust:
             self.sb_i = (self.sb_i + 1) % self.no_players
-        self.pot = [
-            [0, False, defaultdict(int)]
-        ]  # to_call, 1 or more players all in, each player invested in pot
+        self.pot = [[0, False, defaultdict(int)]]
+        # to_call, 1 or more players all in, each player invested in pot
         self.r = 0
 
         random.shuffle(self.deck)
 
-        for i, p in enumerate(
-            self.active_players
-        ):  # TODO account for if small blind is all in treat as bet?
+        for i, p in enumerate(self.active_players):
             p.new_hand(i)
-            # if p.round_invested:
-            #     self.set_pot(p)
+
         for p in sorted(self.active_players, key=lambda x: x.total_invested)[-2:]:
             print("pre", self.pot, p.round_invested)
             self.set_pot(p)
             print("post", self.pot)
-            # if p.total_invested > self.pot[0][0]:
-            #     self.pot[0][0] = p.total_invested
-            # self.pot[0][2][p] = p.total_invested
-            # self.pot[0][3] = {p.position_name}
-
-            # self.pot[0][2] = self.pot[0][2] or p.all_in
 
         print("pot", self.pot)
-        self.players_remaining = sum(
-            [1 for p in self.active_players if not p.fold]
-        )  # have to do this because possible that one of the blinds is put all in by the blinds
+
+        self.players_remaining = sum([1 for p in self.active_players if not p.fold])
         self.communityCard_i = self.no_players * 2
 
         self.end_round(start=True)
@@ -450,7 +433,6 @@ class Table:
     def give_pot(self, pot):
         c_players = [p for p, v in pot[2].items() if not p.fold and v == pot[0]]
         t_chips = sum(pot[2].values())
-        # print(c_players, [(x.fold, x.])
         if len(c_players) > 1:
             wInfo = get_winner([p.holeCards for p in c_players], self.community)
         else:
@@ -461,10 +443,12 @@ class Table:
         wPIs = [x[1] for x in wInfo]
         winners = [p for i, p in enumerate(c_players) if i in wPIs]
 
-
-        for i, w_p in enumerate(sorted(
-            winners, key=lambda x: (x.position_i - 1) % (len(self.active_players) + 1)
-        )):
+        for i, w_p in enumerate(
+            sorted(
+                winners,
+                key=lambda x: (x.position_i - 1) % (self.no_players + 1),
+            )
+        ):
             w_p.chips += t_chips // len(winners)
             if i < t_chips % len(winners):
                 w_p.chips += 1
@@ -534,15 +518,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # p1 = Bot(0, 0, 0)
-    # p2 = Bot(0, 0, 0)
-    # # a = set()
-    # # a.add(p1)
-    # # a.add(p2)
-    # for x in (p1, p2):
-    #     x.chips = 0
-    # print(p1.chips)
-    # p1.chips = 100
-    # # a.add(p1)
-    # # print(a)
-    # pass

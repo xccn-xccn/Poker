@@ -2,16 +2,16 @@ import pygame, random, os
 
 import pygame.image
 from backbone import start, Bot, Human
-# from backbone_copy import start, Bot, Human
 from chips import get_chips
 
-pygame.init()
 
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # TODO clean up code (168) try to remove global variables
 # BUG when changing bet action text changed (once)
 # BUG when player folds pre flop flop is shown, handle when only 1 player left
 # TODO scale window, all in button, speed button
+
+pygame.init()
 
 
 def draw_text(text, font, text_colour, x, y):
@@ -156,25 +156,29 @@ class Slider(Button):
         pygame.draw.rect(
             screen,
             self.l_colour,
-            (self.x, self.y + (self.BH - self.l_height)/2, self.BW, self.l_height),
+            (self.x, self.y + (self.BH - self.l_height) / 2, self.BW, self.l_height),
         )
         pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
 
     def check_press(self, mx, my):
-        if self.x - self.BW / 20 <= mx <= self.x + self.BW and self.y <= my <= self.y + self.BH:
+        if (
+            self.x - self.BW / 20 <= mx <= self.x + self.BW
+            and self.y <= my <= self.y + self.BH
+        ):
             self.pressed_action(mx)
 
-
     def update_slider(self):
-        extra_p = 0 if not self.table.human_player.chips else min(1, self.bet_button.pbet / self.table.human_player.chips)
+        extra_p = (
+            0
+            if not self.table.human_player.chips
+            else min(1, self.bet_button.pbet / self.table.human_player.chips)
+        )
         self.s_x = self.x + extra_p * (self.BW - self.SW)
 
     def pressed_action(self, mx):
         self.s_x = self.x if mx < self.x else min(mx, self.x + self.BW - self.SW)
         percentage = 0 if mx < self.x else min((mx - self.x) / (self.BW - self.SW), 1)
-        self.bet_button.pbet = int(
-            percentage * self.table.human_player.chips
-        )
+        self.bet_button.pbet = int(percentage * self.table.human_player.chips)
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
@@ -306,7 +310,7 @@ class CBetButton(Button):
         val = int(self.bet_button.pbet + self.table.blinds[-1] * self.co * 0.5)  # bad
 
         val = 0 if val < 0 else min(self.table.human_player.chips, val)
-        self.bet_button.pbet = val 
+        self.bet_button.pbet = val
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
         self.bet_button.slider.update_slider()
 
@@ -587,8 +591,6 @@ class PlayerGUI:
     def draw(self):
 
         screen.blit(self.profile, (self.PX, self.PY))
-        # size = self.rect_image.get_size()
-        # pygame.draw.circle(self.profile, (0, 0, 150), (size[0]/2, size[1]/2), radius=size[0]/2, width=2)
 
         text = text_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
@@ -716,7 +718,6 @@ class Main:
         self.CXB = PlayerGUI.get_CXB()
         self.w_for_deal = False
 
-
     def draw_pot(self):
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
         # self.chip_images = [chip] * 30 #testing
@@ -782,7 +783,7 @@ class Main:
                 if self.table.human_player.fold == True:
                     pygame.time.wait(100)
                 else:
-                    pygame.time.wait(500) 
+                    pygame.time.wait(500)
 
             self.acted = False
 
@@ -807,7 +808,7 @@ class Main:
                 if event.key == pygame.K_d:
                     self.dealButton.pressed_action()
 
-                if event.key == pygame.K_q: #TODO
+                if event.key == pygame.K_q:  # TODO
                     print("q")
                     self.table.blinds = [n * 2 for n in self.table.blinds]
 
@@ -823,7 +824,7 @@ class Main:
                         if p.chips:
                             p.chips = 0
                             break
-                    
+
         self.count += 1
         if pygame.mouse.get_pressed()[0]:
             self.betButton.slider.check_press(*self.mouse)
@@ -861,7 +862,9 @@ class Main:
                     self.dealButton.pressed_action()
                 else:
                     self.w_for_deal = True
-                    self.deal_tick = current_tick + self.frame_rate * self.deal_c *(1 if not self.table.human_player.inactive else 0.2)
+                    self.deal_tick = current_tick + self.frame_rate * self.deal_c * (
+                        1 if not self.table.human_player.inactive else 0.2
+                    )
 
         if self.human_acted == True:
             self.human_acted = False
