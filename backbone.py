@@ -5,15 +5,12 @@ from deck import deck
 from winner import get_winner
 
 
-# BUG if other players go all in before non all in player 
-# can act non all in player gets turn skipped
 # BUG illegal bet amounts when player has 0 invested
 # TODO test valid bets on raises
 # BUG index error on players
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
-# TODO auto call when all in
-# TODO main player could do an uneccessary fold and make chips disappear
+# BUG main player could do an uneccessary fold and make chips disappear
 
 
 class Player:
@@ -253,7 +250,7 @@ class Table:
         if (
             self.current_player.all_in == True
             or self.current_player.fold == True
-            or self.active_in_hand == 1
+            or self.r >= self.skip_round
         ):
 
             self.current_player.agg = False  # Bad?
@@ -277,6 +274,9 @@ class Table:
 
         if self.current_player.fold or self.current_player.all_in:
             self.active_in_hand -= 1
+
+            if self.active_in_hand == 1:
+                self.skip_round = self.r + 1
 
         print("pre", self.pot, "\n")
         self.set_pot()
@@ -422,7 +422,7 @@ class Table:
         self.pot = [[0, False, defaultdict(int)]]
         # to_call, 1 or more players all in, each player invested in pot
         self.r = 0
-
+        self.skip_round = float("inf")
         random.shuffle(self.deck)
 
         for i, p in enumerate(self.active_players):
@@ -436,7 +436,7 @@ class Table:
         print("pot", self.pot)
 
         self.active_in_hand = self.players_remaining = sum(
-            [1 for p in self.active_players if not p.fold]
+            [1 for p in self.active_players if not p.fold and not p.all_in]
         )
         self.communityCard_i = self.no_players * 2
 
