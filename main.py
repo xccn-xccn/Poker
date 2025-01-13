@@ -856,7 +856,6 @@ class Main:
 
         if not self.table.running and self.dealButton.pressed:
 
-            # print(current_tick, self.deal_tick, self.w_for_deal)
             if current_tick >= self.deal_tick:
                 if self.w_for_deal:
                     self.dealButton.pressed_action()

@@ -1,10 +1,12 @@
-import random, time
-from collections import deque, defaultdict
+import random
+from collections import defaultdict
 from copy import deepcopy
 from deck import deck
 from winner import get_winner
 
 
+# BUG if other players go all in before non all in player 
+# can act non all in player gets turn skipped
 # BUG illegal bet amounts when player has 0 invested
 # TODO test valid bets on raises
 # BUG index error on players
@@ -248,7 +250,11 @@ class Table:
         self.correct_total_chips += newPlayer.chips
 
     def start_move(self):
-        if self.current_player.all_in == True or self.current_player.fold == True:
+        if (
+            self.current_player.all_in == True
+            or self.current_player.fold == True
+            or self.active_in_hand == 1
+        ):
 
             self.current_player.agg = False  # Bad?
             end = self.end_move()  # skip move
@@ -258,6 +264,7 @@ class Table:
         return True, None  # bad?
 
     def single_move(self, action=None):
+        print("player remaining", self.players_remaining)
 
         valid = self.current_player.move(self, action)
 
@@ -267,6 +274,9 @@ class Table:
 
         if self.current_player.fold == True:
             self.players_remaining -= 1
+
+        if self.current_player.fold or self.current_player.all_in:
+            self.active_in_hand -= 1
 
         print("pre", self.pot, "\n")
         self.set_pot()
@@ -310,7 +320,7 @@ class Table:
             self.bets = [max(x.round_invested for x in self.active_players)]
             self.community = []
         else:
-            self.cPI = self.last_agg = self.sb_i
+            self.cPI = self.last_agg = self.sb_i  # BUG here
             self.bets = [0]
             self.community = self.deck[
                 self.communityCard_i : self.communityCard_i + self.r + 2
@@ -320,9 +330,9 @@ class Table:
 
         try:
             self.current_player = self.active_players[self.cPI]
-            print(self.r, self.current_player.position_i, self.cPI)
+            print("b", self.r, self.current_player.position_i, self.cPI)
         except:
-            print(self.cPI, self.active_players)
+            print("aa", self.cPI, self.active_players, self.sb_i, self.no_players)
             raise Exception
 
     def set_pot(self, player=None):
@@ -360,9 +370,7 @@ class Table:
 
                     remaining = 0
 
-                elif (
-                    rem_after == 0 or required
-                ):  # think because could player already be part invested in the pot
+                elif rem_after == 0 or required:
                     contents[player] = to_call
                     new_pot.append([to_call, required or player.all_in, contents])
                     remaining = rem_after
@@ -408,7 +416,9 @@ class Table:
         self.no_players = len(self.active_players)
 
         if not button_bust:
-            self.sb_i = (self.sb_i + 1) % self.no_players
+            self.sb_i = self.sb_i + 1
+
+        self.sb_i %= self.no_players
         self.pot = [[0, False, defaultdict(int)]]
         # to_call, 1 or more players all in, each player invested in pot
         self.r = 0
@@ -425,7 +435,9 @@ class Table:
 
         print("pot", self.pot)
 
-        self.players_remaining = sum([1 for p in self.active_players if not p.fold])
+        self.active_in_hand = self.players_remaining = sum(
+            [1 for p in self.active_players if not p.fold]
+        )
         self.communityCard_i = self.no_players * 2
 
         self.end_round(start=True)
@@ -490,9 +502,9 @@ def start():
     random.shuffle(profile_pictures)
     for r, p in enumerate(profile_pictures):
         if r == 0:
-            chips = 2000
+            chips = 100
         else:
-            chips = 2000
+            chips = 100
         table1.add_player(Bot(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
