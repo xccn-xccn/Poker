@@ -1,10 +1,6 @@
 from collections import Counter
 from functools import cache
-
-cardValues = {1: "A"}
-for v, k in enumerate("23456789TJQKA", 2):
-    cardValues[k] = v
-    cardValues[v] = k
+from r_lists import card_values
 
 
 def get_winner(hands, community):
@@ -40,19 +36,21 @@ def get_winner(hands, community):
 
     return best
 
+
 def compare_hand(hand1, hand2):
     for c1, c2 in zip(hand1, hand2):
         v1, v2 = c1[0], c2[0]
-        if cardValues[v1] > cardValues[v2]:
+        if card_values[v1] > card_values[v2]:
             return 1
-        elif cardValues[v2] > cardValues[v1]:
+        elif card_values[v2] > card_values[v1]:
             return 2
 
     return 3
 
 
 def cardValue_sort(x):
-    return sorted(x, key=lambda y: cardValues[y[0]], reverse=True)
+    return sorted(x, key=lambda y: card_values[y[0]], reverse=True)
+
 
 # @cache
 def get_hand(cards, f):
@@ -119,7 +117,7 @@ def get_straight(cards, l_5=True):
     copyCards = cards.copy()
     cards = []
     for c in copyCards:
-        cards.append((cardValues[c[0]], c[1]))
+        cards.append((card_values[c[0]], c[1]))
         if c[0] == "A":
             cards.append((1, c[1]))
 
@@ -140,7 +138,7 @@ def get_straight(cards, l_5=True):
 
     if l_5:
         straight = straight[:5]
-    return False if len(straight) < 5 else [cardValues[v] + s for v, s in straight]
+    return False if len(straight) < 5 else [card_values[v] + s for v, s in straight]
 
 
 def get_flush(cards, l_5=True):

@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from copy import deepcopy
-from deck import deck
+from r_lists import deck
 from winner import get_winner
 
 
@@ -197,7 +197,13 @@ class Bot(Player):
 
         return extra
 
+    def opening_move(self):
+        pass
+
     def get_action(self, table):
+
+        if table.r == 0:
+            pass
         bets = table.bets
         round_total = bets[-1]
         l = 1
