@@ -5,9 +5,7 @@ from deck import deck
 from winner import get_winner
 
 
-# BUG illegal bet amounts when player has 0 invested
 # TODO test valid bets on raises
-# BUG index error on players
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # BUG main player could do an uneccessary fold and make chips disappear
@@ -502,9 +500,9 @@ def start():
     random.shuffle(profile_pictures)
     for r, p in enumerate(profile_pictures):
         if r == 0:
-            chips = 100
+            chips = 2000
         else:
-            chips = 100
+            chips = 2000
         table1.add_player(Bot(r, p, table1, str(r), chips=chips))
 
     table1.add_player(

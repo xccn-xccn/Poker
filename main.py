@@ -1,5 +1,4 @@
 import pygame, random, os
-
 import pygame.image
 from backbone import start, Bot, Human
 from chips import get_chips
@@ -10,6 +9,7 @@ from chips import get_chips
 # BUG when changing bet action text changed ?
 # BUG when player folds pre flop, flop is shown
 # TODO scale window, all in button, speed button
+# BUG slider doesnt allow all in
 
 pygame.init()
 
