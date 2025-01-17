@@ -19,18 +19,34 @@ impl RpsBot {
     }
 
     fn other(c: usize) -> [usize; 2] {
-        [(c+1) % 3, (c+2) % 3]
+        [(c + 1) % 3, (c + 2) % 3]
     }
-    fn get_strategy(&mut self, n: u32) -> [i32; 3] {
+    fn get_strategy(&mut self, n: u32) -> Vec<i32> {
         for _ in 1..n {
             let a = self.get_move();
             let b = self.get_move();
 
-            let r = RpsBot::reward(a, b);
-            self.strategy[a] += r;
-            self.strategy[b] += -r;
+            let cr1 = RpsBot::reward(a, b);
+            let cr2 = -cr1;
+            self.strategy[a] += cr1;
+            self.strategy[b] += cr2;
+
+            for o in RpsBot::other(a) {
+                self.strategy[o] += cr1 - RpsBot::reward(o, b)
+            }
+
+            for o in RpsBot::other(b) {
+                self.strategy[o] += cr1 - RpsBot::reward(o, a)
+            }
         }
-        self.strategy
+        let mut f_strategy = Vec::new();
+        let s_sum: i32 = self.strategy.iter().sum();
+        for s in self.strategy {
+            f_strategy.push(s / s_sum);
+        }
+
+        println!("{:?}", self.strategy);
+        f_strategy
     }
 }
 
@@ -42,9 +58,10 @@ fn make_start() -> RpsBot {
 
 fn main() {
     println!("Hello, world!");
-    let a = make_start();
+    let mut a = make_start();
 
-    for _ in 1..20 {
-        println!("{}", a.get_move())
-    }
+    println!("{:?}", a.get_strategy(4));
+    // for _ in 1..20 {
+    //     println!("{}", a.get_move())
+    // }
 }
