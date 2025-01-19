@@ -10,7 +10,7 @@ from r_lists import strengths, card_values
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # BUG main player could do an uneccessary fold and make chips disappear
-
+# TODO make pre flop calling less loose
 
 class Player:
     pos_i_names = {
