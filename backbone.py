@@ -1,9 +1,9 @@
 import random
-from bots import pre_flop
 from collections import defaultdict
 from copy import deepcopy
 from r_lists import deck
 from winner import get_winner
+from r_lists import strengths, card_values
 
 
 # TODO test valid bets on raises
@@ -129,6 +129,8 @@ class Player:
                 end = ""
 
             print(f"\n Your cards are {self.hole_cards}{end}")
+        else:
+            print(f"\n {self.position_name} cards are {self.hole_cards}")
 
         prev_raise = table.blinds[-1]
         if len(table.bets) >= 2:
@@ -201,6 +203,35 @@ class Bot(Player):
     def opening_move(self):
         pass
 
+    def pre_flop(self, table):
+
+        round_total = table.bets[-1]
+        pot_odds = (
+            float('inf')
+            if (round_total - self.round_invested) == 0
+            else (sum([x.total_invested for x in table.active_players]))
+            / ((round_total - self.round_invested))
+        )
+        # not true pot odds adds 3 bb to invested to prevent instant fold from raise
+
+        c1, c2 = self.hole_cards
+        suited = c1[1] == c2[1]
+
+        i1, i2 = sorted(
+            (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=not suited
+        )
+
+        strength = strengths[i1][i2]
+        max_chips = strength**3 * 3 * table.blinds[-1]
+        min_call = (1/pot_odds) < strength**2 or round_total < max_chips
+
+        print("max_chips", max_chips, (1/pot_odds), min_call)
+        if round_total < max_chips / 2 or (min_call and random.randint(1, 10) >= 10):
+            return 3
+        elif min_call:
+            return 2
+        return 1
+
     def get_action(self, table):
 
         bets = table.bets
@@ -214,8 +245,8 @@ class Bot(Player):
 
         action = random.randint(l, h)
 
-        if table.r == 0: #TODO bb can fold 
-            action = pre_flop(self.hole_cards, (round_total - self.round_invested) // table.blinds[-1])
+        if table.r == 0:  # TODO bb can fold
+            action = self.pre_flop(table)
 
         if action == 3:
             bet = self.get_bet(bets, table)
