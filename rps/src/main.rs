@@ -1,67 +1,77 @@
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
-use rand::Rng;
+use std::time::Instant;
 
-const WINNER: [[i32; 3]; 3] = [[0, -1, 1], [1, 0, -1], [-1, 1, 0]];
+const WINNER: [[f64; 3]; 3] = [[0.0, -1.0, 1.0], [1.0, 0.0, -1.0], [-1.0, 1.0, 0.0]];
+
 struct RpsBot {
-    strategy: [i32; 3],
+    strategy: [f64; 3],
+    strategy_p: Vec<f64>,
+    strategy_sum: [f64; 3]
 }
 
 impl RpsBot {
-    fn get_move(&self) -> usize {
-        let d = WeightedIndex::new(self.strategy).unwrap();
-        let mut rng = thread_rng();
-        d.sample(&mut rng)
+    fn get_move(&self, rng: &mut ThreadRng) -> usize {
+        let d = WeightedIndex::new(&self.strategy_p).unwrap();
+        d.sample(rng)
     }
 
-    fn reward(n1: usize, n2: usize) -> i32 {
+    fn reward(n1: usize, n2: usize) -> f64 {
         WINNER[n1][n2]
     }
 
     fn other(c: usize) -> [usize; 2] {
         [(c + 1) % 3, (c + 2) % 3]
     }
-    fn get_strategy(&mut self, n: u32) -> Vec<i32> {
-        for _ in 1..n {
-            let a = self.get_move();
-            let b = self.get_move();
 
-            let cr1 = RpsBot::reward(a, b);
-            let cr2 = -cr1;
-            self.strategy[a] += cr1;
-            self.strategy[b] += cr2;
+    fn convert_percentage(&self, last: bool) -> Vec<f64>{
+        let c = if !last {self.strategy} else {self.strategy_sum};
+        let s_sum: f64 = c.iter().filter(|&&x| x > 0.0).sum();
+        c.iter().map(|&x| if x > 0.0 {x / s_sum} else {1.0 / 3.0}).collect::<Vec<f64>>()
+    }
+
+    fn get_strategy(&mut self, n: u32) -> Vec<f64> {
+        let mut rng = thread_rng();
+        for _ in 0..n {
+            self.strategy_p = self.convert_percentage(false);
+            
+            for (i, p) in self.strategy_p.iter().enumerate() {
+                self.strategy_sum[i] += p
+            }
+
+            let (a, b) = (self.get_move(&mut rng), self.get_move(&mut rng));
+
+            let rr1 = RpsBot::reward(a, b);
+            let rr2 = -rr1;
 
             for o in RpsBot::other(a) {
-                self.strategy[o] += cr1 - RpsBot::reward(o, b)
+                self.strategy[o] +=  RpsBot::reward(o, b) - rr1
             }
 
             for o in RpsBot::other(b) {
-                self.strategy[o] += cr1 - RpsBot::reward(o, a)
+                self.strategy[o] += RpsBot::reward(o, a) - rr2
             }
-        }
-        let mut f_strategy = Vec::new();
-        let s_sum: i32 = self.strategy.iter().sum();
-        for s in self.strategy {
-            f_strategy.push(s / s_sum);
-        }
 
-        println!("{:?}", self.strategy);
-        f_strategy
+        }
+        println!("{:?}", self.strategy_sum);
+
+        self.convert_percentage(true)
+
     }
 }
 
 fn make_start() -> RpsBot {
     RpsBot {
-        strategy: [1, 1, 1],
+        strategy: [1.0; 3],
+        strategy_sum: [1.0 / 3.0 ; 3],
+        strategy_p: vec![1.0 / 3.0 ; 3],
     }
 }
 
 fn main() {
-    println!("Hello, world!");
+    let start = Instant::now();
     let mut a = make_start();
 
-    println!("{:?}", a.get_strategy(4));
-    // for _ in 1..20 {
-    //     println!("{}", a.get_move())
-    // }
+    println!("{:?}", a.get_strategy(100_000));
+    println!("Elapsed: {:.2?}", start.elapsed());
 }
