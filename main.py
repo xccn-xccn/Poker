@@ -499,7 +499,7 @@ class PlayerGUI:
 
     def set_cards(self):
         card_info = [
-            self.player.holeCards[0],
+            self.player.hole_cards[0],
             1,
             self.r_i,
             self.showing,
@@ -510,7 +510,7 @@ class PlayerGUI:
         self.cards = []
         for r in range(2):  # TODO account for more than 2 cards?
             self.cards.append(HoleCard(*card_info))
-            card_info[0] = self.player.holeCards[1]
+            card_info[0] = self.player.hole_cards[1]
             card_info[1] += 1
 
     def show_cards(self):

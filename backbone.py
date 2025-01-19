@@ -1,4 +1,5 @@
 import random
+from bots import pre_flop
 from collections import defaultdict
 from copy import deepcopy
 from r_lists import deck
@@ -65,7 +66,7 @@ class Player:
         a_player_count = len(self.table.active_players)
         self.position_i = ((i - self.table.sb_i) % a_player_count + 1) % a_player_count
         self.position_name = Player.pos_i_names[self.position_i]
-        self.holeCards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
+        self.hole_cards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
         if a_player_count == 2:  # heads up
             self.total_invested = min(self.table.blinds[self.position_i], self.chips)
@@ -127,7 +128,7 @@ class Player:
             else:
                 end = ""
 
-            print(f"\n Your cards are {self.holeCards}{end}")
+            print(f"\n Your cards are {self.hole_cards}{end}")
 
         prev_raise = table.blinds[-1]
         if len(table.bets) >= 2:
@@ -202,8 +203,6 @@ class Bot(Player):
 
     def get_action(self, table):
 
-        if table.r == 0:
-            pass
         bets = table.bets
         round_total = bets[-1]
         l = 1
@@ -214,6 +213,9 @@ class Bot(Player):
             h = 2
 
         action = random.randint(l, h)
+
+        if table.r == 0: #TODO bb can fold 
+            action = pre_flop(self.hole_cards, (round_total - self.round_invested) // table.blinds[-1])
 
         if action == 3:
             bet = self.get_bet(bets, table)
@@ -450,7 +452,7 @@ class Table:
         c_players = [p for p, v in pot[2].items() if not p.fold and v == pot[0]]
         t_chips = sum(pot[2].values())
         if len(c_players) > 1:
-            wInfo = get_winner([p.holeCards for p in c_players], self.community)
+            wInfo = get_winner([p.hole_cards for p in c_players], self.community)
         else:
             wInfo = [[None, 0]]
 
@@ -481,7 +483,7 @@ class Table:
             f"{'Winner' if len(winners) == 1 else 'Winners'} {', '.join([p.position_name for p in winners])} wins {pot} chips {end}"
         )
 
-        print("Testing", [x.holeCards for x in c_players], self.community)
+        print("Testing", [x.hole_cards for x in c_players], self.community)
 
     def end_hand(self):
         print(self.r)
