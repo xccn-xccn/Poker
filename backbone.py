@@ -200,20 +200,19 @@ class Bot(Player):
 
         return extra
 
-    def opening_move(self):
-        pass
-
     def pre_flop(self, table):
 
         round_total = table.bets[-1]
+        to_call = round_total - self.round_invested
         pot_odds = (
             float('inf')
             if (round_total - self.round_invested) == 0
             else (sum([x.total_invested for x in table.active_players]))
-            / ((round_total - self.round_invested))
+            / (to_call)
         )
         # not true pot odds adds 3 bb to invested to prevent instant fold from raise
 
+        
         c1, c2 = self.hole_cards
         suited = c1[1] == c2[1]
 
@@ -223,9 +222,10 @@ class Bot(Player):
 
         strength = strengths[i1][i2]
         max_chips = strength**3 * 3 * table.blinds[-1]
-        min_call = (1/pot_odds) < strength**2 or round_total < max_chips
-
-        print("max_chips", max_chips, (1/pot_odds), min_call)
+        # min_call = (1/pot_odds) < strength**2 or round_total < max_chips
+        min_call = round_total < max_chips or to_call == 0 or pot_odds >= 2 * table.active_in_hand
+        #basically never happens need to make it check how many more can act make it consider all in better
+        print("max_chips", max_chips, min_call)
         if round_total < max_chips / 2 or (min_call and random.randint(1, 10) >= 10):
             return 3
         elif min_call:
