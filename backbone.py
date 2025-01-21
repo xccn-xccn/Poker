@@ -12,6 +12,7 @@ from r_lists import strengths, card_values
 # BUG main player could do an uneccessary fold and make chips disappear
 # TODO make pre flop calling less loose
 
+
 class Player:
     pos_i_names = {
         0: "Button",
@@ -172,6 +173,61 @@ class Player:
 
 
 class Bot(Player):
+    pass
+
+
+class RandomBot(Bot):
+    def get_bet(self, bets, table):
+        print("bets", bets)
+        prev_raise = table.blinds[-1]
+        if len(bets) >= 2:
+            prev_raise = bets[-1] - bets[-2]
+
+        try:
+            extra = random.randint(
+                min(self.chips, bets[-1] - self.round_invested + prev_raise),
+                min(
+                    max(bets[-1] * 2 + prev_raise, int(table.get_total_pot() * 2.5)),
+                    self.chips,
+                ),
+            )
+
+            if extra < 0:
+                raise Exception
+
+        except:
+            print("ERROR", self.chips, bets, self.round_invested, prev_raise, table.pot)
+            print(
+                min(self.chips, bets[-1] - self.round_invested + prev_raise),
+                min(int(table.get_total_pot() * 2.5), self.chips),
+            )
+            raise Exception
+
+        return extra
+
+    def get_action(self, table):
+
+        bets = table.bets
+        round_total = bets[-1]
+        l = 1
+        h = 3
+        if round_total == self.round_invested:
+            l = 2
+        if round_total >= self.round_invested + self.chips:
+            h = 2
+
+        action = random.randint(l, h)
+
+        if action == 3:
+            bet = self.get_bet(bets, table)
+        else:
+            bet = 0
+
+        # return 2, 0
+        return action, bet
+
+
+class BotV1(Player):
     def get_bet(self, bets, table):
         print("bets", bets)
         prev_raise = table.blinds[-1]
@@ -203,16 +259,9 @@ class Bot(Player):
     def pre_flop(self, table):
 
         round_total = table.bets[-1]
-        to_call = round_total - self.round_invested
-        pot_odds = (
-            float('inf')
-            if (round_total - self.round_invested) == 0
-            else (sum([x.total_invested for x in table.active_players]))
-            / (to_call)
-        )
-        # not true pot odds adds 3 bb to invested to prevent instant fold from raise
+        to_call = min(round_total - self.round_invested, self.chips)
+        pot_odds = float("inf") if to_call == 0 else (table.get_total_pot()) / to_call
 
-        
         c1, c2 = self.hole_cards
         suited = c1[1] == c2[1]
 
@@ -222,11 +271,24 @@ class Bot(Player):
 
         strength = strengths[i1][i2]
         max_chips = strength**3 * 3 * table.blinds[-1]
-        # min_call = (1/pot_odds) < strength**2 or round_total < max_chips
-        min_call = round_total < max_chips or to_call == 0 or pot_odds >= 2 * table.active_in_hand
-        #basically never happens need to make it check how many more can act make it consider all in better
-        print("max_chips", max_chips, min_call)
-        if round_total < max_chips / 2 or (min_call and random.randint(1, 10) >= 10):
+        min_call = (
+            round_total < max_chips or to_call == 0 or pot_odds > 2
+        )  # or (pot_odds >= 2 and (table.cPI + 1) % table.no_players == table.last_agg)
+        r = random.randint(1, 10)
+
+        print(
+            "max_chips",
+            round_total,
+            max_chips,
+            min_call,
+            pot_odds,
+            table.cPI == table.last_agg,
+            (table.cPI + 1) % table.no_players,
+            table.last_agg,
+            r,
+        )
+
+        if (round_total < max_chips / 2 and r >= 2) or (min_call and r >= 10):
             return 3
         elif min_call:
             return 2
@@ -542,7 +604,7 @@ def start():
             chips = 2000
         else:
             chips = 2000
-        table1.add_player(Bot(r, p, table1, str(r), chips=chips))
+        table1.add_player(BotV1(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
         Human(
