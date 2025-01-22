@@ -10,6 +10,7 @@ from chips import get_chips
 # BUG when player folds pre flop, flop is shown
 # TODO scale window, all in button, speed button
 # BUG slider doesnt allow all in
+# BUG action text glitch when player is choosing bet and opp has done a large bet (only when player on right?)
 
 pygame.init()
 
@@ -836,6 +837,7 @@ class Main:
                 cont, self.end = self.table.start_move()
 
                 r_i = get_r_i(self.table.current_player, self.table)
+                # print(isinstance(self.table.current_player, Bot))
                 if cont == True and isinstance(self.table.current_player, Bot):
                     self.acted = True
                     self.end = self.table.single_move(
