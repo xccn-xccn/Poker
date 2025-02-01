@@ -272,7 +272,9 @@ class BotV1(Bot):
         strength = strengths[i1][i2]
         max_chips = strength**3 * 3 * table.blinds[-1]
         min_call = (
-            round_total < max_chips or to_call == 0 or (pot_odds > 2 and table.still_to_act() == 0)
+            round_total < max_chips
+            or to_call == 0
+            or (pot_odds > 2 and table.still_to_act() == 0)
         )  # or (pot_odds >= 2 and (table.cPI + 1) % table.no_players == table.last_agg)
         r = random.randint(1, 10)
 
@@ -360,11 +362,10 @@ class Table:
 
         return True, None  # bad?
 
-    def next_player(self, c = None):
+    def next_player(self, c=None):
         if c == None:
             c = self.cPI
         return (c + 1) % self.no_players
-    
 
     def single_move(self, action=None):
         print("player remaining", self.players_remaining)
@@ -505,7 +506,7 @@ class Table:
 
     def get_total_pot(self):
         return sum(sum(p[2].values()) for p in self.pot)
- 
+
     def next_player_i(self):
         pass
 
@@ -514,13 +515,12 @@ class Table:
         ci = self.next_player()
         while True:
             p = self.active_players[ci]
-            if self.last_agg == ci:
+            if self.last_agg == ci or ci == self.cPI:
                 return c
-            if not(p.fold or p.all_in):
+            if not (p.fold or p.all_in):
                 c += 1
             ci = self.next_player(ci)
 
-        return c
 
     def start_hand(self):
         self.running = True
