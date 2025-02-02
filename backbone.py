@@ -228,8 +228,21 @@ class RandomBot(Bot):
 
 
 class BotV1(Bot):
+    def pre_flop_bet(self, bets, table):
+        if table.to_bb(bets[-1]) <= 3 or table.still_to_act == 0:
+            print('in bb', table.to_bb(bets[-1]))
+
+            return bets[-1] * 3
+
+        return bets[-1] * 2
+        
+
     def get_bet(self, bets, table):
         print("bets", bets)
+
+        if table.r == 0:
+            return min(self.pre_flop_bet(bets, table) - self.round_invested, self.chips)
+
         prev_raise = table.blinds[-1]
         if len(bets) >= 2:
             prev_raise = bets[-1] - bets[-2]
@@ -289,9 +302,10 @@ class BotV1(Bot):
             table.last_agg,
             r,
             table.still_to_act(),
+            len(table.bets)
         )
 
-        if (round_total < max_chips / 2 and r >= 2) or (min_call and r >= 10):
+        if (round_total < max_chips / 2 and r >= 2) or (min_call and (r >= 10 or len(table.bets) == 1)):
             return 3
         elif min_call:
             return 2
@@ -618,6 +632,8 @@ class Table:
         if sum(p.chips for p in self.players) != self.correct_total_chips:
             raise Exception([p.chips for p in self.players])
 
+    def to_bb(self, chips):
+        return chips / self.blinds[1]
 
 def start():
     table1 = Table()
