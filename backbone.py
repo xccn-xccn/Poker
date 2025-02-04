@@ -15,6 +15,7 @@ from r_lists import strengths, card_values
 # TODO table.bets 
 # TODO hold invested of each player? currently inefficient replace the functions
 # 3bet more oop
+# underbluffs?
 
 class Player:
     pos_i_names = {
