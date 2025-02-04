@@ -10,8 +10,11 @@ from r_lists import strengths, card_values
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # BUG main player could do an uneccessary fold and make chips disappear
-# TODO make pre flop calling less loose
-
+# TODO tighten opening range
+# TODO change range depending on position
+# TODO table.bets 
+# TODO hold invested of each player? currently inefficient
+# 3bet more oop
 
 class Player:
     pos_i_names = {
@@ -232,7 +235,7 @@ class BotV1(Bot):
         if table.to_bb(bets[-1]) <= 3 or table.still_to_act == 0:
             print('in bb', table.to_bb(bets[-1]))
 
-            return bets[-1] * 3
+            return bets[-1] * 3 + sum(20 for p in table.active_players if p.round_invested == 20) - 20 #for bb
 
         return bets[-1] * 2
         
@@ -305,7 +308,7 @@ class BotV1(Bot):
             len(table.bets)
         )
 
-        if (round_total < max_chips / 2 and r >= 2) or (min_call and (r >= 10 or len(table.bets) == 1)):
+        if (round_total < max_chips / 2 and r >= 2) or (min_call and (r >= 10 or table.bets[-1] == 20)):
             return 3
         elif min_call:
             return 2
