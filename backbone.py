@@ -13,7 +13,7 @@ from r_lists import strengths, card_values
 # TODO tighten opening range
 # TODO change range depending on position
 # TODO table.bets 
-# TODO hold invested of each player? currently inefficient
+# TODO hold invested of each player? currently inefficient replace the functions
 # 3bet more oop
 
 class Player:
@@ -274,9 +274,9 @@ class BotV1(Bot):
 
     def pre_flop(self, table):
 
-        round_total = table.bets[-1]
+        round_total = min(table.bets[-1], self.chips + self.round_invested)
         to_call = min(round_total - self.round_invested, self.chips)
-        pot_odds = float("inf") if to_call == 0 else (table.get_total_pot()) / to_call
+        pot_odds = float("inf") if to_call == 0 else min(table.get_total_pot(), self.chips) / to_call
 
         c1, c2 = self.hole_cards
         suited = c1[1] == c2[1]
@@ -300,6 +300,7 @@ class BotV1(Bot):
             max_chips,
             min_call,
             pot_odds,
+            to_call,
             table.cPI == table.last_agg,
             (table.cPI + 1) % table.no_players,
             table.last_agg,
