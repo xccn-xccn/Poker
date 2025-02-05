@@ -256,7 +256,7 @@ class CheckButton(ActionButton):
         self.text = text_font.render(
             (
                 "Check"
-                if self.table.human_player.round_invested == self.table.bets[-1]
+                if self.table.human_player.round_invested == self.table.last_bet
                 else "Call"
             ),
             True,
