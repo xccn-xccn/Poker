@@ -44,7 +44,7 @@ class RPSTrainer:
             if normalizing_sum > 0:
                 average_strategy[a] = strategy_sum[a] / normalizing_sum
             else:
-                average_strategy[a] = 1.0 / self.NUM_ACTIONS
+                average_strategy[a] = 1/self.NUM_ACTIONS
         return average_strategy
 
     def get_action(self, strategy):
@@ -61,7 +61,7 @@ class RPSTrainer:
             self.strategy_sum += strategy
             self.opponent_strategy_sum += opp_strategy
 
-            opponent_action = self.get_action(opp_strategy)
+            opponent_action = 2 if i < 10_000 else 0
             my_action = self.get_action(strategy)
 
             my_reward = self.get_reward(my_action, opponent_action)

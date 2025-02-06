@@ -32,24 +32,19 @@ impl RpsBot {
 
     fn get_strategy(&mut self, n: u32) -> Vec<f64> {
         let mut rng = thread_rng();
-        for _ in 0..n {
+        for r in 0..n {
             self.strategy_p = self.convert_percentage(false);
             
             for (i, p) in self.strategy_p.iter().enumerate() {
                 self.strategy_sum[i] += p
             }
 
-            let (a, b) = (self.get_move(&mut rng), self.get_move(&mut rng));
+            let (a, b) = (self.get_move(&mut rng), (if r < 10_000 {2} else {0}) as usize);
 
             let rr1 = RpsBot::reward(a, b);
-            let rr2 = -rr1;
 
             for o in RpsBot::other(a) {
                 self.strategy[o] +=  RpsBot::reward(o, b) - rr1
-            }
-
-            for o in RpsBot::other(b) {
-                self.strategy[o] += RpsBot::reward(o, a) - rr2
             }
 
         }

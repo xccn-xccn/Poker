@@ -4,17 +4,6 @@ from r_lists import card_values
 
 
 def get_winner(hands, community):
-    order = [
-        get_straight_flush,
-        get_four,
-        get_house,
-        get_flush,
-        get_straight,
-        get_three,
-        get_2pair,
-        get_pair,
-        cardValue_sort,
-    ]
 
     cards = [list(h) + community for h in hands]
     best = [[]]
@@ -36,7 +25,13 @@ def get_winner(hands, community):
 
     return best
 
-
+def get_hand_rank(hand, community):
+    for i, f in zip(range(len(order) - 1, -1, -1), order):
+        final_hand = get_hand(list(hand) + community, f)
+        if final_hand:
+            print(final_hand)
+            return i
+        
 def compare_hand(hand1, hand2):
     for c1, c2 in zip(hand1, hand2):
         v1, v2 = c1[0], c2[0]
@@ -186,7 +181,21 @@ def get_best_hand(cards):
             return get_hand(cards, f)
 
 
+def main():
+    global order
+    order = [
+        get_straight_flush,
+        get_four,
+        get_house,
+        get_flush,
+        get_straight,
+        get_three,
+        get_2pair,
+        get_pair,
+        cardValue_sort,
+    ]
 if __name__ == "__main__":
+    main()
     # print(get_flush(["AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "KD"]))
     # print(get_straight(["AC", "2C", "4C", "5C", "6C", "7C", "8D", "9C", "3D"]))
     # # print(get_pairs(["AC", "2C", "4C", "5C", "6C", "6D", "8D", "9C", "2D"]))
@@ -194,6 +203,8 @@ if __name__ == "__main__":
     # print(get_pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
     # print(get_2pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
 
-    print(get_winner([("AH", "JC"), ("AS", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
+    # print(get_winner([("AH", "JC"), ("AS", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
+    print(get_hand_rank(("AH", "JC"), ["AC", "KS", "7C", "JS", "9D"]))
+    print(get_hand_rank(("AH", "JH"), ["AC", "KH", "7H", "JH", "9D"]))
 
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
