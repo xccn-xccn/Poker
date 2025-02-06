@@ -520,7 +520,6 @@ class PlayerGUI:
 
     def get_action(self):
         action = self.player.action
-        bets = self.table.bets
 
         if action == None:
             return None
@@ -532,9 +531,9 @@ class PlayerGUI:
             word = (
                 "All In"
                 if self.player.chips == 0
-                else "Bet" if len(bets) == 2 else "Raise"
+                else "Bet" if self.table.bet_count < 2 else "Raise"
             )
-            return f"{word} {bets[-1]}"
+            return f"{word} {self.table.last_bet}"
 
     def update(self, bb, extra=0):
 

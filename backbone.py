@@ -229,8 +229,8 @@ class BotV1(Bot):
 
             return (
                 table.last_bet * 3
-                + sum(20 for p in table.active_players if p.round_invested == 20)
-                - 20
+                + sum(table.blinds[-1] for p in table.active_players if p.round_invested == 20)
+                - table.blinds[-1]
             )  # for bb
 
         return table.last_bet * 2
@@ -238,6 +238,8 @@ class BotV1(Bot):
     def get_bet(self, table):
         print("bets", table.last_bet)
 
+        if table.r == 0:
+            return min(self.pre_flop_bet(table) - self.round_invested, self.chips)
         try:
             extra = random.randint(
                 min(self.chips, table.last_bet - self.round_invested + table.min_raise),
@@ -298,7 +300,7 @@ class BotV1(Bot):
             table.last_agg,
             r,
             table.still_to_act(),
-            len(table.last_bet),
+            table.last_bet,
         )
 
         if (round_total < max_chips / 2 and r >= 2) or (
@@ -411,6 +413,9 @@ class Table:
             self.min_raise = self.current_player.round_invested - self.last_bet 
             self.last_bet = self.current_player.round_invested
 
+        if self.current_player.action == 3:    
+            self.bet_count += 1 
+
         self.current_player.agg = False
         self.cPI = self.next_player()
         self.current_player = self.active_players[self.cPI]
@@ -434,6 +439,7 @@ class Table:
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         self.min_raise = self.blinds[-1]
+        self.bet_count = 0
         if self.r == 0:
             self.cPI = self.last_agg = (
                 self.sb_i + (2 if self.no_players != 2 else 1)
