@@ -5,14 +5,12 @@ from r_lists import deck
 from winner import get_winner
 from r_lists import strengths, card_values
 
-# TODO how to tell when raise and bet
 # TODO test valid bets on raises
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # BUG main player could do an uneccessary fold and make chips disappear
 # TODO tighten opening range
 # TODO change range depending on position
-# TODO table.last_bet
 # TODO hold invested of each player? currently inefficient replace the functions
 # 3bet more oop
 # underbluffs?
@@ -439,19 +437,21 @@ class Table:
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         self.min_raise = self.blinds[-1]
-        self.bet_count = 0
         if self.r == 0:
             self.cPI = self.last_agg = (
                 self.sb_i + (2 if self.no_players != 2 else 1)
             ) % self.no_players
             self.last_bet = max(x.round_invested for x in self.active_players)
             self.community = []
+            self.bet_count = 1
+
         else:
             self.cPI = self.last_agg = self.sb_i
             self.last_bet = 0
             self.community = self.deck[
                 self.communityCard_i : self.communityCard_i + self.r + 2
             ]
+            self.bet_count = 0
 
             print(f"\n{name[self.r]} Cards {self.community} pot {self.pot}")
 
