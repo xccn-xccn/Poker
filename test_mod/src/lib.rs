@@ -4,7 +4,6 @@ use pyo3::{prelude::*, IntoPyObjectExt};
 /// Formats the sum of two numbers as string.
 #[pyfunction]
 fn count_words(py: Python, s: String) -> Py<PyAny>{
-    // Ok((a + b).to_string())
     let mut hm: HashMap<char, usize> = HashMap::new();
 
     for word in s.chars() {
