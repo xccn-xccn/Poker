@@ -25,6 +25,9 @@ def get_winner(hands, community):
 
     return best
 
+def all_hands(community):
+    pass
+
 def get_hand_rank(hand, community):
     for i, f in zip(range(len(order) - 1, -1, -1), order):
         final_hand = get_hand(list(hand) + community, f)
@@ -205,6 +208,6 @@ if __name__ == "__main__":
 
     # print(get_winner([("AH", "JC"), ("AS", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
     print(get_hand_rank(("AH", "JC"), ["AC", "KS", "7C", "JS", "9D"]))
-    print(get_hand_rank(("AH", "JH"), ["AC", "KH", "7H", "JH", "9D"]))
+    print(get_hand_rank(("AH",  "JH"), ["AC", "KH", "7H", "JH", "9D"]))
 
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))

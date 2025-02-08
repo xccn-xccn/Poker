@@ -1,2 +1,4 @@
-a = {1: 3, 2: 4}
-b = {1: 4, 2:2, 3: 4}
+import poker
+
+result = poker.count_words("smoooodles aa")
+print(result)
