@@ -28,7 +28,7 @@ def get_winner(hands, community):
 
 
 def all_hands(community, known=[]):
-    final = []
+    o_hands = []
     buckets = [[] for _ in range(21)]
 
     for h in p_hands:
@@ -39,8 +39,8 @@ def all_hands(community, known=[]):
         buckets[i1].append((h, f_hand))
 
     for i, b in enumerate(buckets):
-        final += [
-            x[0]
+        o_hands += [
+            x
             for x in list(
                 sorted(
                     b,
@@ -50,8 +50,14 @@ def all_hands(community, known=[]):
             )
         ]
 
-    print(final[:100])
 
+    final = {o_hands[0][0]: 0}
+    rank = 0
+    for (hole1, hand1), (hole2, hand2) in zip(o_hands, o_hands[1:]):
+        if compare_hand_k(hand1, hand2) != 0:
+            rank = len(final)
+        final[hole2] = rank
+        
     return final
 
 
@@ -243,7 +249,7 @@ if __name__ == "__main__":
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
 
     # print(all_hands(["4H", "3C", "3S"]))
-    all_hands(["6H", "TD", "2D", "AS", "JH"])
+    print(all_hands(["6H", "TD", "2D", "AS", "JH"]))
     # all_hands(["6H", "AD", "AC", "AS", "AH"])
 
     # print(all_hands([]))
