@@ -1,6 +1,7 @@
 from collections import Counter
-from functools import cache
-from r_lists import card_values
+from functools import cache, cmp_to_key
+from r_lists import card_values, p_hands
+from time import perf_counter
 
 
 def get_winner(hands, community):
@@ -25,16 +26,56 @@ def get_winner(hands, community):
 
     return best
 
-def all_hands(community):
-    pass
+
+def all_hands(community, known=[]):
+    final = []
+    buckets = [[] for _ in range(21)]
+
+    for h in p_hands:
+        i1, f_hand = get_hand_rank(h, community)
+        if h[0] in community + known or h[1] in community + known:
+            continue
+
+        buckets[i1].append((h, f_hand))
+
+    for i, b in enumerate(buckets):
+        final += [
+            x[0]
+            for x in list(
+                sorted(
+                    b,
+                    key=cmp_to_key(lambda x, y: compare_hand_k(x[1], y[1])),
+                    reverse=True,
+                )
+            )
+        ]
+
+    print(final[:100])
+
+    return final
+
 
 def get_hand_rank(hand, community):
-    for i, f in zip(range(len(order) - 1, -1, -1), order):
+    for i, f in enumerate(order):
         final_hand = get_hand(list(hand) + community, f)
         if final_hand:
-            print(final_hand)
-            return i
-        
+            return (
+                i + (13 - (card_values[final_hand[0][0]] - 1) if i == 8 else 0),
+                final_hand,
+            )
+
+
+def compare_hand_k(hand1, hand2):
+    for c1, c2 in zip(hand1, hand2):
+        v1, v2 = c1[0], c2[0]
+        if card_values[v1] > card_values[v2]:
+            return 1
+        elif card_values[v1] < card_values[v2]:
+            return -1
+
+    return 0
+
+
 def compare_hand(hand1, hand2):
     for c1, c2 in zip(hand1, hand2):
         v1, v2 = c1[0], c2[0]
@@ -119,7 +160,7 @@ def get_straight(cards, l_5=True):
         if c[0] == "A":
             cards.append((1, c[1]))
 
-    cards = sorted(list(set(cards)), key=lambda x: x[0], reverse=True)
+    cards = sorted(list(set(cards)), key=lambda x: x[0], reverse=True)  # necessary?
 
     straight = [cards[0]]
     for c1, c2 in zip(cards, cards[1:]):
@@ -167,47 +208,43 @@ def get_straight_flush(cards):
 
 
 def get_best_hand(cards):
-    order = [
-        get_straight_flush,
-        get_four,
-        get_house,
-        get_flush,
-        get_straight,
-        get_three,
-        get_2pair,
-        get_pair,
-        cardValue_sort,
-    ]
 
     for f in order:
         if get_hand(cards, f):
             return get_hand(cards, f)
 
 
-def main():
-    global order
-    order = [
-        get_straight_flush,
-        get_four,
-        get_house,
-        get_flush,
-        get_straight,
-        get_three,
-        get_2pair,
-        get_pair,
-        cardValue_sort,
-    ]
+order = [
+    get_straight_flush,
+    get_four,
+    get_house,
+    get_flush,
+    get_straight,
+    get_three,
+    get_2pair,
+    get_pair,
+    cardValue_sort,
+]
+
 if __name__ == "__main__":
-    main()
+    start = perf_counter()
+    # main()
     # print(get_flush(["AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "KD"]))
-    # print(get_straight(["AC", "2C", "4C", "5C", "6C", "7C", "8D", "9C", "3D"]))
+    # print(get_straight(["AC", "2C", "4C", "5C", "7C", "3D"], True))
     # # print(get_pairs(["AC", "2C", "4C", "5C", "6C", "6D", "8D", "9C", "2D"]))
     # print(get_straight_flush(["AC", "2C", "4C", "5C", "6C", "7C", "8D", "9C", "3C"]))
     # print(get_pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
     # print(get_2pair(["AC", "2C", "2S", "6C", "6D", "2D"]))
 
     # print(get_winner([("AH", "JC"), ("AS", "3H")], ["AC", "KS", "7C", "JS", "9D"]))
-    print(get_hand_rank(("AH", "JC"), ["AC", "KS", "7C", "JS", "9D"]))
-    print(get_hand_rank(("AH",  "JH"), ["AC", "KH", "7H", "JH", "9D"]))
+    # print(get_hand_rank(("AH", "JC"), ["AC", "KS", "7C", "JS", "9D"]))
+    # print(get_hand_rank(("AH",  "JH"), ["AC", "KH", "7H", "JH", "9D"]))
 
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
+
+    # print(all_hands(["4H", "3C", "3S"]))
+    all_hands(["6H", "TD", "2D", "AS", "JH"])
+    # all_hands(["6H", "AD", "AC", "AS", "AH"])
+
+    # print(all_hands([]))
+    print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")
