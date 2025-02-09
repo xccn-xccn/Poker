@@ -15,10 +15,10 @@ def get_winner(hands, community):
                 if best == [[]]:
                     best = [[finalHand, i]]
                 else:
-                    best_player = compare_hand(finalHand, best[0][0])
+                    best_player = compare_hand_k(finalHand, best[0][0])
                     if best_player == 1:
                         best = [[finalHand, i]]
-                    if best_player == 3:  # draw
+                    if best_player == 0:  # draw
                         best.append([finalHand, i])
 
         if best != [[]]:
@@ -50,14 +50,13 @@ def all_hands(community, known=[]):
             )
         ]
 
-
     final = {o_hands[0][0]: 0}
     rank = 0
-    for (hole1, hand1), (hole2, hand2) in zip(o_hands, o_hands[1:]):
+    for (_, hand1), (hole2, hand2) in zip(o_hands, o_hands[1:]):
         if compare_hand_k(hand1, hand2) != 0:
             rank = len(final)
         final[hole2] = rank
-        
+
     return final
 
 
@@ -249,7 +248,7 @@ if __name__ == "__main__":
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
 
     # print(all_hands(["4H", "3C", "3S"]))
-    print(all_hands(["6H", "TD", "2D", "AS", "JH"]))
+    # print(all_hands(["6H", "TD", "2D", "AS", "JH"]))
     # all_hands(["6H", "AD", "AC", "AS", "AH"])
 
     # print(all_hands([]))

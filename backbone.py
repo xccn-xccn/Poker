@@ -111,7 +111,10 @@ class Player:
         else:
             self.action_text = f"bets {self.extra}"
 
-            self.agg = self.round_invested + self.extra >= self.table.last_bet + self.table.min_raise
+            self.agg = (
+                self.round_invested + self.extra
+                >= self.table.last_bet + self.table.min_raise
+            )
 
         self.round_invested += self.extra
         self.total_invested += self.extra
@@ -181,7 +184,10 @@ class RandomBot(Bot):
             extra = random.randint(
                 min(self.chips, table.last_bet - self.round_invested + table.min_raise),
                 min(
-                    max(table.last_bet * 2 + table.min_raise, int(table.get_total_pot() * 2.5)),
+                    max(
+                        table.last_bet * 2 + table.min_raise,
+                        int(table.get_total_pot() * 2.5),
+                    ),
                     self.chips,
                 ),
             )
@@ -227,7 +233,11 @@ class BotV1(Bot):
 
             return (
                 table.last_bet * 3
-                + sum(table.blinds[-1] for p in table.active_players if p.round_invested == 20)
+                + sum(
+                    table.blinds[-1]
+                    for p in table.active_players
+                    if p.round_invested == 20
+                )
                 - table.blinds[-1]
             )  # for bb
 
@@ -242,7 +252,10 @@ class BotV1(Bot):
             extra = random.randint(
                 min(self.chips, table.last_bet - self.round_invested + table.min_raise),
                 min(
-                    max(table.last_bet * 2 + table.min_raise, int(table.get_total_pot() * 2.5)),
+                    max(
+                        table.last_bet * 2 + table.min_raise,
+                        int(table.get_total_pot() * 2.5),
+                    ),
                     self.chips,
                 ),
             )
@@ -281,9 +294,12 @@ class BotV1(Bot):
         max_chips = strength**3 * 3 * table.blinds[-1]
         min_call = (
             round_total < max_chips
-            or to_call == 0
-            or (pot_odds > 2 and table.still_to_act() == 0)
         )  # or (pot_odds >= 2 and (table.cPI + 1) % table.no_players == table.last_agg)
+        max_call = False
+        if min_call == False and (
+            to_call == 0 or (pot_odds > 2 and table.still_to_act() == 0)
+        ):
+            min_call = max_call = True
         r = random.randint(1, 10)
 
         print(
@@ -301,8 +317,9 @@ class BotV1(Bot):
             table.last_bet,
         )
 
-        if (round_total < max_chips / 2 and r >= 2) or (
-            min_call and (r >= 10 or table.last_bet == 20)
+        if max_call != True and (
+            (round_total < max_chips / 2 and r >= 2)
+            or (min_call and (r >= 10 or table.last_bet == 20))
         ):
             return 3
         elif min_call:
@@ -408,11 +425,11 @@ class Table:
 
         if self.current_player.agg:
             self.last_agg = self.cPI
-            self.min_raise = self.current_player.round_invested - self.last_bet 
+            self.min_raise = self.current_player.round_invested - self.last_bet
             self.last_bet = self.current_player.round_invested
 
-        if self.current_player.action == 3:    
-            self.bet_count += 1 
+        if self.current_player.action == 3:
+            self.bet_count += 1
 
         self.current_player.agg = False
         self.cPI = self.next_player()
