@@ -14,6 +14,8 @@ from r_lists import strengths, card_values
 # TODO hold invested of each player? currently inefficient replace the functions
 # 3bet more oop
 # underbluffs?
+#Use mdf or pot odds
+
 
 
 class Player:
