@@ -351,6 +351,11 @@ class BotV1(Bot):
         # return 2, 0
         return action, bet
 
+    def get_mdf(self):
+        pass
+
+    def get_po(self):
+        pass
 
 class Human(Player):
     pass
