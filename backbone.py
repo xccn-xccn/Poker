@@ -173,6 +173,8 @@ class Player:
     def add_chips(self, extra):
         self.chips += extra
 
+    def get_pot(self):
+        return min(self.chips, self.table.get_pot())
 
 class Bot(Player):
     pass
@@ -188,7 +190,7 @@ class RandomBot(Bot):
                 min(
                     max(
                         table.last_bet * 2 + table.min_raise,
-                        int(table.get_total_pot() * 2.5),
+                        int(table.get_pot() * 2.5),
                     ),
                     self.chips,
                 ),
@@ -201,7 +203,7 @@ class RandomBot(Bot):
             print("ERROR", self.chips, self.round_invested, table.last_bet, table.pot)
             print(
                 min(self.chips, table.last_bet - self.round_invested + table.last_bet),
-                min(int(table.get_total_pot() * 2.5), self.chips),
+                min(int(table.get_pot() * 2.5), self.chips),
             )
             raise Exception
 
@@ -256,7 +258,7 @@ class BotV1(Bot):
                 min(
                     max(
                         table.last_bet * 2 + table.min_raise,
-                        int(table.get_total_pot() * 2.5),
+                        int(table.get_pot() * 2.5),
                     ),
                     self.chips,
                 ),
@@ -269,7 +271,7 @@ class BotV1(Bot):
             print("ERROR", self.chips, self.round_invested, table.last_bet, table.pot)
             print(
                 min(self.chips, table.last_bet - self.round_invested + table.last_bet),
-                min(int(table.get_total_pot() * 2.5), self.chips),
+                min(int(table.get_pot() * 2.5), self.chips),
             )
             raise Exception
 
@@ -278,11 +280,10 @@ class BotV1(Bot):
     def pre_flop(self, table):
 
         round_total = min(table.last_bet, self.chips + self.round_invested)
-        to_call = min(round_total - self.round_invested, self.chips)
         pot_odds = (
             float("inf")
-            if to_call == 0
-            else min(table.get_total_pot(), self.chips) / to_call
+            if self.to_call == 0
+            else min(table.get_pot(), self.chips) / self.to_call
         )
 
         c1, c2 = self.hole_cards
@@ -299,7 +300,7 @@ class BotV1(Bot):
         )  # or (pot_odds >= 2 and (table.cPI + 1) % table.no_players == table.last_agg)
         max_call = False
         if min_call == False and (
-            to_call == 0 or (pot_odds > 2 and table.still_to_act() == 0)
+            self.to_call == 0 or (pot_odds > 2 and table.still_to_act() == 0)
         ):
             min_call = max_call = True
         r = random.randint(1, 10)
@@ -310,7 +311,7 @@ class BotV1(Bot):
             max_chips,
             min_call,
             pot_odds,
-            to_call,
+            self.to_call,
             table.cPI == table.last_agg,
             (table.cPI + 1) % table.no_players,
             table.last_agg,
@@ -329,7 +330,8 @@ class BotV1(Bot):
         return 1
 
     def get_action(self, table):
-
+        self.to_call = min(table.last_bet - self.round_invested, self.chips)
+        
         round_total = table.last_bet
         l = 1
         h = 3
@@ -351,11 +353,11 @@ class BotV1(Bot):
         # return 2, 0
         return action, bet
 
-    def get_mdf(self):
-        pass
+    def calc_mdf(self):
+        return (self.get_pot() - self.to_call) / self.get_pot() 
 
-    def get_po(self):
-        pass
+    def calc_po(self):
+        return (self.to_call) / (self.get_pot() + self.to_call) 
 
 class Human(Player):
     pass
@@ -547,7 +549,7 @@ class Table:
 
             self.pot = new_pot
 
-    def get_total_pot(self):
+    def get_pot(self):
         return sum(sum(p[2].values()) for p in self.pot)
 
     def next_player_i(self):

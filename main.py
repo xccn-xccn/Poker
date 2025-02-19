@@ -759,9 +759,9 @@ class Main:
 
                 self.set_community_cards()
 
-                self.pot = self.table.get_total_pot()
+                self.pot = self.table.get_pot()
                 self.chip_images = PlayerGUI.get_chip_images(
-                    self.table.get_total_pot(), self.table.blinds[-1]
+                    self.table.get_pot(), self.table.blinds[-1]
                 )
 
                 for p in self.players:
