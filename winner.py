@@ -1,7 +1,8 @@
 from collections import Counter
 from functools import cache, cmp_to_key
-from r_lists import card_values, p_hands
+from r_lists import *
 from time import perf_counter
+from random import choices
 
 
 def get_winner(hands, community):
@@ -60,6 +61,21 @@ def all_hands(community, known=[]):
     return final
 
 
+def all_hands2(community, known=[]):
+    seen = set(community + known)
+    o_hands = [h for h in p_hands if h[0] not in seen and h[1] not in seen]
+    print(o_hands, "\n\n")
+
+    o_hands = list(
+        sorted(
+            o_hands,
+            key=cmp_to_key(lambda x, y: hand_p_k(x, y, community=community, samples=10)),
+            reverse=True,
+        ))
+    
+
+    return o_hands
+
 def get_hand_rank(hand, community):
     for i, f in enumerate(order):
         final_hand = get_hand(list(hand) + community, f)
@@ -90,6 +106,23 @@ def compare_hand(hand1, hand2):
             return 2
 
     return 3
+
+
+def hand_p(*hands, community=[], samples=100):
+    seen = set(community + [x for xs in hands for x in xs])
+    n_deck = [c for c in deck if c not in seen]
+    w_count = [0 for _ in range(len(hands))]
+    for r in range(samples):
+        new = choices(n_deck, k=5 - len(community))
+        winner = get_winner(hands, community + new)
+        for w in winner:
+            w_count[w[1]] += 1 / len(winner)
+
+    return [w / samples for w in w_count]
+
+
+def hand_p_k(hand1, hand2, community, samples=100):
+    return hand_p(hand1, hand2, community=community, samples=samples)[0] - 0.5
 
 
 def cardValue_sort(x):
@@ -252,4 +285,9 @@ if __name__ == "__main__":
     # all_hands(["6H", "AD", "AC", "AS", "AH"])
 
     # print(all_hands([]))
+
+    # print(hand_p(("AH", "JC"), ("AS", "3H"), samples=1_000))
+    # print(hand_p(("AH", "AC"), ("AS", "AD"), samples=1_000))
+
+    print(all_hands2(["4C", "3C", "2C", "5C"]))
     print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")
