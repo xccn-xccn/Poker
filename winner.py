@@ -28,7 +28,13 @@ def get_winner(hands, community):
     return best
 
 
-def all_hands(community, known=[]):
+def all_hands_ranked(community, known=None, p_hands=None): #try to bucket draws and combo draws?
+
+    if known == None:
+        known = []
+    if p_hands == None:
+        p_hands = all_p_hands
+
     o_hands = []
     buckets = [[] for _ in range(21)]
 
@@ -63,7 +69,7 @@ def all_hands(community, known=[]):
 
 def all_hands2(community, known=[]):
     seen = set(community + known)
-    o_hands = [h for h in p_hands if h[0] not in seen and h[1] not in seen]
+    o_hands = [h for h in all_p_hands if h[0] not in seen and h[1] not in seen]
     print(o_hands, "\n\n")
 
     o_hands = list(
@@ -121,7 +127,7 @@ def hand_p(*hands, community=[], samples=100):
     return [w / samples for w in w_count]
 
 
-def hand_p_k(hand1, hand2, community, samples=100):
+def hand_p_k(hand1, hand2, community=[], samples=100):
     return hand_p(hand1, hand2, community=community, samples=samples)[0] - 0.5
 
 
@@ -287,7 +293,7 @@ if __name__ == "__main__":
     # print(all_hands([]))
 
     # print(hand_p(("AH", "JC"), ("AS", "3H"), samples=1_000))
-    # print(hand_p(("AH", "AC"), ("AS", "AD"), samples=1_000))
+    # print(hand_p_k(("AH", "JC"), ("AS", "3H"), samples=1_000))
 
-    print(all_hands2(["4C", "3C", "2C", "5C"]))
+    print(all_hands2(["4D", "3C", "2C"]))
     print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")

@@ -22,11 +22,11 @@ for v, k in enumerate("23456789TJQKA", 2):
     card_values[v] = k
 
 deck = [c + s for s in "CSHD" for c in "23456789TJQKA"]
-p_hands = [(c1, c2) for c1 in deck for c2 in deck if card_values[c1[0]] > card_values[c2[0]] or c1[0] == c2[0] and c1[1] > c2[1]]
-
+all_p_hands = [(c1, c2) for c1 in deck for c2 in deck if card_values[c1[0]] > card_values[c2[0]] or c1[0] == c2[0] and c1[1] > c2[1]]
+sorted_hands = sorted(all_p_hands)
 
 def main():
-    print(len(p_hands))
+    print(len(all_p_hands))
 
 
 if __name__ == "__main__":

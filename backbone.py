@@ -14,8 +14,13 @@ from r_lists import strengths, card_values
 # TODO hold invested of each player? currently inefficient replace the functions
 # 3bet more oop
 # underbluffs?
-#Use mdf or pot odds
+# Use mdf or pot odds
 
+
+def strength_index(c1, c2):
+    return sorted(
+        (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=c1[1] != c2[1]
+    )
 
 
 class Player:
@@ -176,6 +181,7 @@ class Player:
     def get_pot(self):
         return min(self.chips, self.table.get_pot())
 
+
 class Bot(Player):
     pass
 
@@ -287,11 +293,8 @@ class BotV1(Bot):
         )
 
         c1, c2 = self.hole_cards
-        suited = c1[1] == c2[1]
 
-        i1, i2 = sorted(
-            (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=not suited
-        )
+        i1, i2 = strength_index(c1, c2)
 
         strength = strengths[i1][i2]
         max_chips = strength**3 * 3 * table.blinds[-1]
@@ -329,9 +332,12 @@ class BotV1(Bot):
             return 2
         return 1
 
+    def set_range(self, action, table):
+        pass
+
     def get_action(self, table):
         self.to_call = min(table.last_bet - self.round_invested, self.chips)
-        
+
         round_total = table.last_bet
         l = 1
         h = 3
@@ -351,13 +357,15 @@ class BotV1(Bot):
             bet = 0
 
         # return 2, 0
+
         return action, bet
 
     def calc_mdf(self):
-        return (self.get_pot() - self.to_call) / self.get_pot() 
+        return (self.get_pot() - self.to_call) / self.get_pot()
 
     def calc_po(self):
-        return (self.to_call) / (self.get_pot() + self.to_call) 
+        return (self.to_call) / (self.get_pot() + self.to_call)
+
 
 class Human(Player):
     pass
