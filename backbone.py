@@ -2,7 +2,7 @@ import random
 from collections import defaultdict
 from copy import deepcopy
 from winner import get_winner
-from r_lists import *
+from misc import *
 
 # TODO test valid bets on raises
 # TODO skip and show hands if only one player left

@@ -1,5 +1,5 @@
 import random
-from r_lists import strengths, card_values
+from misc import strengths, card_values
 
 
 

@@ -1,6 +1,6 @@
 from collections import Counter
 from functools import cache, cmp_to_key
-from r_lists import *
+from misc import *
 from time import perf_counter
 from random import choices
 
