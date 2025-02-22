@@ -1,13 +1,13 @@
 import random
 from collections import defaultdict
 from copy import deepcopy
-from r_lists import deck
 from winner import get_winner
-from r_lists import strengths, card_values
+from r_lists import *
 
 # TODO test valid bets on raises
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
+# BUG if last player does non legal raise other player doesn't have a chance to call
 # BUG main player could do an uneccessary fold and make chips disappear
 # TODO tighten opening range
 # TODO change range depending on position
@@ -15,12 +15,6 @@ from r_lists import strengths, card_values
 # 3bet more oop
 # underbluffs?
 # Use mdf or pot odds
-
-
-def strength_index(c1, c2):
-    return sorted(
-        (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=c1[1] != c2[1]
-    )
 
 
 class Player:
@@ -178,9 +172,22 @@ class Player:
     def add_chips(self, extra):
         self.chips += extra
 
-    def get_pot(self):
-        return min(self.chips, self.table.get_pot())
+    def get_pot(
+        self,
+    ):  # BUG doesn't work (what if player already has some chips invested)???
+        count = 0
+        pot_sum = 0
+        for p in self.table.pot:
+            count += p[0]
+            if count > self.chips + self.total_invested:
+                rem_chips = self.chips + self.total_invested - count + p[0]
+                pot_sum += sum([min(rem_chips, x) for x in p[2].values()])
+                return pot_sum
+            pot_sum += sum(p[2].values())
+        return pot_sum
 
+    def get_round_total(self):
+        return min(self.table.last_bet, self.chips + self.round_invested)
 
 class Bot(Player):
     pass
@@ -285,12 +292,8 @@ class BotV1(Bot):
 
     def pre_flop(self, table):
 
-        round_total = min(table.last_bet, self.chips + self.round_invested)
-        pot_odds = (
-            float("inf")
-            if self.to_call == 0
-            else min(table.get_pot(), self.chips) / self.to_call
-        )
+        round_total = self.get_round_total()
+        pot_odds = self.calc_po(frac=True)
 
         c1, c2 = self.hole_cards
 
@@ -303,7 +306,7 @@ class BotV1(Bot):
         )  # or (pot_odds >= 2 and (table.cPI + 1) % table.no_players == table.last_agg)
         max_call = False
         if min_call == False and (
-            self.to_call == 0 or (pot_odds > 2 and table.still_to_act() == 0)
+            self.to_call == 0 or (pot_odds > 3 and table.still_to_act() == 0)
         ):
             min_call = max_call = True
         r = random.randint(1, 10)
@@ -321,6 +324,7 @@ class BotV1(Bot):
             r,
             table.still_to_act(),
             table.last_bet,
+            self.get_pot(),
         )
 
         if max_call != True and (
@@ -332,11 +336,11 @@ class BotV1(Bot):
             return 2
         return 1
 
-    def set_range(self, action, table):
+    def set_pre_range(self, action, table):
         pass
 
     def get_action(self, table):
-        self.to_call = min(table.last_bet - self.round_invested, self.chips)
+        self.to_call = min(table.last_bet - self.round_invested, self.chips)#make function
 
         round_total = table.last_bet
         l = 1
@@ -350,6 +354,7 @@ class BotV1(Bot):
 
         if table.r == 0:
             action = self.pre_flop(table)
+            self.set_pre_range(action, table)
 
         if action == 3:
             bet = self.get_bet(table)
@@ -363,8 +368,9 @@ class BotV1(Bot):
     def calc_mdf(self):
         return (self.get_pot() - self.to_call) / self.get_pot()
 
-    def calc_po(self):
-        return (self.to_call) / (self.get_pot() + self.to_call)
+    def calc_po(self, frac=False):
+        po = (self.to_call) / (self.get_pot() + self.to_call)
+        return po if frac == False else po**-1 if po != 0 else float("inf")
 
 
 class Human(Player):

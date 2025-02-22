@@ -1,5 +1,15 @@
 from math import log
 
+def strength_index(c1, c2):
+    return sorted(
+        (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=c1[1] != c2[1]
+    )
+
+
+def pre_strength(c1, c2):
+    i1, i2 = strength_index(c1, c2)
+    return strengths[i1][i2]
+
 strengths = [
     [float("inf"), 3.44, 2.80, 2.36, 2.06, 1.65, 1.52, 1.39, 1.29, 1.38, 1.29, 1.20, 1.10],
     [3.00, 6.58, 2.26, 1.98, 1.77, 1.40, 1.19, 1.10, 1.03, 0.95, 0.86, 0.80, 0.74],
@@ -23,7 +33,7 @@ for v, k in enumerate("23456789TJQKA", 2):
 
 deck = [c + s for s in "CSHD" for c in "23456789TJQKA"]
 all_p_hands = [(c1, c2) for c1 in deck for c2 in deck if card_values[c1[0]] > card_values[c2[0]] or c1[0] == c2[0] and c1[1] > c2[1]]
-sorted_hands = sorted(all_p_hands)
+sorted_hands = sorted(all_p_hands, key= lambda x: pre_strength(*x))
 
 def main():
     print(len(all_p_hands))
