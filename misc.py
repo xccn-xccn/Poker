@@ -1,6 +1,7 @@
 from time import perf_counter
 from math import log
 
+
 def strength_index(c1, c2):
     return sorted(
         (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=c1[1] != c2[1]
@@ -14,6 +15,7 @@ def pre_strength(c1, c2):
 
 def get_min_hand(strength):
     pass
+
 
 strengths = [
     [
@@ -60,9 +62,6 @@ all_p_hands = [
 ]
 sorted_hands = sorted(all_p_hands, key=lambda x: pre_strength(*x), reverse=True)
 strengths_to_index = {pre_strength(*x): i for i, x in enumerate(sorted_hands)}
-
-
-
 
 
 def get_ps_index(c_range, m_strength):

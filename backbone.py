@@ -1,13 +1,14 @@
 import random
 from collections import defaultdict
 from copy import deepcopy
-from winner import get_winner
+from winner import get_winner, all_hands_ranked
 from misc import *
 
 # TODO test valid bets on raises
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
 # TODO make calling range capped and raising range tighter with percentages
+# TODO test get_ps_strength
 # BUG main player could do an uneccessary fold and make chips disappear
 # TODO tighten opening range
 # TODO change range depending on position
@@ -356,35 +357,33 @@ class BotV1(Bot):
             min_strength = (self.round_total / self.table.blinds[-1] / 3) ** (1 / 3)
             # max_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
 
-            self.c_range = sorted_hands[: strengths_to_index[get_ps_strength(min_strength)]]
+            self.c_range = sorted_hands[
+                : strengths_to_index[get_ps_strength(min_strength)]
+            ]
 
-    
     def spr_range(self):
         if self.table.last_bet == 20:
             self.spc_range(flag=True)
         else:
             min_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
 
-            self.c_range = sorted_hands[: strengths_to_index[get_ps_strength(min_strength)]]
+            self.c_range = sorted_hands[
+                : strengths_to_index[get_ps_strength(min_strength)]
+            ]
 
-    def sp_range(self, action, table): #incorrect because boundraries
+    def sp_range(self, action, table):  # incorrect because boundraries
         if action == 1:
             self.c_range = None
-            return 
+            return
         self.spc_range()
-        
+
+    def post_flop(self, table):
+        range_ranked = all_hands_ranked(table.community, p_hands=self.c_range)
+
     def get_action(self, table):
         self.to_call = min(
             table.last_bet - self.round_invested, self.chips
         )  # make function
-
-        round_total = table.last_bet
-        l = 1
-        h = 3
-        if round_total == self.round_invested:
-            l = 2
-        if round_total >= self.round_invested + self.chips or table.only_call == True:
-            h = 2
 
         action = random.randint(l, h)
 
@@ -393,17 +392,28 @@ class BotV1(Bot):
             self.sp_range(action, table)
             if action != 1:
                 print(self.c_range)
+        else:
+            round_total = table.last_bet
+            l = 1
+            h = 3
+            if round_total == self.round_invested:
+                l = 2
+            if (
+                round_total >= self.round_invested + self.chips
+                or table.only_call == True
+            ):
+                h = 2
 
         if action == 3:
-            extra = self.get_bet(table)
+            bet = self.get_bet(table)
         else:
-            extra = 0
+            bet = 0
 
         # return 2, 0
 
         # if table.still_to_act() == 0:
         #     return 3, 2000 - self.total_invested
-        return action, extra
+        return action, bet
 
     def calc_mdf(self):
         return (self.get_pot() - self.to_call) / self.get_pot()
