@@ -91,6 +91,7 @@ class Player:
             self.round_invested = 0
         self.action = self.action_text = None
         self.extra = 0
+        self.only_call = False
 
     def move_action(self, roundTotal):
         if self.action == 1:
@@ -112,9 +113,11 @@ class Player:
         else:
             self.action_text = f"bets {self.extra}"
 
-            self.agg = (
+            self.agg = True
+
+            self.only_call = (
                 self.round_invested + self.extra
-                >= self.table.last_bet + self.table.min_raise
+                < self.table.last_bet + self.table.min_raise
             )
 
         self.round_invested += self.extra
@@ -140,17 +143,19 @@ class Player:
 
         if action == 3:
             if (
-                self.round_invested + extra < table.last_bet + table.min_raise
-                and extra < self.chips
-            ) or extra > self.chips:
+                (
+                    self.round_invested + extra < table.last_bet + table.min_raise
+                    and extra < self.chips
+                )
+                or extra > self.chips
+                or table.only_call == True
+            ):
                 return False
 
         return True
 
     def move(self, table, action):
 
-        if len(action) != 2:
-            raise Exception
         valid = self.is_valid(table, action)
 
         if not valid and isinstance(self, Bot):
@@ -188,6 +193,7 @@ class Player:
 
     def get_round_total(self):
         return min(self.table.last_bet, self.chips + self.round_invested)
+
 
 class Bot(Player):
     pass
@@ -229,7 +235,7 @@ class RandomBot(Bot):
         h = 3
         if round_total == self.round_invested:
             l = 2
-        if round_total >= self.round_invested + self.chips:
+        if round_total >= self.round_invested + self.chips or table.only_call == True:
             h = 2
 
         action = random.randint(l, h)
@@ -309,6 +315,7 @@ class BotV1(Bot):
             self.to_call == 0 or (pot_odds > 3 and table.still_to_act() == 0)
         ):
             min_call = max_call = True
+        max_call = self.table.only_call
         r = random.randint(1, 10)
 
         print(
@@ -340,14 +347,16 @@ class BotV1(Bot):
         pass
 
     def get_action(self, table):
-        self.to_call = min(table.last_bet - self.round_invested, self.chips)#make function
+        self.to_call = min(
+            table.last_bet - self.round_invested, self.chips
+        )  # make function
 
         round_total = table.last_bet
         l = 1
         h = 3
         if round_total == self.round_invested:
             l = 2
-        if round_total >= self.round_invested + self.chips:
+        if round_total >= self.round_invested + self.chips or table.only_call == True:
             h = 2
 
         action = random.randint(l, h)
@@ -363,6 +372,9 @@ class BotV1(Bot):
 
         # return 2, 0
 
+
+        if table.still_to_act == 0:
+            return 3, 2000
         return action, bet
 
     def calc_mdf(self):
@@ -450,6 +462,7 @@ class Table:
             self.last_agg = self.cPI
             self.min_raise = self.current_player.round_invested - self.last_bet
             self.last_bet = self.current_player.round_invested
+            self.only_call = self.current_player.only_call
 
         if self.current_player.action == 3:
             self.bet_count += 1
@@ -477,6 +490,7 @@ class Table:
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
         self.min_raise = self.blinds[-1]
+        self.only_call = False
         if self.r == 0:
             self.cPI = self.last_agg = (
                 self.sb_i + (2 if self.no_players != 2 else 1)
