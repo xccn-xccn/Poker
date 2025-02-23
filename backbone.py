@@ -7,11 +7,12 @@ from misc import *
 # TODO test valid bets on raises
 # TODO skip and show hands if only one player left
 # TODO stop showing next round when everyone folds
-# BUG if last player does non legal raise other player doesn't have a chance to call
+# TODO make calling range capped and raising range tighter with percentages
 # BUG main player could do an uneccessary fold and make chips disappear
 # TODO tighten opening range
 # TODO change range depending on position
 # TODO hold invested of each player? currently inefficient replace the functions
+# TODO if big bet and 1 player calls, bb will also call with nothing
 # 3bet more oop
 # underbluffs?
 # Use mdf or pot odds
@@ -298,32 +299,16 @@ class BotV1(Bot):
 
     def pre_flop(self, table):
 
-        round_total = self.get_round_total()
-        pot_odds = self.calc_po(frac=True)
+        self.set_pre_var(table)
 
-        c1, c2 = self.hole_cards
-
-        i1, i2 = strength_index(c1, c2)
-
-        strength = strengths[i1][i2]
-        max_chips = strength**3 * 3 * table.blinds[-1]
-        min_call = (
-            round_total < max_chips
-        )  # or (pot_odds >= 2 and (table.cPI + 1) % table.no_players == table.last_agg)
-        max_call = False
-        if min_call == False and (
-            self.to_call == 0 or (pot_odds > 3 and table.still_to_act() == 0)
-        ):
-            min_call = max_call = True
-        max_call = self.table.only_call
         r = random.randint(1, 10)
 
         print(
             "max_chips",
-            round_total,
-            max_chips,
-            min_call,
-            pot_odds,
+            self.round_total,
+            self.max_chips,
+            self.min_call,
+            # pot_odds,
             self.to_call,
             table.cPI == table.last_agg,
             (table.cPI + 1) % table.no_players,
@@ -334,18 +319,60 @@ class BotV1(Bot):
             self.get_pot(),
         )
 
-        if max_call != True and (
-            (round_total < max_chips / 2 and r >= 2)
-            or (min_call and (r >= 10 or table.last_bet == 20))
+        if self.max_call != True and (
+            (self.round_total < self.max_chips / 2 and r >= 2)
+            or (self.min_call and (r >= 10 or table.last_bet == 20))
         ):
             return 3
-        elif min_call:
+        elif self.min_call:
             return 2
         return 1
 
-    def set_pre_range(self, action, table):
-        pass
+    def valid_pre_po(self):
+        return self.pot_odds > 3
 
+    def set_pre_var(self, table):
+        self.round_total = self.get_round_total()
+        self.pot_odds = self.calc_po(frac=True)
+
+        c1, c2 = self.hole_cards
+
+        i1, i2 = strength_index(c1, c2)
+
+        strength = strengths[i1][i2]
+        self.max_chips = strength**3 * 3 * table.blinds[-1]
+        self.min_call = self.round_total < self.max_chips
+        self.max_call = False
+        if self.min_call == False and (
+            self.to_call == 0 or (self.valid_pre_po() and table.still_to_act() == 0)
+        ):
+            self.min_call = self.max_call = True
+        self.max_call = self.table.only_call
+
+    def spc_range(self, flag=False):
+        if self.valid_pre_po() or self.to_call == 0 and not flag:
+            self.c_range = sorted_hands
+        else:
+            min_strength = (self.round_total / self.table.blinds[-1] / 3) ** (1 / 3)
+            # max_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
+
+            self.c_range = sorted_hands[: strengths_to_index[get_ps_strength(min_strength)]]
+
+    
+    def spr_range(self):
+        if self.table.last_bet == 20:
+            self.spc_range(flag=True)
+        else:
+            min_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
+
+            self.c_range = sorted_hands[: strengths_to_index[get_ps_strength(min_strength)]]
+
+    def sp_range(self, action, table): #incorrect because boundraries
+        if action == 1:
+            self.c_range = None
+            return 
+        self.spc_range()
+        
     def get_action(self, table):
         self.to_call = min(
             table.last_bet - self.round_invested, self.chips
@@ -363,19 +390,20 @@ class BotV1(Bot):
 
         if table.r == 0:
             action = self.pre_flop(table)
-            self.set_pre_range(action, table)
+            self.sp_range(action, table)
+            if action != 1:
+                print(self.c_range)
 
         if action == 3:
-            bet = self.get_bet(table)
+            extra = self.get_bet(table)
         else:
-            bet = 0
+            extra = 0
 
         # return 2, 0
 
-
-        if table.still_to_act == 0:
-            return 3, 2000
-        return action, bet
+        # if table.still_to_act() == 0:
+        #     return 3, 2000 - self.total_invested
+        return action, extra
 
     def calc_mdf(self):
         return (self.get_pot() - self.to_call) / self.get_pot()
