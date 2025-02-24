@@ -16,6 +16,8 @@ from misc import *
 # TODO change range depending on position
 # TODO hold invested of each player? currently inefficient replace the functions
 # TODO if big bet and 1 player calls, bb will also call with nothing
+# TODO consider hand strength with betsize
+# TODO consider bet size with range changes 
 # 3bet more oop
 # underbluffs?
 # Use mdf or pot odds
