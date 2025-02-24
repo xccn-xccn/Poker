@@ -414,6 +414,7 @@ class BotV1(Bot):
             p_hands=[h for h, r in self.c_range.items() if r <= min_rank],
         )
 
+        print(rank, len(self.c_range), action)
         return action
 
     def get_action(self, table):
