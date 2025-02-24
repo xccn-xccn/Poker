@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from copy import deepcopy
-from winner import get_winner, all_hands_ranked
+from winner import get_winner, all_hands_ranked, group_rank_pre
 from misc import *
 
 # TODO test valid bets on raises
@@ -10,6 +10,8 @@ from misc import *
 # TODO make calling range capped and raising range tighter with percentages
 # TODO test get_ps_strength
 # BUG main player could do an uneccessary fold and make chips disappear
+# TODO bots dont bet thinly enough post flop
+# TODO consider draws
 # TODO tighten opening range
 # TODO change range depending on position
 # TODO hold invested of each player? currently inefficient replace the functions
@@ -330,7 +332,7 @@ class BotV1(Bot):
         return 1
 
     def valid_pre_po(self):
-        return self.pot_odds > 3
+        return self.pot_odds > 3 and self.table.still_to_act() == 0
 
     def set_pre_var(self, table):
         self.round_total = self.get_round_total()
@@ -345,64 +347,86 @@ class BotV1(Bot):
         self.min_call = self.round_total < self.max_chips
         self.max_call = False
         if self.min_call == False and (
-            self.to_call == 0 or (self.valid_pre_po() and table.still_to_act() == 0)
+            self.to_call == 0 or self.valid_pre_po() 
         ):
             self.min_call = self.max_call = True
         self.max_call = self.table.only_call
 
+    def fsp_range(self, hands=None, min_strength=-1, max_strength=float("inf")):
+
+        if hands == None:
+            hands = sorted_hands
+
+        self.c_range = group_rank_pre(
+            sorted_hands[
+                strengths_to_index[get_ps_strength(max_strength)] : strengths_to_index[
+                    get_ps_strength(min_strength)
+                ]
+                + 1
+            ],
+            f=pre_strength,
+        )
+
     def spc_range(self, flag=False):
         if self.valid_pre_po() or self.to_call == 0 and not flag:
-            self.c_range = sorted_hands
+            min_strength = 0
         else:
             min_strength = (self.round_total / self.table.blinds[-1] / 3) ** (1 / 3)
             # max_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
 
-            self.c_range = sorted_hands[
-                : strengths_to_index[get_ps_strength(min_strength)]
-            ]
+        self.fsp_range(min_strength=min_strength)
 
-    def spr_range(self):
+    def spr_range(self): #TODO
         if self.table.last_bet == 20:
             self.spc_range(flag=True)
         else:
             min_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
 
-            self.c_range = sorted_hands[
-                : strengths_to_index[get_ps_strength(min_strength)]
-            ]
+            self.fsp_range(min_strength=min_strength)
 
-    def sp_range(self, action, table):  # incorrect because boundraries
+    def sp_range(self, action):
         if action == 1:
             self.c_range = None
             return
-        self.spc_range()
+        flag = action == 3
+        self.spc_range(flag)
 
     def post_flop(self, table):
-        range_ranked = all_hands_ranked(table.community, p_hands=self.c_range)
+
+        self.c_range = all_hands_ranked(table.community, p_hands=self.c_range.keys())
+        min_rank = len(self.c_range) * self.calc_mdf()
+
+        rank = self.c_range[sort_hole(*self.hole_cards)]
+        action = None
+        if rank > min_rank:
+            return 1
+        elif rank <= min_rank / 4:
+            action = 3
+            min_rank /= 4
+        else:
+            action = 2
+
+        self.c_range = all_hands_ranked(
+            table.community,
+            p_hands=[h for h, r in self.c_range.items() if r <= min_rank],
+        )
+
+        return action
 
     def get_action(self, table):
         self.to_call = min(
             table.last_bet - self.round_invested, self.chips
         )  # make function
 
-        action = random.randint(l, h)
 
         if table.r == 0:
             action = self.pre_flop(table)
-            self.sp_range(action, table)
+            self.sp_range(action)
             if action != 1:
-                print(self.c_range)
+                # print(self.c_range)
+                pass
         else:
-            round_total = table.last_bet
-            l = 1
-            h = 3
-            if round_total == self.round_invested:
-                l = 2
-            if (
-                round_total >= self.round_invested + self.chips
-                or table.only_call == True
-            ):
-                h = 2
+            action = self.post_flop(table)
 
         if action == 3:
             bet = self.get_bet(table)

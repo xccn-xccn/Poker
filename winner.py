@@ -28,7 +28,8 @@ def get_winner(hands, community):
     return best
 
 
-def all_hands_ranked(community, known=None, p_hands=None): #try to bucket draws and combo draws?
+def all_hands_ranked(community, known=None, p_hands=None):
+    # try to bucket draws and combo draws?
 
     if known == None:
         known = []
@@ -45,6 +46,7 @@ def all_hands_ranked(community, known=None, p_hands=None): #try to bucket draws 
 
         buckets[i1].append((h, f_hand))
 
+    # print(o_hands, p_hands)
     for i, b in enumerate(buckets):
         o_hands += [
             x
@@ -57,10 +59,30 @@ def all_hands_ranked(community, known=None, p_hands=None): #try to bucket draws 
             )
         ]
 
-    final = {o_hands[0][0]: 0}
+    # print("o_hands", o_hands)
+    return group_rank(o_hands)
+
+
+def group_rank_pre(hands, f=pre_strength):
+    # print(hands, hands[0])
+    final = {hands[0]: 0}
     rank = 0
-    for (_, hand1), (hole2, hand2) in zip(o_hands, o_hands[1:]):
-        if compare_hand_k(hand1, hand2) != 0:
+    for hand1, hand2 in zip(hands, hands[1:]):
+        if f(*hand1) == f(*hand2):
+            rank = len(final)
+        final[hand2] = rank
+
+    # raise Exception
+    return final
+
+
+def group_rank(hands, f=None):
+    if f == None:
+        f = compare_hand_k
+    final = {hands[0][0]: 0}
+    rank = 0
+    for (_, hand1), (hole2, hand2) in zip(hands, hands[1:]):
+        if f(hand1, hand2) != 0:
             rank = len(final)
         final[hole2] = rank
 
@@ -75,12 +97,15 @@ def all_hands2(community, known=[]):
     o_hands = list(
         sorted(
             o_hands,
-            key=cmp_to_key(lambda x, y: hand_p_k(x, y, community=community, samples=10)),
+            key=cmp_to_key(
+                lambda x, y: hand_p_k(x, y, community=community, samples=10)
+            ),
             reverse=True,
-        ))
-    
+        )
+    )
 
     return o_hands
+
 
 def get_hand_rank(hand, community):
     for i, f in enumerate(order):
@@ -286,7 +311,7 @@ if __name__ == "__main__":
 
     # print(get_best_hand(["AC", "2S", "7C", "3S", "9D"]))
 
-    # print(all_hands(["4H", "3C", "3S"]))
+    print(all_hands_ranked(["4H", "3C", "3S"]))
     # print(all_hands(["6H", "TD", "2D", "AS", "JH"]))
     # all_hands(["6H", "AD", "AC", "AS", "AH"])
 
@@ -295,5 +320,5 @@ if __name__ == "__main__":
     # print(hand_p(("AH", "JC"), ("AS", "3H"), samples=1_000))
     # print(hand_p_k(("AH", "JC"), ("AS", "3H"), samples=1_000))
 
-    print(all_hands2(["4D", "3C", "2C"]))
+    # print(all_hands2(["4D", "3C", "2C"]))
     print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")

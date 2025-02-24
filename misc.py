@@ -1,5 +1,7 @@
+import random
 from time import perf_counter
 from math import log
+
 
 
 def strength_index(c1, c2):
@@ -63,7 +65,8 @@ all_p_hands = [
 sorted_hands = sorted(all_p_hands, key=lambda x: pre_strength(*x), reverse=True)
 strengths_to_index = {pre_strength(*x): i for i, x in enumerate(sorted_hands)}
 
-
+def sort_hole(c1, c2):
+    return tuple(sorted((c1, c2), key=lambda x: (card_values[x[0]], x[1]), reverse=True))
 def get_ps_index(c_range, m_strength):
     l, h = 0, len(c_range) - 1
 
@@ -83,7 +86,7 @@ def get_ps_index(c_range, m_strength):
     return m
 
 
-def get_ps_strength(m_strength):
+def get_ps_strength(m_strength, minimum=True):
     l, h = 0, len(flatt_strengths) - 1
 
     while l <= h:
@@ -99,23 +102,29 @@ def get_ps_strength(m_strength):
             return t_strength
         # 4, 3, 2, 1     2.5
 
-    return flatt_strengths[m - 1]
+    return flatt_strengths[m - 1] if minimum else flatt_strengths[m]
 
 
 def main():
 
     # print(sorted_hands[get_ps_index(sorted_hands, 3.00)])
-    print(get_ps_strength(flatt_strengths, 0))
+    # print(get_ps_strength(0.2, minimum=False))
+    
+    pass
+
+    
 
 
 if __name__ == "__main__":
+    l = list(range(1_000_000))
+    # random.shuffle(l)
     start = perf_counter()
 
     # print(list(map(lambda x: round(x**2, 3), s)))
 
     # for s in strengths:
     #     print(list(map(lambda x: round(x**3 * 3, 3), s)))
-
+    # list(sorted(l))
     main()
 
     print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")
