@@ -167,7 +167,7 @@ class Player:
         valid = self.is_valid(table, action)
 
         if not valid and isinstance(self, Bot):
-            print(table.last_bet, action)
+            print(table.last_bet, action, self.round_invested, self.chips, self.can_only_call(), self.table.r)
             raise Exception
         elif not valid:
             return False
@@ -359,18 +359,17 @@ class BotV1(Bot):
             self.to_call == 0 or self.valid_pre_po() 
         ):
             self.min_call = self.max_call = True
-        self.max_call = self.table.only_call
+        self.max_call = self.max_call or self.can_only_call()
 
     def fsp_range(self, hands=None, min_strength=-1, max_strength=float("inf")):
 
         if hands == None:
             hands = sorted_hands
-
         self.c_range = group_rank_pre(
             sorted_hands[
-                strengths_to_index[get_ps_strength(max_strength)] : strengths_to_index[
+                strengths_to_index[get_ps_strength(max_strength, minimum=False)][0] : strengths_to_index[
                     get_ps_strength(min_strength)
-                ]
+                ][-1]
                 + 1
             ],
             f=pre_strength,

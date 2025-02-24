@@ -1,6 +1,8 @@
 import random
 from time import perf_counter
 from math import log
+from collections import defaultdict
+# from winner import *
 
 
 
@@ -63,7 +65,9 @@ all_p_hands = [
     if card_values[c1[0]] > card_values[c2[0]] or c1[0] == c2[0] and c1[1] > c2[1]
 ]
 sorted_hands = sorted(all_p_hands, key=lambda x: pre_strength(*x), reverse=True)
-strengths_to_index = {pre_strength(*x): i for i, x in enumerate(sorted_hands)}
+strengths_to_index = defaultdict(list)
+for i, x in enumerate(sorted_hands):
+    strengths_to_index[pre_strength(*x)].append(i)
 
 def sort_hole(c1, c2):
     return tuple(sorted((c1, c2), key=lambda x: (card_values[x[0]], x[1]), reverse=True))
@@ -104,13 +108,31 @@ def get_ps_strength(m_strength, minimum=True):
 
     return flatt_strengths[m - 1] if minimum else flatt_strengths[m]
 
+# def group_rank_pre(hands, f=pre_strength):
+#     # print(hands, hands[0])
+#     final = {hands[0]: 0}
+#     rank = 0
+#     for hand1, hand2 in zip(hands, hands[1:]):
+#         if f(*hand1) != f(*hand2):
+#             rank = len(final)
+#         final[hand2] = rank
 
+#     # raise Exception
+#     return final
 def main():
 
     # print(sorted_hands[get_ps_index(sorted_hands, 3.00)])
-    # print(get_ps_strength(0.2, minimum=False))
+    print(get_ps_strength(float("inf"), minimum=False))
     print(sort_hole("AH", "AD"))
-    print(sorted_hands[:8])
+    # print(group_rank_pre(
+    #         sorted_hands[
+    #             strengths_to_index[get_ps_strength(float("inf"), minimum=False)][0] : strengths_to_index[
+    #                 get_ps_strength(0)
+    #             ][-1]
+    #             + 1
+    #         ],
+    #         f=pre_strength,
+    #     ))
     pass
 
     

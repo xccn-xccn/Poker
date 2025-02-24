@@ -68,7 +68,7 @@ def group_rank_pre(hands, f=pre_strength):
     final = {hands[0]: 0}
     rank = 0
     for hand1, hand2 in zip(hands, hands[1:]):
-        if f(*hand1) == f(*hand2):
+        if f(*hand1) != f(*hand2):
             rank = len(final)
         final[hand2] = rank
 
