@@ -109,14 +109,15 @@ def main():
 
     # print(sorted_hands[get_ps_index(sorted_hands, 3.00)])
     # print(get_ps_strength(0.2, minimum=False))
-    
+    print(sort_hole("AH", "AD"))
+    print(sorted_hands[:8])
     pass
 
     
 
 
 if __name__ == "__main__":
-    l = list(range(1_000_000))
+    # l = list(range(1_000_000))
     # random.shuffle(l)
     start = perf_counter()
 
