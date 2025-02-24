@@ -879,7 +879,7 @@ def main():
     running = True
     FRAME_RATE = 30
     window = Main(FRAME_RATE)
-    # window.set_test()
+    window.set_test()
 
     while running:
         running = window.single_frame()

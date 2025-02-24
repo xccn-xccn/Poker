@@ -156,6 +156,7 @@ class Player:
                 )
                 or extra > self.chips
                 or table.only_call == True
+                or self.round_invested + extra < table.last_bet
             ):
                 return False
 
@@ -186,7 +187,7 @@ class Player:
 
     def get_pot(
         self,
-    ):  # BUG doesn't work (what if player already has some chips invested)???
+    ):
         count = 0
         pot_sum = 0
         for p in self.table.pot:
@@ -203,7 +204,8 @@ class Player:
 
 
 class Bot(Player):
-    pass
+    def can_only_call(self):
+        return self.table.last_bet >= self.round_invested + self.chips or self.table.only_call == True
 
 
 class RandomBot(Bot):
@@ -242,7 +244,7 @@ class RandomBot(Bot):
         h = 3
         if round_total == self.round_invested:
             l = 2
-        if round_total >= self.round_invested + self.chips or table.only_call == True:
+        if self.can_only_call():
             h = 2
 
         action = random.randint(l, h)
@@ -257,6 +259,10 @@ class RandomBot(Bot):
 
 
 class BotV1(Bot):
+
+    def new_hand(self, i):
+        self.c_range = None
+        return super().new_hand(i)
     def pre_flop_bet(self, table):
         if table.to_bb(table.last_bet) <= 3 or table.still_to_act == 0:
             print("in bb", table.to_bb(table.last_bet))
@@ -373,6 +379,8 @@ class BotV1(Bot):
     def spc_range(self, flag=False):
         if self.valid_pre_po() or self.to_call == 0 and not flag:
             min_strength = 0
+            if self.c_range != None:
+                return
         else:
             min_strength = (self.round_total / self.table.blinds[-1] / 3) ** (1 / 3)
             # max_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
@@ -399,15 +407,21 @@ class BotV1(Bot):
         self.c_range = all_hands_ranked(table.community, p_hands=self.c_range.keys())
         min_rank = len(self.c_range) * self.calc_mdf()
 
-        rank = self.c_range[sort_hole(*self.hole_cards)]
+        try:
+            rank = self.c_range[sort_hole(*self.hole_cards)]
+        except:
+            print(self.c_range)
+            rank = self.c_range[sort_hole(*self.hole_cards)]
+            raise Exception
+            
         action = None
         if rank > min_rank:
             return 1
-        elif rank <= min_rank / 4:
+        elif self.can_only_call() or rank > min_rank / 4:
+            action = 2
+        else:
             action = 3
             min_rank /= 4
-        else:
-            action = 2
 
         self.c_range = all_hands_ranked(
             table.community,
@@ -415,6 +429,9 @@ class BotV1(Bot):
         )
 
         print(rank, len(self.c_range), action)
+        if ('AD', 'AH') in self.c_range:
+            print(self.c_range)
+            raise Exception
         return action
 
     def get_action(self, table):
