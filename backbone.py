@@ -17,8 +17,6 @@ from misc import *
 # TODO hold invested of each player? currently inefficient replace the functions
 # TODO if big bet and 1 player calls, bb will also call with nothing
 # TODO consider hand strength with betsize
-# TODO consider bet size with range changes 
-# BUG KeyError: ('AH', 'AD')
 # 3bet more oop
 # underbluffs?
 # Use mdf or pot odds
@@ -135,7 +133,7 @@ class Player:
             self.all_in = True
 
     def is_valid(self, table, action):
-
+        print(action)
         action, extra = action
 
         if isinstance(self, Human):
@@ -335,10 +333,10 @@ class BotV1(Bot):
             (self.round_total < self.max_chips / 2 and r >= 2)
             or (self.min_call and (r >= 10 or table.last_bet == 20))
         ):
-            return 3
+            return 3, self.get_bet(table)
         elif self.min_call:
-            return 2
-        return 1
+            return 2, 0
+        return 1, 0
 
     def valid_pre_po(self):
         return self.pot_odds > 3 and self.table.still_to_act() == 0
@@ -415,12 +413,16 @@ class BotV1(Bot):
             
         action = None
         if rank > min_rank:
-            return 1
+            return (1, 0)
         elif self.can_only_call() or rank > min_rank / 4:
-            action = 2
+            action = (2, 0)
         else:
-            action = 3
-            min_rank /= 4
+            action = (3, self.get_bet(table))
+
+
+            min_rank *= self.calc_mdf(applied=False, bet=action[1]-table.last_bet)
+
+            print(self.calc_mdf(applied=False, bet=action[1]-table.last_bet))
 
         self.c_range = all_hands_ranked(
             table.community,
@@ -428,9 +430,6 @@ class BotV1(Bot):
         )
 
         print(rank, len(self.c_range), action)
-        if ('AD', 'AH') in self.c_range:
-            print(self.c_range)
-            raise Exception
         return action
 
     def get_action(self, table):
@@ -448,19 +447,20 @@ class BotV1(Bot):
         else:
             action = self.post_flop(table)
 
-        if action == 3:
-            bet = self.get_bet(table)
-        else:
-            bet = 0
+        # if action == 3:
+        #     bet = self.get_bet(table)
+        # else:
+        #     bet = 0
 
+        
         # return 2, 0
 
         # if table.still_to_act() == 0:
         #     return 3, 2000 - self.total_invested
-        return action, bet
+        return action
 
-    def calc_mdf(self):
-        return (self.get_pot() - self.to_call) / self.get_pot()
+    def calc_mdf(self, applied=True, bet=None):
+        return (self.get_pot() - self.to_call) / self.get_pot() if applied else self.get_pot() / (self.get_pot() + bet)
 
     def calc_po(self, frac=False):
         po = (self.to_call) / (self.get_pot() + self.to_call)

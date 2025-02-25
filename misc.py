@@ -108,31 +108,11 @@ def get_ps_strength(m_strength, minimum=True):
 
     return flatt_strengths[m - 1] if minimum else flatt_strengths[m]
 
-# def group_rank_pre(hands, f=pre_strength):
-#     # print(hands, hands[0])
-#     final = {hands[0]: 0}
-#     rank = 0
-#     for hand1, hand2 in zip(hands, hands[1:]):
-#         if f(*hand1) != f(*hand2):
-#             rank = len(final)
-#         final[hand2] = rank
-
-#     # raise Exception
-#     return final
 def main():
 
     # print(sorted_hands[get_ps_index(sorted_hands, 3.00)])
     print(get_ps_strength(float("inf"), minimum=False))
     print(sort_hole("AH", "AD"))
-    # print(group_rank_pre(
-    #         sorted_hands[
-    #             strengths_to_index[get_ps_strength(float("inf"), minimum=False)][0] : strengths_to_index[
-    #                 get_ps_strength(0)
-    #             ][-1]
-    #             + 1
-    #         ],
-    #         f=pre_strength,
-    #     ))
     pass
 
     
