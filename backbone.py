@@ -165,7 +165,14 @@ class Player:
         valid = self.is_valid(table, action)
 
         if not valid and isinstance(self, Bot):
-            print(table.last_bet, action, self.round_invested, self.chips, self.can_only_call(), self.table.r)
+            print(
+                table.last_bet,
+                action,
+                self.round_invested,
+                self.chips,
+                self.can_only_call(),
+                self.table.r,
+            )
             raise Exception
         elif not valid:
             return False
@@ -203,7 +210,10 @@ class Player:
 
 class Bot(Player):
     def can_only_call(self):
-        return self.table.last_bet >= self.round_invested + self.chips or self.table.only_call == True
+        return (
+            self.table.last_bet >= self.round_invested + self.chips
+            or self.table.only_call == True
+        )
 
 
 class RandomBot(Bot):
@@ -261,6 +271,7 @@ class BotV1(Bot):
     def new_hand(self, i):
         self.c_range = None
         return super().new_hand(i)
+
     def pre_flop_bet(self, table):
         if table.to_bb(table.last_bet) <= 3 or table.still_to_act == 0:
             print("in bb", table.to_bb(table.last_bet))
@@ -353,9 +364,7 @@ class BotV1(Bot):
         self.max_chips = strength**3 * 3 * table.blinds[-1]
         self.min_call = self.round_total < self.max_chips
         self.max_call = False
-        if self.min_call == False and (
-            self.to_call == 0 or self.valid_pre_po() 
-        ):
+        if self.min_call == False and (self.to_call == 0 or self.valid_pre_po()):
             self.min_call = self.max_call = True
         self.max_call = self.max_call or self.can_only_call()
 
@@ -365,9 +374,9 @@ class BotV1(Bot):
             hands = sorted_hands
         self.c_range = group_rank_pre(
             sorted_hands[
-                strengths_to_index[get_ps_strength(max_strength, minimum=False)][0] : strengths_to_index[
-                    get_ps_strength(min_strength)
-                ][-1]
+                strengths_to_index[get_ps_strength(max_strength, minimum=False)][
+                    0
+                ] : strengths_to_index[get_ps_strength(min_strength)][-1]
                 + 1
             ],
             f=pre_strength,
@@ -384,7 +393,7 @@ class BotV1(Bot):
 
         self.fsp_range(min_strength=min_strength)
 
-    def spr_range(self): #TODO
+    def spr_range(self):  # TODO
         if self.table.last_bet == 20:
             self.spc_range(flag=True)
         else:
@@ -410,7 +419,7 @@ class BotV1(Bot):
             print(self.c_range)
             rank = self.c_range[sort_hole(*self.hole_cards)]
             raise Exception
-            
+
         action = None
         if rank > min_rank:
             return (1, 0)
@@ -419,10 +428,9 @@ class BotV1(Bot):
         else:
             action = (3, self.get_bet(table))
 
+            min_rank *= self.calc_mdf(applied=False, bet=action[1] - table.last_bet)
 
-            min_rank *= self.calc_mdf(applied=False, bet=action[1]-table.last_bet)
-
-            print(self.calc_mdf(applied=False, bet=action[1]-table.last_bet))
+            print(self.calc_mdf(applied=False, bet=action[1] - table.last_bet))
 
         self.c_range = all_hands_ranked(
             table.community,
@@ -437,7 +445,6 @@ class BotV1(Bot):
             table.last_bet - self.round_invested, self.chips
         )  # make function
 
-
         if table.r == 0:
             action = self.pre_flop(table)
             self.sp_range(action)
@@ -447,20 +454,15 @@ class BotV1(Bot):
         else:
             action = self.post_flop(table)
 
-        # if action == 3:
-        #     bet = self.get_bet(table)
-        # else:
-        #     bet = 0
-
-        
         # return 2, 0
-
-        # if table.still_to_act() == 0:
-        #     return 3, 2000 - self.total_invested
         return action
 
     def calc_mdf(self, applied=True, bet=None):
-        return (self.get_pot() - self.to_call) / self.get_pot() if applied else self.get_pot() / (self.get_pot() + bet)
+        return (
+            (self.get_pot() - self.to_call) / self.get_pot()
+            if applied
+            else self.get_pot() / (self.get_pot() + bet)
+        )
 
     def calc_po(self, frac=False):
         po = (self.to_call) / (self.get_pot() + self.to_call)

@@ -1,5 +1,5 @@
 from collections import Counter
-from functools import cache, cmp_to_key
+from functools import cmp_to_key
 from misc import *
 from time import perf_counter
 from random import choices
@@ -46,8 +46,7 @@ def all_hands_ranked(community, known=None, p_hands=None):
 
         buckets[i1].append((h, f_hand))
 
-    # print(o_hands, p_hands)
-    for i, b in enumerate(buckets):
+    for b in buckets:
         o_hands += [
             x
             for x in list(
@@ -59,20 +58,17 @@ def all_hands_ranked(community, known=None, p_hands=None):
             )
         ]
 
-    # print("o_hands", o_hands)
     return group_rank(o_hands)
 
 
-def group_rank_pre(hands, f=pre_strength):
-    # print(hands, hands[0])
+def group_rank_pre(hands):
     final = {hands[0]: 0}
     rank = 0
     for hand1, hand2 in zip(hands, hands[1:]):
-        if f(*hand1) != f(*hand2):
+        if pre_strength(*hand1) != pre_strength(*hand2):
             rank = len(final)
         final[hand2] = rank
 
-    # raise Exception
     return final
 
 
@@ -126,17 +122,6 @@ def compare_hand_k(hand1, hand2):
             return -1
 
     return 0
-
-
-def compare_hand(hand1, hand2):
-    for c1, c2 in zip(hand1, hand2):
-        v1, v2 = c1[0], c2[0]
-        if card_values[v1] > card_values[v2]:
-            return 1
-        elif card_values[v2] > card_values[v1]:
-            return 2
-
-    return 3
 
 
 def hand_p(*hands, community=[], samples=100):

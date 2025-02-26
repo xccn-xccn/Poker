@@ -1,9 +1,5 @@
-import random
 from time import perf_counter
-from math import log
 from collections import defaultdict
-# from winner import *
-
 
 
 def strength_index(c1, c2):
@@ -69,8 +65,13 @@ strengths_to_index = defaultdict(list)
 for i, x in enumerate(sorted_hands):
     strengths_to_index[pre_strength(*x)].append(i)
 
+
 def sort_hole(c1, c2):
-    return tuple(sorted((c1, c2), key=lambda x: (card_values[x[0]], x[1]), reverse=True))
+    return tuple(
+        sorted((c1, c2), key=lambda x: (card_values[x[0]], x[1]), reverse=True)
+    )
+
+
 def get_ps_index(c_range, m_strength):
     l, h = 0, len(c_range) - 1
 
@@ -85,7 +86,6 @@ def get_ps_index(c_range, m_strength):
             l = m + 1
         else:
             return l
-        # 4, 3, 2, 1     2.5
 
     return m
 
@@ -104,9 +104,9 @@ def get_ps_strength(m_strength, minimum=True):
             l = m + 1
         else:
             return t_strength
-        # 4, 3, 2, 1     2.5
 
     return flatt_strengths[m - 1] if minimum else flatt_strengths[m]
+
 
 def main():
 
@@ -114,8 +114,6 @@ def main():
     print(get_ps_strength(float("inf"), minimum=False))
     print(sort_hole("AH", "AD"))
     pass
-
-    
 
 
 if __name__ == "__main__":
