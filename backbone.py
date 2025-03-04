@@ -379,7 +379,6 @@ class BotV1(Bot):
                 ] : strengths_to_index[get_ps_strength(min_strength)][-1]
                 + 1
             ],
-            f=pre_strength,
         )
 
     def spc_range(self, flag=False):
