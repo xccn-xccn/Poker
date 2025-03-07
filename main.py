@@ -134,6 +134,15 @@ class Button:
             self.pressed_action()
 
 
+class Menu_Button(Button):
+    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH):
+        super().__init__(x, y, colour, text, BW, BH)
+
+    def pressed_action(self):
+        print("pressed")
+        self.window.current_window = 1
+
+
 class Slider(Button):
     def __init__(
         self,
@@ -630,9 +639,18 @@ class PlayerGUI:
             )
 
 
-class Main:
+class Display:
+    def __init__(self, frame_rate):
+        self.frame_rate = frame_rate
+
+    def single_frame(self):
+        for b in self.buttons:
+            b.draw()
+
+
+class PokerGame(Display):
     def __init__(self, frame_rate) -> None:
-        self.running = True
+        super().__init__(frame_rate)
         self.table = start()
         self.community_cards = []
         self.frame_rate = frame_rate
@@ -642,6 +660,7 @@ class Main:
         self.testing = False
         self.acted = False
         self.human_acted = False
+        self.current_window = 1
 
         self.dealButton = DealButton(
             screen.get_width() / 2 - (BUTTONW / 2),
@@ -739,10 +758,12 @@ class Main:
 
     def single_frame(self):
         global screen
+        super().single_frame()
 
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
         current_tick = pygame.time.get_ticks()
+
         self.mouse = pygame.mouse.get_pos()
         skip = False
 
@@ -875,14 +896,65 @@ class Main:
         return True and self.table.no_players != 1
 
 
+class Menu(Display):
+    def __init__(self, frame_rate):
+        super().__init__(frame_rate)
+
+        background = pygame.image.load(
+            rf"{dirname}/images/misc/black_poker_background.jpg"
+        ).convert_alpha()
+
+        self.background = pygame.transform.smoothscale(
+            background, (screen.get_width(), screen.get_height())
+        )
+        self.button_size = (screen.get_width() / 8, screen.get_height() / 8)
+        self.play_button = Menu_Button(
+            (screen.get_width() - self.button_size[0]) / 2,
+            (screen.get_height() - self.button_size[1]) / 2,
+            BLACK,
+            text_font.render("Play", True, WHITE),
+            *self.button_size,
+        )
+        self.current_window = 0
+        self.buttons = [self.play_button]
+
+        for b in self.buttons:
+            b.add_window(self)
+
+    def single_frame(self):
+        global screen
+        super().single_frame()
+        self.mouse = pygame.mouse.get_pos()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for b in self.buttons:
+                    b.check_press(*self.mouse)
+
+        screen.blit(self.background, (0, 0))
+
+        for b in self.buttons:
+            b.draw()
+        pygame.display.flip()
+        return True
+
+
 def main():
     running = True
     FRAME_RATE = 30
-    window = Main(FRAME_RATE)
+    # window = Poker_game(FRAME_RATE)
     # window.set_test()
-
+    window = Menu(FRAME_RATE)
+    states = [Menu, PokerGame]
     while running:
+        old_state = window.current_window
         running = window.single_frame()
+
+        if old_state != window.current_window:
+            window = states[window.current_window](FRAME_RATE)
         clock.tick(FRAME_RATE)
 
     pygame.quit()
