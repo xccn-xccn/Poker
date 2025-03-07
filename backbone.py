@@ -5,15 +5,15 @@ from winner import get_winner, all_hands_ranked, group_rank_pre
 from misc import *
 
 # TODO test valid bets on raises
-# TODO skip and show hands if only one player left
-# TODO stop showing next round when everyone folds
+# TODO show hands if only one player left
 # TODO make calling range capped and raising range tighter with percentages
+# TODO Consider hand within all hands (not just range)
 # TODO test get_ps_strength
 # BUG main player could do an uneccessary fold and make chips disappear
 # TODO bots dont bet thinly enough post flop
 # TODO consider draws
 # TODO tighten opening range
-# TODO change range depending on position
+# TODO change range depending on position and num of players
 # TODO hold invested of each player? currently inefficient replace the functions
 # TODO if big bet and 1 player calls, bb will also call with nothing
 # TODO consider hand strength with betsize
