@@ -109,7 +109,7 @@ player_coords = [
 
 
 class Button:
-    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH):
+    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None):
         self.x = x
         self.y = y
         self.colour = colour
@@ -121,10 +121,21 @@ class Button:
             center=(self.x + self.BW / 2, self.y + self.BH / 2)
         )
 
-    def draw(self):
-        pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
-        pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
+        if image == None:
+            self.background = pygame.Surface((self.BW, self.BH))
+            self.background.fill(colour)
+        else:
+            self.background = pygame.transform.smoothscale(image, (self.BW, self.BH))
+        pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
 
+    # def draw(self):
+    #     pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
+    #     pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
+
+    #     screen.blit(self.text, self.text_rect)
+
+    def draw(self):
+        screen.blit(self.background, (self.x, self.y))
         screen.blit(self.text, self.text_rect)
 
     def add_table(self, table):
@@ -140,30 +151,15 @@ class Button:
 
 class Menu_Button(Button):
     def __init__(
-        self,
-        x,
-        y,
-        colour,
-        text,
-        w_change,
-        BW=BUTTONW,
-        BH=BUTTONH,
+        self, x, y, colour, text, w_change, BW=BUTTONW, BH=BUTTONH, image=None
     ):
-        super().__init__(x, y, colour, text, BW, BH)
+        super().__init__(x, y, colour, text, BW, BH, image)
 
-        self.background = pygame.Surface((self.BW, self.BH))
         self.background.set_alpha(128)
-        self.background.fill(colour)
-        pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
-
         self.w_change = w_change
 
     def pressed_action(self):
         self.window.current_window = self.w_change
-
-    def draw(self):
-        screen.blit(self.background, (self.x, self.y))
-        screen.blit(self.text, self.text_rect)
 
 
 class Slider(Button):
@@ -695,6 +691,7 @@ class Window:
 class PlayWindow(Window):
     pass
 
+
 class PokerGame(PlayWindow):
     def __init__(self, frame_rate) -> None:
         super().__init__(frame_rate)
@@ -858,7 +855,7 @@ class PokerGame(PlayWindow):
         end = super().mid_frame()
         if end == False:
             return False
-        
+
         for event in pygame.event.get():
 
             if event.type == pygame.KEYDOWN:
