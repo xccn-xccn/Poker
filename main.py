@@ -345,7 +345,7 @@ class BetButton(ActionButton):
             x,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            main_font.render("-", True, WHITE),
+            main_font.render("", True, WHITE),
             self,
         )
         self.pbet = 0
@@ -353,8 +353,10 @@ class BetButton(ActionButton):
     def draw(self):
         super().draw()
         text = main_font.render(str(self.pbet), True, BLACK)
-        text_rect = text.get_rect(center=(self.x + self.BW / 2, 0))
-        screen.blit(text, (text_rect[0], self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2))
+        text_rect = text.get_rect(center=(self.x + self.BW / 2, self.slider.y - BUTTONW / 2))
+        # screen.blit(text, (text_rect[0], self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2))
+        screen.blit(text, text_rect)
+
 
 
 class CBetButton(Button):
