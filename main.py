@@ -109,7 +109,9 @@ player_coords = [
 
 
 class Button:
-    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None):
+    def __init__(
+        self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None, border=True
+    ):
         self.x = x
         self.y = y
         self.colour = colour
@@ -126,7 +128,9 @@ class Button:
             self.background.fill(colour)
         else:
             self.background = pygame.transform.smoothscale(image, (self.BW, self.BH))
-        pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
+
+        if border:
+            pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
 
     # def draw(self):
     #     pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
@@ -151,11 +155,22 @@ class Button:
 
 class Menu_Button(Button):
     def __init__(
-        self, x, y, colour, text, w_change, BW=BUTTONW, BH=BUTTONH, image=None
+        self,
+        x,
+        y,
+        colour,
+        text,
+        w_change,
+        BW=BUTTONW,
+        BH=BUTTONH,
+        image=None,
+        border=True,
+        see=True,
     ):
-        super().__init__(x, y, colour, text, BW, BH, image)
+        super().__init__(x, y, colour, text, BW, BH, image, border)
 
-        self.background.set_alpha(128)
+        if see:
+            self.background.set_alpha(128)
         self.w_change = w_change
 
     def pressed_action(self):
@@ -468,8 +483,6 @@ class PlayerGUI:
             width=3,
         )
 
-        # pygame.draw.circle(self.profile, (0, 0, 200), (size[0]//2, size[1]//2), radius=  1/2*size[0], width=2) #why doesnt this work
-
         self.profile.blit(self.rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN)
 
     @staticmethod
@@ -667,6 +680,7 @@ class PlayerGUI:
 class Window:
     def __init__(self, frame_rate):
         self.frame_rate = frame_rate
+        self.buttons = []
 
     def beg_frame(self):
         self.mouse = pygame.mouse.get_pos()
@@ -689,7 +703,23 @@ class Window:
 
 
 class PlayWindow(Window):
-    pass
+    def __init__(self, frame_rate):
+        super().__init__(frame_rate)
+        size = screen.get_height() / 16
+        self.back_button = Menu_Button(
+            size / 4,
+            size / 4,
+            (99, 99, 99),
+            large_font.render("", True, WHITE),
+            0,
+            size,
+            size,
+            pygame.image.load(
+                rf"{dirname}/images/misc/Back_button.png"
+            ).convert_alpha(),
+            border=False,
+            see=False,
+        )
 
 
 class PokerGame(PlayWindow):
@@ -697,7 +727,6 @@ class PokerGame(PlayWindow):
         super().__init__(frame_rate)
         self.table = start()
         self.community_cards = []
-        self.frame_rate = frame_rate
 
         self.deal_c = 75
         self.w_for_deal = False
@@ -740,18 +769,21 @@ class PokerGame(PlayWindow):
             3,
         )
 
-        zbw = 45
-        self.zoom = Zoom(screen.get_width() - zbw * 2.1, 1.1 * zbw, zbw)
-        self.buttons = [
-            self.dealButton,
-            self.foldButton,
-            self.checkButton,
-            self.betButton,
-            self.betButton.increase,
-            self.betButton.decrease,
-            self.betButton.slider,
-            self.zoom,
-        ]
+        zbw = screen.get_height() / 16
+        self.zoom = Zoom(screen.get_width() - zbw * 5/4, zbw / 4, zbw)
+        self.buttons.extend(
+            [
+                self.dealButton,
+                self.foldButton,
+                self.checkButton,
+                self.betButton,
+                self.betButton.increase,
+                self.betButton.decrease,
+                self.betButton.slider,
+                self.zoom,
+                self.back_button,
+            ]
+        )
 
         self.deal_tick = 0
         self.e_j = pygame.transform.scale(
@@ -959,7 +991,7 @@ class Menu(PlayWindow):
             *self.button_size,
         )
         self.current_window = 0
-        self.buttons = [self.play_button, self.explorer]
+        self.buttons.extend([self.play_button, self.explorer])
 
         for b in self.buttons:
             b.add_window(self)
@@ -981,7 +1013,7 @@ class Menu(PlayWindow):
 class Explorer(PlayWindow):
     def __init__(self, frame_rate):
         super().__init__(frame_rate)
-        self.buttons = []
+        self.buttons.extend([])
 
     def single_frame(self):
         screen.fill((0, 119, 8))
