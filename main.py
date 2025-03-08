@@ -139,7 +139,6 @@ class Menu_Button(Button):
         super().__init__(x, y, colour, text, BW, BH)
 
     def pressed_action(self):
-        print("pressed")
         self.window.current_window = 1
 
 
@@ -639,16 +638,17 @@ class PlayerGUI:
             )
 
 
-class Display:
+class Window:
     def __init__(self, frame_rate):
         self.frame_rate = frame_rate
 
     def single_frame(self):
+        self.mouse = pygame.mouse.get_pos()
         for b in self.buttons:
             b.draw()
 
 
-class PokerGame(Display):
+class PokerGame(Window):
     def __init__(self, frame_rate) -> None:
         super().__init__(frame_rate)
         self.table = start()
@@ -758,13 +758,13 @@ class PokerGame(Display):
 
     def single_frame(self):
         global screen
-        super().single_frame()
 
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
+
+        super().single_frame()
         current_tick = pygame.time.get_ticks()
 
-        self.mouse = pygame.mouse.get_pos()
         skip = False
 
         if self.dealButton.pressed:
@@ -794,8 +794,8 @@ class PokerGame(Display):
                     for p in self.players:
                         p.showdown(self.table)
 
-        for b in self.buttons:
-            b.draw()
+        # for b in self.buttons:
+        #     b.draw()
 
         pygame.display.flip()
 
@@ -830,7 +830,7 @@ class PokerGame(Display):
                     self.dealButton.pressed_action()
 
                 if event.key == pygame.K_q:  # TODO
-                    print("q")
+                    print("q", self.table.blinds)
                     self.table.blinds = [n * 2 for n in self.table.blinds]
 
                     print(self.table.blinds)
@@ -896,7 +896,7 @@ class PokerGame(Display):
         return True and self.table.no_players != 1
 
 
-class Menu(Display):
+class Menu(Window):
     def __init__(self, frame_rate):
         super().__init__(frame_rate)
 
@@ -923,8 +923,14 @@ class Menu(Display):
 
     def single_frame(self):
         global screen
+
+        screen.blit(self.background, (0, 0))
         super().single_frame()
-        self.mouse = pygame.mouse.get_pos()
+        # self.mouse = pygame.mouse.get_pos()
+
+        # for b in self.buttons:
+        #     b.draw()
+        pygame.display.flip()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -933,12 +939,6 @@ class Menu(Display):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for b in self.buttons:
                     b.check_press(*self.mouse)
-
-        screen.blit(self.background, (0, 0))
-
-        for b in self.buttons:
-            b.draw()
-        pygame.display.flip()
         return True
 
 

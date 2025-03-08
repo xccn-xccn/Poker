@@ -422,7 +422,7 @@ class BotV1(Bot):
         action = None
         if rank > min_rank:
             return (1, 0)
-        elif self.can_only_call() or rank > min_rank / 4:
+        elif self.can_only_call() or rank > min_rank / 3:
             action = (2, 0)
         else:
             action = (3, self.get_bet(table))
