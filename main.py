@@ -24,8 +24,10 @@ dirname = os.path.dirname(__file__)
 SCREENSIZE = (1400, 900)
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
-text_font = pygame.font.SysFont("Comic Sans", 35)
-text_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
+# text_font = pygame.font.SysFont("Comic Sans", 35)
+main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
+large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80)
+
 BUTTONW = 150
 BUTTONH = 50
 BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW
@@ -115,13 +117,15 @@ class Button:
         self.BW = BW
         self.BH = BH
 
+        self.text_rect = self.text.get_rect(
+            center=(self.x + self.BW / 2, self.y + self.BH / 2)
+        )
+
     def draw(self):
         pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
         pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
-        text_rect = self.text.get_rect(
-            center=(self.x + self.BW / 2, self.y + self.BH / 2)
-        )
-        screen.blit(self.text, text_rect)
+
+        screen.blit(self.text, self.text_rect)
 
     def add_table(self, table):
         self.table = table
@@ -135,11 +139,31 @@ class Button:
 
 
 class Menu_Button(Button):
-    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH):
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        w_change,
+        BW=BUTTONW,
+        BH=BUTTONH,
+    ):
         super().__init__(x, y, colour, text, BW, BH)
 
+        self.background = pygame.Surface((self.BW, self.BH))
+        self.background.set_alpha(128)
+        self.background.fill(colour)
+        pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
+
+        self.w_change = w_change
+
     def pressed_action(self):
-        self.window.current_window = 1
+        self.window.current_window = self.w_change
+
+    def draw(self):
+        screen.blit(self.background, (self.x, self.y))
+        screen.blit(self.text, self.text_rect)
 
 
 class Slider(Button):
@@ -261,7 +285,7 @@ class ActionButton(Button):
 class CheckButton(ActionButton):
     def set_text(self):
 
-        self.text = text_font.render(
+        self.text = main_font.render(
             (
                 "Check"
                 if self.table.human_player.round_invested == self.table.last_bet
@@ -270,6 +294,12 @@ class CheckButton(ActionButton):
             True,
             WHITE,
         )
+
+    def draw(self):
+        self.text_rect = self.text.get_rect(
+            center=(self.x + self.BW / 2, self.y + self.BH / 2)
+        )
+        super().draw()
 
 
 class BetButton(ActionButton):
@@ -280,7 +310,7 @@ class BetButton(ActionButton):
             x + self.BW,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            text_font.render("+", True, WHITE),
+            main_font.render("+", True, WHITE),
             1,
             self,
         )
@@ -288,7 +318,7 @@ class BetButton(ActionButton):
             x - BUTTONW / 4,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            text_font.render("-", True, WHITE),
+            main_font.render("-", True, WHITE),
             -1,
             self,
         )
@@ -296,14 +326,14 @@ class BetButton(ActionButton):
             x,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            "",
+            main_font.render("-", True, WHITE),
             self,
         )
         self.pbet = 0
 
     def draw(self):
         super().draw()
-        text = text_font.render(str(self.pbet), True, BLACK)
+        text = main_font.render(str(self.pbet), True, BLACK)
         text_rect = text.get_rect(center=(self.x + self.BW / 2, 0))
         screen.blit(text, (text_rect[0], self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2))
 
@@ -600,7 +630,7 @@ class PlayerGUI:
 
         screen.blit(self.profile, (self.PX, self.PY))
 
-        text = text_font.render(str(self.player.chips), True, (255, 215, 0))
+        text = main_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
@@ -627,7 +657,7 @@ class PlayerGUI:
             screen.blit(self.button_image, (self.BX, self.BY))
 
         if self.action_text:
-            text = text_font.render(self.action_text, True, BLACK)
+            text = main_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(
                 text,
@@ -642,13 +672,30 @@ class Window:
     def __init__(self, frame_rate):
         self.frame_rate = frame_rate
 
-    def single_frame(self):
+    def beg_frame(self):
         self.mouse = pygame.mouse.get_pos()
         for b in self.buttons:
             b.draw()
 
+    def mid_frame(self):
+        global screen
 
-class PokerGame(Window):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for b in self.buttons:
+                    b.check_press(*self.mouse)
+
+            if event.type == pygame.VIDEORESIZE:
+                screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+
+
+class PlayWindow(Window):
+    pass
+
+class PokerGame(PlayWindow):
     def __init__(self, frame_rate) -> None:
         super().__init__(frame_rate)
         self.table = start()
@@ -666,7 +713,7 @@ class PokerGame(Window):
             screen.get_width() / 2 - (BUTTONW / 2),
             screen.get_height() / 6 - BUTTONH / 2,
             (169, 169, 169),
-            text_font.render("Deal", True, WHITE),
+            main_font.render("Deal", True, WHITE),
         )
         self.foldButton = ActionButton(
             screen.get_width()
@@ -675,7 +722,7 @@ class PokerGame(Window):
             + BUTTON_BUFFER_X,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (255, 0, 0),
-            text_font.render("Fold", True, WHITE),
+            main_font.render("Fold", True, WHITE),
             1,
         )
         self.checkButton = CheckButton(
@@ -685,14 +732,14 @@ class PokerGame(Window):
             + BUTTON_BUFFER_X,
             screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            text_font.render("Check", True, WHITE),
+            main_font.render("Check", True, WHITE),
             2,
         )
         self.betButton = BetButton(
             screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
             screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            text_font.render("Bet ", True, WHITE),
+            main_font.render("Bet", True, WHITE),
             3,
         )
 
@@ -741,7 +788,7 @@ class PokerGame(Window):
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
         # self.chip_images = [chip] * 30 #testing
         PlayerGUI.draw_chips(x - CHIPW / 2, y - CARDH / 4, self.CXB, self.chip_images)
-        text = text_font.render(str(self.pot), True, BLACK)
+        text = main_font.render(str(self.pot), True, BLACK)
         text_rect = text.get_rect()
         screen.blit(text, (x - text_rect.width / 2, y))
 
@@ -762,7 +809,7 @@ class PokerGame(Window):
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
 
-        super().single_frame()
+        super().beg_frame()
         current_tick = pygame.time.get_ticks()
 
         skip = False
@@ -808,21 +855,13 @@ class PokerGame(Window):
         if skip:
             return True
 
+        end = super().mid_frame()
+        if end == False:
+            return False
+        
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return False
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for b in self.buttons:
-                    b.check_press(*self.mouse)
-
-            if event.type == pygame.VIDEORESIZE:
-                screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_f:
-                    pass
-
                 if event.key == pygame.K_d:
                     self.dealButton.pressed_action()
 
@@ -893,7 +932,7 @@ class PokerGame(Window):
         return True and self.table.no_players != 1
 
 
-class Menu(Window):
+class Menu(PlayWindow):
     def __init__(self, frame_rate):
         super().__init__(frame_rate)
 
@@ -904,16 +943,26 @@ class Menu(Window):
         self.background = pygame.transform.smoothscale(
             background, (screen.get_width(), screen.get_height())
         )
-        self.button_size = (screen.get_width() / 8, screen.get_height() / 8)
+        self.button_size = (screen.get_width() / 4, screen.get_height() / 8)
         self.play_button = Menu_Button(
             (screen.get_width() - self.button_size[0]) / 2,
-            (screen.get_height() - self.button_size[1]) / 2,
-            BLACK,
-            text_font.render("Play", True, WHITE),
+            screen.get_height() / 4 - self.button_size[1] / 2,
+            (99, 99, 99),
+            large_font.render("Play", True, WHITE),
+            1,
+            *self.button_size,
+        )
+
+        self.explorer = Menu_Button(
+            (screen.get_width() - self.button_size[0]) / 2,
+            screen.get_height() / 2 - self.button_size[1] / 2,
+            (99, 99, 99),
+            large_font.render("Explorer", True, WHITE),
+            2,
             *self.button_size,
         )
         self.current_window = 0
-        self.buttons = [self.play_button]
+        self.buttons = [self.play_button, self.explorer]
 
         for b in self.buttons:
             b.add_window(self)
@@ -922,18 +971,28 @@ class Menu(Window):
         global screen
 
         screen.blit(self.background, (0, 0))
-        super().single_frame()
+        super().beg_frame()
 
         pygame.display.flip()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return False
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for b in self.buttons:
-                    b.check_press(*self.mouse)
+        end = super().mid_frame()
+        if end == False:
+            return False
         return True
+
+
+class Explorer(PlayWindow):
+    def __init__(self, frame_rate):
+        super().__init__(frame_rate)
+        self.buttons = []
+
+    def single_frame(self):
+        screen.fill((0, 119, 8))
+        super().beg_frame()
+
+        end = super().mid_frame()
+        if end == False:
+            return False
 
 
 def main():
@@ -942,7 +1001,7 @@ def main():
     # window = Poker_game(FRAME_RATE)
     # window.set_test()
     window = Menu(FRAME_RATE)
-    states = [Menu, PokerGame]
+    states = [Menu, PokerGame, Explorer]
     while running:
         old_state = window.current_window
         running = window.single_frame()

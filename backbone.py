@@ -420,7 +420,7 @@ class BotV1(Bot):
             raise Exception
 
         action = None
-        if rank > min_rank:
+        if rank > min_rank and self.to_call > 0:
             return (1, 0)
         elif self.can_only_call() or rank > min_rank / 3:
             action = (2, 0)
