@@ -26,6 +26,8 @@ screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 # text_font = pygame.font.SysFont("Comic Sans", 35)
 main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
 large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80)
+title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120)
+
 
 BUTTONW = 150
 BUTTONH = 50
@@ -261,10 +263,13 @@ class Zoom(Button):
 class DealButton(Button):
     pressed = False
 
-    def __init__(self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None, border=True):
+    def __init__(
+        self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None, border=True
+    ):
         super().__init__(x, y, colour, text, BW, BH, image, border)
 
         self.pressed = False
+
     def pressed_action(self):
         self.pressed = True
 
@@ -1021,7 +1026,7 @@ class Explorer(PlayWindow):
         super().__init__(frame_rate, cw)
 
         self.buttons.extend([])
-        self.text = large_font.render("Coming Soon!", True, WHITE)
+        self.text = title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
