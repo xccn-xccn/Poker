@@ -794,9 +794,6 @@ class PokerGame(Window):
                     for p in self.players:
                         p.showdown(self.table)
 
-        # for b in self.buttons:
-        #     b.draw()
-
         pygame.display.flip()
 
         if self.acted:
@@ -926,10 +923,7 @@ class Menu(Window):
 
         screen.blit(self.background, (0, 0))
         super().single_frame()
-        # self.mouse = pygame.mouse.get_pos()
 
-        # for b in self.buttons:
-        #     b.draw()
         pygame.display.flip()
 
         for event in pygame.event.get():
