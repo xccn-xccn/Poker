@@ -10,6 +10,7 @@ from chips import get_chips
 # BUG slider doesnt allow all in
 # BUG action text glitch when player is choosing bet and opp has done a large bet (only when player on right?)
 # TODO make LHS buttons and RHS buttons
+# BUG cant go all in
 
 pygame.init()
 
@@ -277,7 +278,7 @@ class BetButton(ActionButton):
 
         if s_buttons == None:
             s_buttons = [
-                [(2.5, "bb"), (4, "bb"), (8, "bb"), (-1, "all")],
+                [(2.5, "bb"), (8, "bb"), (2.5, "p"), (-1, "all")],
                 [(0.5, "p"), (1, "p"), (2, "p"), (-1, "all")],
             ]
         self.increase = CBetButton(
@@ -805,7 +806,7 @@ class Window:
     def mid_frame(self):
         global screen
 
-        for event in pygame.event.get():
+        for event in self.events:
             if event.type == pygame.QUIT:
                 return False
 
@@ -998,12 +999,14 @@ class PokerGame(PlayWindow):
         if skip:
             return True
 
+        self.events = pygame.event.get()
+
         end = super().mid_frame()
         if end == False:
             return False
 
-        for event in pygame.event.get():
-
+        # print(pygame.event.get())
+        for event in self.events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_d:
                     self.dealButton.pressed_action()
@@ -1115,6 +1118,7 @@ class Menu(Window):
 
         pygame.display.flip()
 
+        self.events = pygame.event.get()
         end = super().mid_frame()
         if end == False:
             return False
@@ -1138,6 +1142,8 @@ class Explorer(PlayWindow):
 
         screen.blit(self.text, self.text_rect)
         pygame.display.flip()
+
+        self.events = pygame.event.get()
 
         end = super().mid_frame()
         if end == False:
