@@ -24,6 +24,7 @@ SCREENSIZE = (1400, 900)
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 # text_font = pygame.font.SysFont("Comic Sans", 35)
+small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30)
 main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
 large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80)
 title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120)
@@ -133,11 +134,10 @@ class Button:
         if border:
             pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
 
-    # def draw(self):
-    #     pygame.draw.rect(screen, self.colour, (self.x, self.y, self.BW, self.BH))
-    #     pygame.draw.rect(screen, BLACK, (self.x, self.y, self.BW, self.BH), 3)
-
-    #     screen.blit(self.text, self.text_rect)
+    def set_text_rect(self):
+        self.text_rect = self.text.get_rect(
+            center=(self.x + self.BW / 2, self.y + self.BH / 2)
+        )
 
     def draw(self):
         screen.blit(self.background, (self.x, self.y))
@@ -176,55 +176,6 @@ class Menu_Button(Button):
 
     def pressed_action(self):
         self.window.current_window = self.w_change
-
-
-class Slider(Button):
-    def __init__(
-        self,
-        x,
-        y,
-        colour,
-        text,
-        bet_button,
-        l_colour=BLACK,
-        l_height=10,
-        SW=BUTTONW / 6,
-    ):
-        super().__init__(x, y, colour, text)
-        self.l_colour = l_colour
-        self.l_height = l_height
-        self.bet_button = bet_button
-        self.s_x = x
-        self.SW = SW
-
-    def draw(self):
-        pygame.draw.rect(
-            screen,
-            self.l_colour,
-            (self.x, self.y + (self.BH - self.l_height) / 2, self.BW, self.l_height),
-        )
-        pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
-
-    def check_press(self, mx, my):
-        if (
-            self.x - self.BW / 20 <= mx <= self.x + self.BW
-            and self.y <= my <= self.y + self.BH
-        ):
-            self.pressed_action(mx)
-
-    def update_slider(self):
-        extra_p = (
-            0
-            if not self.table.human_player.chips
-            else min(1, self.bet_button.pbet / self.table.human_player.chips)
-        )
-        self.s_x = self.x + extra_p * (self.BW - self.SW)
-
-    def pressed_action(self, mx):
-        self.s_x = self.x if mx < self.x else min(mx, self.x + self.BW - self.SW)
-        percentage = 0 if mx < self.x else min((mx - self.x) / (self.BW - self.SW), 1)
-        self.bet_button.pbet = int(percentage * self.table.human_player.chips)
-        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
 class Zoom(Button):
@@ -321,41 +272,6 @@ class CheckButton(ActionButton):
         super().draw()
 
 
-
-
-class SetBetButton(Button):
-    def __init__(
-        self,
-        x,
-        y,
-        colour,
-        text,
-        bet_button,
-        set_action,
-        BW=BUTTONW,
-        BH=BUTTONH,
-        image=None,
-        border=True,
-    ):
-        super().__init__(x, y, colour, text, BW, BH, image, border)
-
-        self.bet_button = bet_button
-        self.set_action = set_action
-
-    def pressed_action(self):
-        r_action = self.set_action[0 if self.table.r == 0 else 1]
-        if r_action[0] == -1:
-            val = self.table.human_player.chips
-        elif r_action[1] == "bb":
-            val = self.table.blinds[-1] * r_action[0]
-        else:
-            val = self.table.get_pot() * r_action[0]
-
-        self.bet_button.pbet = round(min(val, self.table.human_player.chips))
-        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
-        self.bet_button.slider.update_slider()
-
-
 class BetButton(ActionButton):
 
     def __init__(self, x, y, colour, text, action, s_buttons=None):
@@ -439,6 +355,107 @@ class CBetButton(Button):
         self.bet_button.pbet = val
         self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
         self.bet_button.slider.update_slider()
+
+
+class SetBetButton(Button):
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        bet_button,
+        set_action,
+        BW=BUTTONW,
+        BH=BUTTONH,
+        image=None,
+        border=True,
+    ):
+        super().__init__(x, y, colour, text, BW, BH, image, border)
+
+        self.bet_button = bet_button
+        self.set_action = set_action
+
+    def pressed_action(self):
+        r_action = self.get_r_action()
+        if r_action[0] == -1:
+            val = self.table.human_player.chips
+        elif r_action[1] == "bb":
+            val = self.table.blinds[-1] * r_action[0]
+        else:
+            val = self.table.get_pot() * r_action[0]
+
+        self.bet_button.pbet = round(min(val, self.table.human_player.chips))
+        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
+        self.bet_button.slider.update_slider()
+
+    def get_r_action(self):
+        return self.set_action[0 if self.table.r == 0 else 1]
+
+    def update_text(self):
+        r_action = self.get_r_action()
+        if r_action[0] == -1:
+            text = "All"
+        elif r_action[1] == "bb":
+            text = str(round(self.table.blinds[-1] * r_action[0]))
+        else:
+            text = str(round(r_action[0] * 100)) + "%"
+
+        self.text = small_font.render(text, True, WHITE)
+        self.set_text_rect()
+
+    def draw(self):
+        self.update_text()
+        super().draw()
+
+
+class Slider(Button):
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        bet_button,
+        l_colour=BLACK,
+        l_height=10,
+        SW=BUTTONW / 6,
+    ):
+        super().__init__(x, y, colour, text)
+        self.l_colour = l_colour
+        self.l_height = l_height
+        self.bet_button = bet_button
+        self.s_x = x
+        self.SW = SW
+
+    def draw(self):
+        pygame.draw.rect(
+            screen,
+            self.l_colour,
+            (self.x, self.y + (self.BH - self.l_height) / 2, self.BW, self.l_height),
+        )
+        pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
+
+    def check_press(self, mx, my):
+        if (
+            self.x - self.BW / 20 <= mx <= self.x + self.BW
+            and self.y <= my <= self.y + self.BH
+        ):
+            self.pressed_action(mx)
+
+    def update_slider(self):
+        extra_p = (
+            0
+            if not self.table.human_player.chips
+            else min(1, self.bet_button.pbet / self.table.human_player.chips)
+        )
+        self.s_x = self.x + extra_p * (self.BW - self.SW)
+
+    def pressed_action(self, mx):
+        self.s_x = self.x if mx < self.x else min(mx, self.x + self.BW - self.SW)
+        percentage = 0 if mx < self.x else min((mx - self.x) / (self.BW - self.SW), 1)
+        self.bet_button.pbet = int(percentage * self.table.human_player.chips)
+        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
 
 
 class Card:

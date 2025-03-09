@@ -484,6 +484,7 @@ class Table:
         self.running = False
         self.community = []
         self.correct_total_chips = 0
+        self.r = 0
 
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
