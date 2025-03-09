@@ -452,9 +452,6 @@ class BotV1(Bot):
         if table.r == 0:
             action = self.pre_flop(table)
             self.sp_range(action)
-            if action != 1:
-                # print(self.c_range)
-                pass
         else:
             action = self.post_flop(table)
 

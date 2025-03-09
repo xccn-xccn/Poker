@@ -121,9 +121,7 @@ class Button:
         self.BW = BW
         self.BH = BH
 
-        self.text_rect = self.text.get_rect(
-            center=(self.x + self.BW / 2, self.y + self.BH / 2)
-        )
+        self.set_text_rect()
 
         if image == None:
             self.background = pygame.Surface((self.BW, self.BH))
@@ -409,7 +407,21 @@ class SetBetButton(Button):
 
     def draw(self):
         self.update_text()
-        super().draw()
+        pygame.draw.rect(
+            screen,
+            self.colour,
+            (self.x, self.y, self.BW, self.BH),
+            border_radius=min(self.BW, self.BH) // 3,
+        )
+        pygame.draw.rect(
+            screen,
+            BLACK,
+            (self.x, self.y, self.BW, self.BH),
+            border_radius=min(self.BW, self.BH) // 3,
+            width=3,
+        )
+
+        screen.blit(self.text, self.text_rect)
 
 
 class Slider(Button):
@@ -566,20 +578,20 @@ class PlayerGUI:
             PROFILE_SIZE,
         )
 
-        self.rect_image = pygame.Surface(self.profile.get_size(), pygame.SRCALPHA)
-        size = self.rect_image.get_size()
+        rect_image = pygame.Surface(self.profile.get_size(), pygame.SRCALPHA)
+        size = rect_image.get_size()
         pygame.draw.rect(
-            self.rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0] // 2
+            rect_image, (255, 255, 255), (0, 0, *size), border_radius=size[0] // 2
         )
         pygame.draw.rect(
-            self.rect_image,
-            (0, 0, 0),
+            rect_image,
+            BLACK,
             (0, 0, *size),
             border_radius=size[0] // 2,
             width=3,
         )
 
-        self.profile.blit(self.rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN)
+        self.profile.blit(rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN)
 
     @staticmethod
     def get_CXB():
