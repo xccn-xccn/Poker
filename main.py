@@ -340,8 +340,6 @@ class SetBetButton(ActionButton):
         self.bet_button = bet_button
         self.s_buttons = s_buttons
         bo_len = len(s_buttons[0])
-        # self.background = pygame.Surface((self.BW, self.BH))
-        # self.background.set_alpha(0)
 
         for w in range(1, bo_len + 1):
             # pygame.draw.rect(
