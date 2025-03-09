@@ -281,8 +281,8 @@ class DealButton(Button):
 
 
 class ActionButton(Button):
-    def __init__(self, x, y, colour, text, action):
-        super().__init__(x, y, colour, text)
+    def __init__(self, x, y, colour, text, action, BW=BUTTONW, BH=BUTTONH, border=True):
+        super().__init__(x, y, colour, text, BW, BH, border=border)
         self.action = action
 
     def pressed_action(self):
@@ -321,10 +321,52 @@ class CheckButton(ActionButton):
         super().draw()
 
 
+class SetBetButton(ActionButton):
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        action,
+        bet_button,
+        s_buttons,
+        BW=BUTTONW,
+        BH=BUTTONH,
+        border=True,
+    ):
+        super().__init__(x, y, colour, text, action, BW, BH, border=border)
+
+        self.bet_button = bet_button
+        self.s_buttons = s_buttons
+        bo_len = len(s_buttons[0])
+        # self.background = pygame.Surface((self.BW, self.BH))
+        # self.background.set_alpha(0)
+
+        for w in range(1, bo_len + 1):
+            # pygame.draw.rect(
+            #     self.background,
+            #     BLACK,
+            #     (self.BW * w / (bo_len), 0, self.BW / bo_len, self.BH),
+            #     2,
+            # )
+            clear_border = pygame.Surface((3, self.BH), pygame.SRCALPHA)
+            self.background.blit(
+                clear_border, (self.BW * w / (bo_len), 0), None, pygame.BLEND_RGBA_MIN
+            )
+
+
 class BetButton(ActionButton):
 
-    def __init__(self, x, y, colour, text, action):
+    def __init__(self, x, y, colour, text, action, s_buttons=None):
         super().__init__(x, y, colour, text, action)
+
+        self.s_buttons = s_buttons
+        if s_buttons == None:
+            self.s_buttons = [
+                [(2.5, "bb"), (4, "bb"), (8, "bb"), (-1, "all")],
+                [(0.5, "p"), (1, "p"), (2, "p"), (-1, "all")],
+            ]
         self.increase = CBetButton(
             x + self.BW,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
@@ -348,19 +390,35 @@ class BetButton(ActionButton):
             main_font.render("", True, WHITE),
             self,
         )
+
+        self.set_button = SetBetButton(
+            self.decrease.x,
+            self.decrease.y - BUTTONH - 5,
+            (14, 74, 146),
+            main_font.render("", True, WHITE),
+            3,
+            self,
+            self.s_buttons,
+            BW=self.increase.x - self.decrease.x + self.decrease.BW,
+        )
+
+        self.buttons = [self.increase, self.decrease, self.slider, self.set_button]
         self.pbet = 0
 
     def draw(self):
         super().draw()
         text = main_font.render(str(self.pbet), True, BLACK)
-        text_rect = text.get_rect(center=(self.x + self.BW / 2, self.slider.y - BUTTONW / 2))
-        # screen.blit(text, (text_rect[0], self.y - (BUTTONH + BUTTON_BUFFER_Y) * 2))
+        text_rect = text.get_rect(
+            center=(self.x + self.BW / 2, self.slider.y - BUTTONW / 2)
+        )
         screen.blit(text, text_rect)
 
+    def add_table(self, table):
+        super().add_table(table)
 
 
 class CBetButton(Button):
-    def __init__(self, x, y, colour, text, co, bet_button):
+    def __init__(self, x, y, colour, text, co, bet_button, border=True):
         super().__init__(x, y, colour, text, BW=BUTTONW / 4)
         self.co = co
         self.bet_button = bet_button
@@ -794,11 +852,9 @@ class PokerGame(PlayWindow):
                 self.foldButton,
                 self.checkButton,
                 self.betButton,
-                self.betButton.increase,
-                self.betButton.decrease,
-                self.betButton.slider,
                 self.zoom,
             ]
+            + self.betButton.buttons
         )
 
         self.deal_tick = 0
