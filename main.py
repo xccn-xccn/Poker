@@ -321,37 +321,39 @@ class CheckButton(ActionButton):
         super().draw()
 
 
-class SetBetButton(ActionButton):
+
+
+class SetBetButton(Button):
     def __init__(
         self,
         x,
         y,
         colour,
         text,
-        action,
         bet_button,
-        s_buttons,
+        set_action,
         BW=BUTTONW,
         BH=BUTTONH,
+        image=None,
         border=True,
     ):
-        super().__init__(x, y, colour, text, action, BW, BH, border=border)
+        super().__init__(x, y, colour, text, BW, BH, image, border)
 
         self.bet_button = bet_button
-        self.s_buttons = s_buttons
-        bo_len = len(s_buttons[0])
+        self.set_action = set_action
 
-        for w in range(1, bo_len + 1):
-            # pygame.draw.rect(
-            #     self.background,
-            #     BLACK,
-            #     (self.BW * w / (bo_len), 0, self.BW / bo_len, self.BH),
-            #     2,
-            # )
-            clear_border = pygame.Surface((3, self.BH), pygame.SRCALPHA)
-            self.background.blit(
-                clear_border, (self.BW * w / (bo_len), 0), None, pygame.BLEND_RGBA_MIN
-            )
+    def pressed_action(self):
+        r_action = self.set_action[0 if self.table.r == 0 else 1]
+        if r_action[0] == -1:
+            val = self.table.human_player.chips
+        elif r_action[1] == "bb":
+            val = self.table.blinds[-1] * r_action[0]
+        else:
+            val = self.table.get_pot() * r_action[0]
+
+        self.bet_button.pbet = round(min(val, self.table.human_player.chips))
+        self.window.players[0].update(self.table.blinds[-1], extra=self.bet_button.pbet)
+        self.bet_button.slider.update_slider()
 
 
 class BetButton(ActionButton):
@@ -359,9 +361,8 @@ class BetButton(ActionButton):
     def __init__(self, x, y, colour, text, action, s_buttons=None):
         super().__init__(x, y, colour, text, action)
 
-        self.s_buttons = s_buttons
         if s_buttons == None:
-            self.s_buttons = [
+            s_buttons = [
                 [(2.5, "bb"), (4, "bb"), (8, "bb"), (-1, "all")],
                 [(0.5, "p"), (1, "p"), (2, "p"), (-1, "all")],
             ]
@@ -389,18 +390,27 @@ class BetButton(ActionButton):
             self,
         )
 
-        self.set_button = SetBetButton(
-            self.decrease.x,
-            self.decrease.y - BUTTONH - 5,
-            (14, 74, 146),
-            main_font.render("", True, WHITE),
-            3,
-            self,
-            self.s_buttons,
-            BW=self.increase.x - self.decrease.x + self.decrease.BW,
-        )
+        self.set_buttons = []
 
-        self.buttons = [self.increase, self.decrease, self.slider, self.set_button]
+        sb_count = len(s_buttons[0])
+        TW = self.increase.x - self.decrease.x + self.decrease.BW
+        sb_buffer = TW / 30
+        SW = (TW - sb_buffer * sb_count) / sb_count
+
+        for i in range(sb_count):
+            self.set_buttons.append(
+                SetBetButton(
+                    self.decrease.x + (SW + sb_buffer) * i,
+                    self.decrease.y - BUTTONH - 5,
+                    (14, 74, 146),
+                    main_font.render("", True, WHITE),
+                    self,
+                    [x[i] for x in s_buttons],
+                    BW=SW,
+                )
+            )
+
+        self.buttons = [self.increase, self.decrease, self.slider] + self.set_buttons
         self.pbet = 0
 
     def draw(self):
@@ -632,6 +642,8 @@ class PlayerGUI:
             c.show()
 
     def get_action(self):
+        # BUG when action is reset such as through button press
+        # the new action is the last players action
         action = self.player.action
 
         if action == None:
