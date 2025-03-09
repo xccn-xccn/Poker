@@ -437,6 +437,11 @@ class BotV1(Bot):
         )
 
         print(rank, len(self.c_range), action)
+
+        if rank > len(self.c_range):
+            self.c_range[sort_hole(*self.hole_cards)] = (
+                len(self.c_range) + 1
+            )  # uneeded?
         return action
 
     def get_action(self, table):

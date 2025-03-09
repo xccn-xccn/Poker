@@ -309,14 +309,17 @@ class BetButton(ActionButton):
         self.set_buttons = []
 
         sb_count = len(s_buttons[0])
-        TW = self.increase.x - self.decrease.x + self.decrease.BW
+        e = 1.2
+        TW = (self.increase.x - self.decrease.x + self.decrease.BW) * e
+        # TW = (screen.get_width() - self.decrease.x) * e
         sb_buffer = TW / 30
-        SW = (TW - sb_buffer * sb_count) / sb_count
+        SW = (TW - sb_buffer * (sb_count - 1)) / sb_count
 
         for i in range(sb_count):
             self.set_buttons.append(
                 SetBetButton(
-                    self.decrease.x + (SW + sb_buffer) * i,
+                    # screen.get_width() - TW + (SW + sb_buffer) * i,
+                    self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i,
                     self.decrease.y - BUTTONH - 5,
                     (14, 74, 146),
                     main_font.render("", True, WHITE),
@@ -399,7 +402,7 @@ class SetBetButton(Button):
         elif r_action[1] == "bb":
             text = str(round(self.table.blinds[-1] * r_action[0]))
         else:
-            text = str(round(r_action[0] * 100)) + "%"
+            text = str(r_action[0]) + "x"
 
         self.text = small_font.render(text, True, WHITE)
         self.set_text_rect()
