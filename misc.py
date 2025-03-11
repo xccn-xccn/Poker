@@ -68,17 +68,11 @@ for i, x in enumerate(sorted_hands):
 class Scale(float):
     def __mul__(self, value):
 
-        if isinstance(value, int):
-            return round(super().__mul__(value))
+        return round(super().__mul__(value))
 
-        return super().__mul__(value)
-    
     def __rmul__(self, value):
 
-        if isinstance(value, int):
-            return round(super().__mul__(value))
-
-        return super().__mul__(value)
+        return round(super().__mul__(value))
     
 def sort_hole(c1, c2):
     return tuple(
