@@ -2,6 +2,7 @@ import pygame, random, os
 import pygame.image
 from backbone import start, Bot, Human
 from chips import get_chips
+from misc import *
 
 
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
@@ -10,6 +11,8 @@ from chips import get_chips
 # BUG slider doesnt allow all in
 # BUG action text glitch when player is choosing bet and opp has done a large bet (only when player on right?)
 # TODO make LHS buttons and RHS buttons
+# TODO double blinds button
+# BUG sometimes can click close window button (maybe lag or because of event loop)
 # BUG cant go all in
 
 pygame.init()
@@ -22,7 +25,23 @@ def draw_text(text, font, text_colour, x, y):
 
 dirname = os.path.dirname(__file__)
 SCREENSIZE = (1400, 900)
-screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
+INTENDEDSIZE = (1400, 900)
+
+# ENTIRESCREEN = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+TEMPSCALE = Scale(
+    min(
+        pygame.display.Info().current_w / INTENDEDSIZE[0],
+        pygame.display.Info().current_h / INTENDEDSIZE[1],
+        key=lambda x: abs(1 - x),
+    )
+)
+FULLSCREEN = (
+    INTENDEDSIZE[0] * TEMPSCALE * 0.90,
+    INTENDEDSIZE[1] * TEMPSCALE * 0.90,
+)
+# screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
+screen = pygame.display.set_mode(FULLSCREEN, pygame.RESIZABLE)
+
 
 # text_font = pygame.font.SysFont("Comic Sans", 35)
 small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30)
@@ -30,15 +49,14 @@ main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
 large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80)
 title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120)
 
+WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
+BUTTONW = 150 * WSCALE
+BUTTONH = 50 * HSCALE
+BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * min(WSCALE, HSCALE)
+BUTTON_BUFFER_X = 80 * WSCALE
+BUTTON_BUFFER_Y = 20 * HSCALE
 
-BUTTONW = 150
-BUTTONH = 50
-BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW
-BUTTON_BUFFER_X = 80
-BUTTON_BUFFER_Y = 20
-
-CS = 20
-CHIPW, CHIPH = (2 * CS, 1 * CS)
+CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
 
 valFilename = {}
 suitFilename = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
@@ -58,18 +76,15 @@ clock = pygame.time.Clock()
 tableImage = pygame.image.load(
     rf"{dirname}/images/misc/poker-table.png"
 ).convert_alpha()
-TIS = 1
-table_image_size = (868 * TIS, 423 * TIS)
+table_image_size = (868 * WSCALE, 423 * HSCALE)
 tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
 TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
 TableY = (screen.get_height() / 2) - (table_image_size[1] / 2)
 
-CARD_S = 1
-BUFFER_S = 1
 CARDW, CARDH, CARDB = (
-    59 / 1000 * table_image_size[0] * CARD_S,
-    173 / 1000 * table_image_size[1] * CARD_S,
-    7 / 1000 * table_image_size[1] * BUFFER_S,
+    59 / 1000 * table_image_size[0],
+    173 / 1000 * table_image_size[1],
+    7 / 1000 * table_image_size[1],
 )
 
 chip = pygame.transform.smoothscale(
@@ -89,7 +104,7 @@ TCard = pygame.transform.smoothscale(
 
 TCard2 = pygame.transform.rotate(TCard, 90)
 
-PROFILE_SIZE = (125, 125)
+PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
 X1 = TableX + 700 / 1000 * table_image_size[0]
 Y1 = TableY + table_image_size[1]
 

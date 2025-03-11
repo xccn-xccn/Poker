@@ -65,7 +65,21 @@ strengths_to_index = defaultdict(list)
 for i, x in enumerate(sorted_hands):
     strengths_to_index[pre_strength(*x)].append(i)
 
+class Scale(float):
+    def __mul__(self, value):
 
+        if isinstance(value, int):
+            return round(super().__mul__(value))
+
+        return super().__mul__(value)
+    
+    def __rmul__(self, value):
+
+        if isinstance(value, int):
+            return round(super().__mul__(value))
+
+        return super().__mul__(value)
+    
 def sort_hole(c1, c2):
     return tuple(
         sorted((c1, c2), key=lambda x: (card_values[x[0]], x[1]), reverse=True)

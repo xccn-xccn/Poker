@@ -6,8 +6,8 @@ from collections import Counter
 start = perf_counter()
 
 string = "smoooodles aa"
-for r in range(100_000):
-    result = test_mod.count_words(string)
+# for r in range(100_000):
+#     result = test_mod.count_words(string)
 
 # for r in range(100_000):
 #     result = Counter(string)
@@ -17,4 +17,17 @@ for r in range(100_000):
 
 # print(list(sorted(l)))
 
+
+class Scale(float):
+    def __mul__(self, value):
+
+        return round(super().__mul__(value))
+
+    def __rmul__(self, value):
+
+        return round(super().__mul__(value))
+
+
+a = Scale(1.5)
+print(a * 2, a * 1, 9.5 * 87 * a)
 print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")
