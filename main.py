@@ -92,23 +92,6 @@ def init_images():
         7 / 1000 * table_image_size[1],
     )
 
-    chip = pygame.transform.smoothscale(
-        pygame.image.load(rf"{dirname}/images/chips/green_chip.png").convert_alpha(),
-        (CHIPW, CHIPH),
-    )
-
-    chip2 = pygame.transform.smoothscale(
-        pygame.image.load(rf"{dirname}/images/chips/black_chip.png").convert_alpha(),
-        (CHIPW, CHIPH),
-    )
-
-    TCard = pygame.transform.smoothscale(
-        pygame.image.load(rf"{dirname}/images/cards/card_back.png").convert_alpha(),
-        (CARDW, CARDH),
-    )
-
-    TCard2 = pygame.transform.rotate(TCard, 90)
-
     PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
     X1 = TableX + 700 / 1000 * table_image_size[0]
     Y1 = TableY + table_image_size[1]
@@ -345,7 +328,7 @@ class BetButton(ActionButton):
             self.set_buttons.append(
                 SetBetButton(
                     # screen.get_width() - TW + (SW + sb_buffer) * i,
-                    self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i,
+                    round(self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i),
                     self.decrease.y - BUTTONH - 5,
                     (14, 74, 146),
                     main_font.render("", True, WHITE),
