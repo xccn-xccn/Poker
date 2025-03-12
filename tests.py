@@ -28,6 +28,28 @@ class Scale(float):
         return round(super().__mul__(value))
 
 
-a = Scale(1.5)
-print(a * 2, a * 1, 9.5 * 87 * a)
+def make_globals():
+    local_vars = locals()
+    print(local_vars)
+    for var_name, var_value in local_vars.items():
+        print(var_name)
+        globals()[var_name] = var_value
+
+def set_variables():
+    var1 = "Hello, World!"
+    var2 = 123
+    var3 = [4, 5, 6]
+    
+    local_vars = locals()
+
+    for var_name, var_value in local_vars.items():
+        print(var_name)
+        globals()[var_name] = var_value
+
+set_variables()
+
+print(var1)  
+print(var2)  
+print(var3)  
+
 print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")

@@ -40,23 +40,8 @@ FULLSCREEN = (
     INTENDEDSIZE[1] * TEMPSCALE * 0.90,
 )
 # screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
-screen = pygame.display.set_mode(FULLSCREEN, pygame.RESIZABLE)
 
-
-# text_font = pygame.font.SysFont("Comic Sans", 35)
-small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30)
-main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35)
-large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80)
-title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120)
-
-WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
-BUTTONW = 150 * WSCALE
-BUTTONH = 50 * HSCALE
-BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * min(WSCALE, HSCALE)
-BUTTON_BUFFER_X = 80 * WSCALE
-BUTTON_BUFFER_Y = 20 * HSCALE
-
-CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
+SCREENSIZE = FULLSCREEN
 
 valFilename = {}
 suitFilename = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
@@ -65,65 +50,92 @@ for k, v in zip(
     ["2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king", "ace"],
 ):
     valFilename[k] = v
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-
-pygame.display.set_caption("Poker Game")
-
 clock = pygame.time.Clock()
+screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
-tableImage = pygame.image.load(
-    rf"{dirname}/images/misc/poker-table.png"
-).convert_alpha()
-table_image_size = (868 * WSCALE, 423 * HSCALE)
-tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
-TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
-TableY = (screen.get_height() / 2) - (table_image_size[1] / 2)
 
-CARDW, CARDH, CARDB = (
-    59 / 1000 * table_image_size[0],
-    173 / 1000 * table_image_size[1],
-    7 / 1000 * table_image_size[1],
-)
+def init_images():
 
-chip = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}/images/chips/green_chip.png").convert_alpha(),
-    (CHIPW, CHIPH),
-)
+    WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
 
-chip2 = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}/images/chips/black_chip.png").convert_alpha(),
-    (CHIPW, CHIPH),
-)
+    # text_font = pygame.font.SysFont("Comic Sans", 35)
+    small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
+    main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
+    large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
+    title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
 
-TCard = pygame.transform.smoothscale(
-    pygame.image.load(rf"{dirname}/images/cards/card_back.png").convert_alpha(),
-    (CARDW, CARDH),
-)
+    BUTTONW = 150 * WSCALE
+    BUTTONH = 50 * HSCALE
+    BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * max(WSCALE, HSCALE)
+    BUTTON_BUFFER_X = 80 * WSCALE
+    BUTTON_BUFFER_Y = 20 * HSCALE
 
-TCard2 = pygame.transform.rotate(TCard, 90)
+    CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
 
-PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
-X1 = TableX + 700 / 1000 * table_image_size[0]
-Y1 = TableY + table_image_size[1]
+    pygame.display.set_caption("Poker Game")
 
-X2 = screen.get_width() - X1
-Y2 = screen.get_height() - Y1
+    tableImage = pygame.image.load(
+        rf"{dirname}/images/misc/poker-table.png"
+    ).convert_alpha()
+    table_image_size = (868 * WSCALE, 423 * HSCALE)
+    tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
+    TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
+    TableY = (screen.get_height() / 2) - (table_image_size[1] / 2)
 
-X3 = TableX
-Y3 = screen.get_height() / 2
+    CARDW, CARDH, CARDB = (
+        59 / 1000 * table_image_size[0],
+        173 / 1000 * table_image_size[1],
+        7 / 1000 * table_image_size[1],
+    )
 
-X4 = screen.get_width() - X3
+    chip = pygame.transform.smoothscale(
+        pygame.image.load(rf"{dirname}/images/chips/green_chip.png").convert_alpha(),
+        (CHIPW, CHIPH),
+    )
 
-player_coords = [
-    (X1, Y1),
-    (X2, Y1),
-    (X3, Y3),
-    (X2, Y2),
-    (X1, Y2),
-    (X4, Y3),
-]
+    chip2 = pygame.transform.smoothscale(
+        pygame.image.load(rf"{dirname}/images/chips/black_chip.png").convert_alpha(),
+        (CHIPW, CHIPH),
+    )
+
+    TCard = pygame.transform.smoothscale(
+        pygame.image.load(rf"{dirname}/images/cards/card_back.png").convert_alpha(),
+        (CARDW, CARDH),
+    )
+
+    TCard2 = pygame.transform.rotate(TCard, 90)
+
+    PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
+    X1 = TableX + 700 / 1000 * table_image_size[0]
+    Y1 = TableY + table_image_size[1]
+
+    X2 = screen.get_width() - X1
+    Y2 = screen.get_height() - Y1
+
+    X3 = TableX
+    Y3 = screen.get_height() / 2
+
+    X4 = screen.get_width() - X3
+
+    player_coords = [
+        (X1, Y1),
+        (X2, Y1),
+        (X3, Y3),
+        (X2, Y2),
+        (X1, Y2),
+        (X4, Y3),
+    ]
+
+    local_vars = locals()
+    for var_name, var_value in local_vars.items():
+        globals()[var_name] = var_value
+
+
+init_images()
 
 
 class Button:
@@ -831,6 +843,7 @@ class Window:
 
             if event.type == pygame.VIDEORESIZE:
                 screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+                init_images()
 
 
 class PlayWindow(Window):
