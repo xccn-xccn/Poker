@@ -13,6 +13,7 @@ from misc import *
 # TODO make LHS buttons and RHS buttons
 # TODO double blinds button
 # BUG sometimes can click close window button (maybe lag or because of event loop)
+# BUG sometimes dimensions can cause non integer number of pixels
 # BUG cant go all in
 
 pygame.init()
@@ -851,6 +852,63 @@ class PlayWindow(Window):
         self.buttons.extend([self.back_button])
 
 
+class Menu(Window):
+    def __init__(self, frame_rate, cw=0):
+        super().__init__(frame_rate, cw)
+
+        background = pygame.image.load(
+            rf"{dirname}/images/misc/black_poker_background.jpg"
+        ).convert_alpha()
+
+        self.background = pygame.transform.smoothscale(
+            background, (screen.get_width(), screen.get_height())
+        )
+        self.button_size = (screen.get_width() / 4, screen.get_height() / 8)
+        self.play_button = Menu_Button(
+            (screen.get_width() - self.button_size[0]) / 2,
+            screen.get_height() / 4 - self.button_size[1] / 2,
+            (99, 99, 99),
+            large_font.render("Play", True, WHITE),
+            1,
+            *self.button_size,
+        )
+
+        self.explorer = Menu_Button(
+            (screen.get_width() - self.button_size[0]) / 2,
+            screen.get_height() / 2 - self.button_size[1] / 2,
+            (99, 99, 99),
+            large_font.render("Explorer", True, WHITE),
+            2,
+            *self.button_size,
+        )
+
+        self.trainer = Menu_Button(
+            (screen.get_width() - self.button_size[0]) / 2,
+            screen.get_height() * 3 / 4 - self.button_size[1] / 2,
+            (99, 99, 99),
+            large_font.render("Trainer", True, WHITE),
+            3,
+            *self.button_size,
+        )
+        self.buttons.extend([self.play_button, self.explorer, self.trainer])
+
+        super().end_init()
+
+    def single_frame(self):
+        global screen
+
+        screen.blit(self.background, (0, 0))
+        super().beg_frame()
+
+        pygame.display.flip()
+
+        self.events = pygame.event.get()
+        end = super().mid_frame()
+        if end == False:
+            return False
+        return True
+
+
 class PokerGame(PlayWindow):
     def __init__(self, frame_rate, cw) -> None:
         super().__init__(frame_rate, cw)
@@ -1088,55 +1146,34 @@ class PokerGame(PlayWindow):
         return True and self.table.no_players != 1
 
 
-class Menu(Window):
-    def __init__(self, frame_rate, cw=0):
+class Explorer(PlayWindow):
+    def __init__(self, frame_rate, cw):
         super().__init__(frame_rate, cw)
 
-        background = pygame.image.load(
-            rf"{dirname}/images/misc/black_poker_background.jpg"
-        ).convert_alpha()
-
-        self.background = pygame.transform.smoothscale(
-            background, (screen.get_width(), screen.get_height())
+        self.buttons.extend([])
+        self.text = title_font.render("Coming Soon!", True, WHITE)
+        self.text_rect = self.text.get_rect(
+            center=(screen.get_width() / 2, screen.get_height() / 3)
         )
-        self.button_size = (screen.get_width() / 4, screen.get_height() / 8)
-        self.play_button = Menu_Button(
-            (screen.get_width() - self.button_size[0]) / 2,
-            screen.get_height() / 4 - self.button_size[1] / 2,
-            (99, 99, 99),
-            large_font.render("Play", True, WHITE),
-            1,
-            *self.button_size,
-        )
-
-        self.explorer = Menu_Button(
-            (screen.get_width() - self.button_size[0]) / 2,
-            screen.get_height() / 2 - self.button_size[1] / 2,
-            (99, 99, 99),
-            large_font.render("Explorer", True, WHITE),
-            2,
-            *self.button_size,
-        )
-        self.buttons.extend([self.play_button, self.explorer])
-
         super().end_init()
 
     def single_frame(self):
-        global screen
-
-        screen.blit(self.background, (0, 0))
+        screen.fill((0, 119, 8))
         super().beg_frame()
 
+        screen.blit(self.text, self.text_rect)
         pygame.display.flip()
 
         self.events = pygame.event.get()
+
         end = super().mid_frame()
         if end == False:
             return False
+
         return True
 
 
-class Explorer(PlayWindow):
+class Trainer(PlayWindow):
     def __init__(self, frame_rate, cw):
         super().__init__(frame_rate, cw)
 
@@ -1169,7 +1206,7 @@ def main():
     # window = Poker_game(FRAME_RATE)
     # window.set_test()
     window = Menu(FRAME_RATE)
-    states = [Menu, PokerGame, Explorer]
+    states = [Menu, PokerGame, Explorer, Trainer]
     while running:
         old_state = window.current_window
         running = window.single_frame()
