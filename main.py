@@ -15,6 +15,7 @@ from misc import *
 # BUG sometimes can click close window button (maybe lag or because of event loop)
 # BUG sometimes dimensions can cause non integer number of pixels
 # BUG cant go all in
+# TODO looks weird when small
 
 pygame.init()
 
@@ -25,7 +26,7 @@ def draw_text(text, font, text_colour, x, y):
 
 
 dirname = os.path.dirname(__file__)
-SCREENSIZE = (1400, 900)
+# SCREENSIZE = (1400, 900)
 INTENDEDSIZE = (1400, 900)
 
 # ENTIRESCREEN = (pygame.display.Info().current_w, pygame.display.Info().current_h)
@@ -1021,7 +1022,6 @@ class PokerGame(PlayWindow):
 
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
-
         super().beg_frame()
         current_tick = pygame.time.get_ticks()
 
