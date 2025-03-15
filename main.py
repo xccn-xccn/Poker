@@ -15,7 +15,7 @@ from misc import *
 # BUG sometimes can click close window button (maybe lag or because of event loop)
 # BUG sometimes dimensions can cause non integer number of pixels
 # BUG cant go all in
-# TODO looks weird when small
+# BUG default variables (in button) do not get reset after the variable itself is reset
 
 pygame.init()
 
@@ -331,7 +331,7 @@ class BetButton(ActionButton):
                 SetBetButton(
                     # screen.get_width() - TW + (SW + sb_buffer) * i,
                     round(self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i),
-                    self.decrease.y - BUTTONH - 5,
+                    round(self.decrease.y - BUTTONH - 5),
                     (14, 74, 146),
                     main_font.render("", True, WHITE),
                     self,
