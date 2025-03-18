@@ -6,7 +6,7 @@ from backbone_misc import *
 
 # from main_misc import *
 
-# line 560
+# line 578
 # keep chips when resizing profile
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
