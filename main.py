@@ -125,8 +125,14 @@ init_images()
 
 class Button:
     def __init__(
-        self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None, border=True
+        self, x, y, colour, text, BW=None, BH=None, image=None, border=True
     ):
+        
+        if BW == None:
+            BW = BUTTONW
+        if BH == None:
+            BH = BUTTONH
+
         self.x = x
         self.y = y
         self.colour = colour
@@ -173,8 +179,8 @@ class Menu_Button(Button):
         colour,
         text,
         w_change,
-        BW=BUTTONW,
-        BH=BUTTONH,
+        BW=None,
+        BH=None,
         image=None,
         border=True,
         see=True,
@@ -183,6 +189,8 @@ class Menu_Button(Button):
 
         if see:
             self.background.set_alpha(128)
+
+        
         self.w_change = w_change
 
     def pressed_action(self):
@@ -226,7 +234,7 @@ class DealButton(Button):
     pressed = False
 
     def __init__(
-        self, x, y, colour, text, BW=BUTTONW, BH=BUTTONH, image=None, border=True
+        self, x, y, colour, text, BW=None, BH=None, image=None, border=True
     ):
         super().__init__(x, y, colour, text, BW, BH, image, border)
 
@@ -243,7 +251,7 @@ class DealButton(Button):
 
 
 class ActionButton(Button):
-    def __init__(self, x, y, colour, text, action, BW=BUTTONW, BH=BUTTONH, border=True):
+    def __init__(self, x, y, colour, text, action, BW=None, BH=None, border=True):
         super().__init__(x, y, colour, text, BW, BH, border=border)
         self.action = action
 
@@ -323,8 +331,8 @@ class BetButton(ActionButton):
         e = 1.2
         TW = (self.increase.x - self.decrease.x + self.decrease.BW) * e
         # TW = (screen.get_width() - self.decrease.x) * e
-        sb_buffer = TW / 30
-        SW = (TW - sb_buffer * (sb_count - 1)) / sb_count
+        sb_buffer = TW // 30
+        SW = (TW - sb_buffer * (sb_count - 1)) // sb_count
 
         for i in range(sb_count):
             self.set_buttons.append(
@@ -336,7 +344,7 @@ class BetButton(ActionButton):
                     main_font.render("", True, WHITE),
                     self,
                     [x[i] for x in s_buttons],
-                    BW=SW,
+                    BW=round(SW),
                 )
             )
 
@@ -357,7 +365,7 @@ class BetButton(ActionButton):
 
 class CBetButton(Button):
     def __init__(self, x, y, colour, text, co, bet_button, border=True):
-        super().__init__(x, y, colour, text, BW=BUTTONW / 4)
+        super().__init__(x, y, colour, text, BW=BUTTONW // 4)
         self.co = co
         self.bet_button = bet_button
 
@@ -380,8 +388,8 @@ class SetBetButton(Button):
         text,
         bet_button,
         set_action,
-        BW=BUTTONW,
-        BH=BUTTONH,
+        BW=None,
+        BH=None,
         image=None,
         border=True,
     ):
@@ -420,6 +428,8 @@ class SetBetButton(Button):
 
     def draw(self):
         self.update_text()
+
+        # print((self.x, self.y, self.BW, self.BH))
         pygame.draw.rect(
             screen,
             self.colour,
