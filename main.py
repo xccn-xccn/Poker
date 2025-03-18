@@ -58,12 +58,16 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
-tableImage = pygame.image.load(
-        rf"{dirname}/images/misc/poker-table.png"
-    ).convert_alpha()
+
 
 def init_images():
-    global tableImage
+    global WSCALE, HSCALE
+    global tableImage, TableX, TableY, table_image_size
+    global BUTTONW, BUTTONH, BUTTON_EDGE_BUFFER, BUTTON_BUFFER_X, BUTTON_BUFFER_Y
+    global CHIPW, CHIPH, CARDW, CARDH, CARDB, PROFILE_SIZE
+    global player_coords
+    global small_font, main_font, large_font, title_font
+
     WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
 
     # text_font = pygame.font.SysFont("Comic Sans", 35)
@@ -82,7 +86,9 @@ def init_images():
 
     pygame.display.set_caption("Poker Game")
 
-    
+    tableImage = pygame.image.load(
+        rf"{dirname}/images/misc/poker-table.png"
+    ).convert_alpha()
     table_image_size = (868 * WSCALE, 423 * HSCALE)
     tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
     TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
@@ -115,19 +121,17 @@ def init_images():
         (X4, Y3),
     ]
 
-    local_vars = locals()
-    for var_name, var_value in local_vars.items():
-        globals()[var_name] = var_value
+    # local_vars = locals()
+    # for var_name, var_value in local_vars.items():
+    #     globals()[var_name] = var_value
 
 
 init_images()
 
 
 class Button:
-    def __init__(
-        self, x, y, colour, text, BW=None, BH=None, image=None, border=True
-    ):
-        
+    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
+
         if BW == None:
             BW = BUTTONW
         if BH == None:
@@ -190,7 +194,6 @@ class Menu_Button(Button):
         if see:
             self.background.set_alpha(128)
 
-        
         self.w_change = w_change
 
     def pressed_action(self):
@@ -233,9 +236,7 @@ class Zoom(Button):
 class DealButton(Button):
     pressed = False
 
-    def __init__(
-        self, x, y, colour, text, BW=None, BH=None, image=None, border=True
-    ):
+    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
         super().__init__(x, y, colour, text, BW, BH, image, border)
 
         self.pressed = False
