@@ -1,5 +1,5 @@
 import random
-from misc import strengths, card_values
+from backbone_misc import strengths, card_values
 
 
 

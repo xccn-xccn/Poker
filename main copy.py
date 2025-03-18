@@ -2,7 +2,7 @@ import pygame, random, os
 import pygame.image
 from backbone import start, Bot, Human
 from chips import get_chips
-from misc import *
+from backbone_misc import *
 
 
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded

@@ -2,9 +2,12 @@ import pygame, random, os
 import pygame.image
 from backbone import start, Bot, Human
 from chips import get_chips
-from misc import *
+from backbone_misc import *
+
+# from main_misc import *
 
 # line 560
+# keep chips when resizing profile
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO scale window, all in button, speed button
@@ -26,6 +29,7 @@ def draw_text(text, font, text_colour, x, y):
 
 
 dirname = os.path.dirname(__file__)
+
 # SCREENSIZE = (1400, 900)
 INTENDEDSIZE = (1400, 900)
 
@@ -66,16 +70,15 @@ def init_images():
     global BUTTONW, BUTTONH, BUTTON_EDGE_BUFFER, BUTTON_BUFFER_X, BUTTON_BUFFER_Y
     global CHIPW, CHIPH, CARDW, CARDH, CARDB, PROFILE_SIZE
     global player_coords
-    global small_font, main_font, large_font, title_font
+    global fonts
 
     WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
 
-    # text_font = pygame.font.SysFont("Comic Sans", 35)
-    small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
-    main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
-    large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
-    title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
-
+    # fonts.text_font = pygame.font.SysFont("Comic Sans", 35)
+    # fonts.small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
+    # fonts.main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
+    # fonts.large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
+    # fonts.title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
     BUTTONW = 150 * WSCALE
     BUTTONH = 50 * HSCALE
     BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * max(WSCALE, HSCALE)
@@ -121,9 +124,26 @@ def init_images():
         (X4, Y3),
     ]
 
+    fonts = Fonts()
     # local_vars = locals()
     # for var_name, var_value in local_vars.items():
     #     globals()[var_name] = var_value
+
+
+class Fonts:
+    def __init__(self):
+        self.small_font = pygame.font.Font(
+            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE
+        )
+        self.main_font = pygame.font.Font(
+            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE
+        )
+        self.large_font = pygame.font.Font(
+            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE
+        )
+        self.title_font = pygame.font.Font(
+            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE
+        )
 
 
 init_images()
@@ -275,7 +295,7 @@ class ActionButton(Button):
 class CheckButton(ActionButton):
     def set_text(self):
 
-        self.text = main_font.render(
+        self.text = fonts.main_font.render(
             (
                 "Check"
                 if self.table.human_player.round_invested == self.table.last_bet
@@ -306,7 +326,7 @@ class BetButton(ActionButton):
             x + self.BW,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            main_font.render("+", True, WHITE),
+            fonts.main_font.render("+", True, WHITE),
             1,
             self,
         )
@@ -314,7 +334,7 @@ class BetButton(ActionButton):
             x - BUTTONW / 4,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            main_font.render("-", True, WHITE),
+            fonts.main_font.render("-", True, WHITE),
             -1,
             self,
         )
@@ -322,7 +342,7 @@ class BetButton(ActionButton):
             x,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            main_font.render("", True, WHITE),
+            fonts.main_font.render("", True, WHITE),
             self,
         )
 
@@ -342,7 +362,7 @@ class BetButton(ActionButton):
                     round(self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i),
                     round(self.decrease.y - BUTTONH - 5),
                     (14, 74, 146),
-                    main_font.render("", True, WHITE),
+                    fonts.main_font.render("", True, WHITE),
                     self,
                     [x[i] for x in s_buttons],
                     BW=round(SW),
@@ -354,7 +374,7 @@ class BetButton(ActionButton):
 
     def draw(self):
         super().draw()
-        text = main_font.render(str(self.pbet), True, BLACK)
+        text = fonts.main_font.render(str(self.pbet), True, BLACK)
         text_rect = text.get_rect(
             center=(self.x + self.BW / 2, self.slider.y - BUTTONW / 2)
         )
@@ -424,7 +444,7 @@ class SetBetButton(Button):
         else:
             text = str(r_action[0]) + "x"
 
-        self.text = small_font.render(text, True, WHITE)
+        self.text = fonts.small_font.render(text, True, WHITE)
         self.set_text_rect()
 
     def draw(self):
@@ -576,7 +596,11 @@ class PlayerGUI:
         self.player = player
         self.showing = isinstance(self.player, Human)
         self.action_text = None
-        self.set_chip_images(table.blinds[-1])
+        self.resize()
+        self.CXB = PlayerGUI.get_CXB()
+
+    def resize(self):
+        self.set_chip_images(self.table.blinds[-1])
 
         self.PX, self.PY = self.get_profile_pos(
             6 / 100 * table_image_size[0], PROFILE_SIZE[0]
@@ -592,7 +616,6 @@ class PlayerGUI:
         self.CX, self.CY = self.get_chip_pos(
             10 / 100 * table_image_size[0], CHIPW, CHIPH
         )
-        self.CXB = PlayerGUI.get_CXB()
 
         self.set_cards()
         self.profile = pygame.transform.smoothscale(
@@ -717,7 +740,6 @@ class PlayerGUI:
             return f"{word} {self.table.last_bet}"
 
     def update(self, bb, extra=0):
-
         self.set_chip_images(bb, extra=extra)
         self.action_text = self.get_action()
 
@@ -770,10 +792,11 @@ class PlayerGUI:
             screen.blit(c_image, (cx, cy))
 
     def draw(self):
+        # self.resize()
 
         screen.blit(self.profile, (self.PX, self.PY))
 
-        text = main_font.render(str(self.player.chips), True, (255, 215, 0))
+        text = fonts.main_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
@@ -800,7 +823,7 @@ class PlayerGUI:
             screen.blit(self.button_image, (self.BX, self.BY))
 
         if self.action_text:
-            text = main_font.render(self.action_text, True, BLACK)
+            text = fonts.main_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
             screen.blit(
                 text,
@@ -826,6 +849,9 @@ class Window:
         for b in self.buttons:
             b.draw()
 
+    def resize(self):
+        return
+
     def mid_frame(self):
         global screen
 
@@ -839,7 +865,9 @@ class Window:
 
             if event.type == pygame.VIDEORESIZE:
                 screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+
                 init_images()
+                self.resize()
 
 
 class PlayWindow(Window):
@@ -850,7 +878,7 @@ class PlayWindow(Window):
             size / 4,
             size / 4,
             (99, 99, 99),
-            large_font.render("", True, WHITE),
+            fonts.large_font.render("", True, WHITE),
             0,
             size,
             size,
@@ -880,7 +908,7 @@ class Menu(Window):
             (screen.get_width() - self.button_size[0]) / 2,
             screen.get_height() / 4 - self.button_size[1] / 2,
             (99, 99, 99),
-            large_font.render("Play", True, WHITE),
+            fonts.large_font.render("Play", True, WHITE),
             1,
             *self.button_size,
         )
@@ -889,7 +917,7 @@ class Menu(Window):
             (screen.get_width() - self.button_size[0]) / 2,
             screen.get_height() / 2 - self.button_size[1] / 2,
             (99, 99, 99),
-            large_font.render("Explorer", True, WHITE),
+            fonts.large_font.render("Explorer", True, WHITE),
             2,
             *self.button_size,
         )
@@ -898,7 +926,7 @@ class Menu(Window):
             (screen.get_width() - self.button_size[0]) / 2,
             screen.get_height() * 3 / 4 - self.button_size[1] / 2,
             (99, 99, 99),
-            large_font.render("Trainer", True, WHITE),
+            fonts.large_font.render("Trainer", True, WHITE),
             3,
             *self.button_size,
         )
@@ -938,7 +966,7 @@ class PokerGame(PlayWindow):
             screen.get_width() / 2 - (BUTTONW / 2),
             screen.get_height() / 6 - BUTTONH / 2,
             (169, 169, 169),
-            main_font.render("Deal", True, WHITE),
+            fonts.main_font.render("Deal", True, WHITE),
         )
         self.foldButton = ActionButton(
             screen.get_width()
@@ -947,7 +975,7 @@ class PokerGame(PlayWindow):
             + BUTTON_BUFFER_X,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (255, 0, 0),
-            main_font.render("Fold", True, WHITE),
+            fonts.main_font.render("Fold", True, WHITE),
             1,
         )
         self.checkButton = CheckButton(
@@ -957,14 +985,14 @@ class PokerGame(PlayWindow):
             + BUTTON_BUFFER_X,
             screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            main_font.render("Check", True, WHITE),
+            fonts.main_font.render("Check", True, WHITE),
             2,
         )
         self.betButton = BetButton(
             screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
             screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            main_font.render("Bet", True, WHITE),
+            fonts.main_font.render("Bet", True, WHITE),
             3,
         )
 
@@ -992,6 +1020,11 @@ class PokerGame(PlayWindow):
         super().end_init()
         self.count = 0
 
+    def resize(self):
+        for p in self.players:
+            p.resize()
+        return super().resize()
+
     def set_test(self):
         self.deal_c = 0
         self.testing = True
@@ -1013,7 +1046,7 @@ class PokerGame(PlayWindow):
         x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
         # self.chip_images = [chip] * 30 #testing
         PlayerGUI.draw_chips(x - CHIPW / 2, y - CARDH / 4, self.CXB, self.chip_images)
-        text = main_font.render(str(self.pot), True, BLACK)
+        text = fonts.main_font.render(str(self.pot), True, BLACK)
         text_rect = text.get_rect()
         screen.blit(text, (x - text_rect.width / 2, y))
 
@@ -1162,7 +1195,7 @@ class Explorer(PlayWindow):
         super().__init__(frame_rate, cw)
 
         self.buttons.extend([])
-        self.text = title_font.render("Coming Soon!", True, WHITE)
+        self.text = fonts.title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
@@ -1189,7 +1222,7 @@ class Trainer(PlayWindow):
         super().__init__(frame_rate, cw)
 
         self.buttons.extend([])
-        self.text = title_font.render("Coming Soon!", True, WHITE)
+        self.text = fonts.title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
