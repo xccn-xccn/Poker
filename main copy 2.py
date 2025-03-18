@@ -4,7 +4,7 @@ from backbone import start, Bot, Human
 from chips import get_chips
 from misc import *
 
-# line 560
+
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO scale window, all in button, speed button
@@ -59,8 +59,9 @@ RED = (255, 0, 0)
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 tableImage = pygame.image.load(
-        rf"{dirname}/images/misc/poker-table.png"
-    ).convert_alpha()
+    rf"{dirname}/images/misc/poker-table.png"
+).convert_alpha()
+
 
 def init_images():
     global tableImage
@@ -82,7 +83,6 @@ def init_images():
 
     pygame.display.set_caption("Poker Game")
 
-    
     table_image_size = (868 * WSCALE, 423 * HSCALE)
     tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
     TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
@@ -124,22 +124,20 @@ init_images()
 
 
 class Button:
-    def __init__(
-        self, x, y, colour, text, BW=None, BH=None, image=None, border=True
-    ):
-        
-        if BW == None:
-            BW = BUTTONW
-        if BH == None:
-            BH = BUTTONH
+    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
 
-        self.x = x
-        self.y = y
+        self.BW = BW if BW != None else BUTTONW
+        self.BH = BH if BH != None else BUTTONH
+
+        self.original_x = x / WSCALE
+        self.original_y = y / HSCALE
+        self.x = self.original_x * WSCALE
+        self.y = self.original_y * HSCALE
+        
         self.colour = colour
         self.text = text
-        self.BW = BW
-        self.BH = BH
-
+        self.border = border
+        self.image = image
         self.set_text_rect()
 
         if image == None:
@@ -148,8 +146,27 @@ class Button:
         else:
             self.background = pygame.transform.smoothscale(image, (self.BW, self.BH))
 
-        if border:
+        if self.border:
             pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
+
+    def update_position(self):
+        self.x = self.original_x * WSCALE
+        self.y = self.original_y * HSCALE
+        self.BW = BUTTONW
+        self.BH = BUTTONH
+
+        if hasattr(self, "background"):
+            if self.image == None:
+                self.background = pygame.Surface((self.BW, self.BH))
+                self.background.fill(self.colour)
+            else:
+                self.background = pygame.transform.smoothscale(self.image, (self.BW, self.BH))
+
+            if self.border:
+                pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
+
+        if hasattr(self, "text"):
+            self.set_text_rect()
 
     def set_text_rect(self):
         self.text_rect = self.text.get_rect(
@@ -190,18 +207,23 @@ class Menu_Button(Button):
         if see:
             self.background.set_alpha(128)
 
-        
         self.w_change = w_change
 
     def pressed_action(self):
         self.window.current_window = self.w_change
 
-
+class Zoom(Button):
+    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
+        super().__init__(x, y, colour, text, BW, BH, image, border)
 class Zoom(Button):
     def __init__(self, x, y, width):
-
-        self.x = x
-        self.y = y
+        # super().__init__(x, y, None, None, border=False)
+        # self.x = x
+        # self.y = y
+        self.original_x = x / WSCALE
+        self.original_y = y / HSCALE
+        self.x = self.original_x * WSCALE
+        self.y = self.original_y * HSCALE
         self.current = 0
 
         self.BW = self.BH = width
@@ -233,9 +255,7 @@ class Zoom(Button):
 class DealButton(Button):
     pressed = False
 
-    def __init__(
-        self, x, y, colour, text, BW=None, BH=None, image=None, border=True
-    ):
+    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
         super().__init__(x, y, colour, text, BW, BH, image, border)
 
         self.pressed = False
@@ -521,6 +541,12 @@ class Card:
         difference = self.get_difference()
 
         image = self.image if self.showing else self.card_back
+        print(
+            (
+                self.STARTING_X + difference,
+                self.STARTING_Y,
+            )
+        )
         screen.blit(
             image,
             (
@@ -555,6 +581,7 @@ class HoleCard(Card):
 
 
 class CommunityCard(Card):
+    #TODO
     def __init__(self, value, order, showing=True):
         super().__init__(value, order, showing)
         self.STARTING_X = screen.get_width() / 2 - 5 / 2 * CARDW - 2 * CARDB
@@ -839,8 +866,11 @@ class Window:
             if event.type == pygame.VIDEORESIZE:
                 screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
                 init_images()
+                self.rescale()
 
-
+    def rescale(self):
+        for button in self.buttons:
+            button.update_position()
 class PlayWindow(Window):
     def __init__(self, frame_rate, cw):
         super().__init__(frame_rate, cw)

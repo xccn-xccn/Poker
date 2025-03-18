@@ -4,7 +4,7 @@ from backbone import start, Bot, Human
 from chips import get_chips
 from misc import *
 
-# line 560
+
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO scale window, all in button, speed button
@@ -22,7 +22,7 @@ pygame.init()
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
-    screen.blit(img, (x, y))
+    fake_screen.blit(img, (x, y))
 
 
 dirname = os.path.dirname(__file__)
@@ -41,7 +41,7 @@ FULLSCREEN = (
     INTENDEDSIZE[0] * TEMPSCALE * 0.90,
     INTENDEDSIZE[1] * TEMPSCALE * 0.90,
 )
-# screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
+# fake_screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 SCREENSIZE = FULLSCREEN
 
@@ -58,69 +58,116 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
+fake_screen = screen.copy()
 tableImage = pygame.image.load(
         rf"{dirname}/images/misc/poker-table.png"
     ).convert_alpha()
 
 def init_images():
-    global tableImage
-    WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
+    global WSCALE, HSCALE
+    WSCALE, HSCALE = Scale(fake_screen.get_width() / 1400), Scale(fake_screen.get_height() / 900)
 
-    # text_font = pygame.font.SysFont("Comic Sans", 35)
-    small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
-    main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
-    large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
-    title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
+    # # text_font = pygame.font.SysFont("Comic Sans", 35)
+    # small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
+    # main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
+    # large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
+    # title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
 
-    BUTTONW = 150 * WSCALE
-    BUTTONH = 50 * HSCALE
-    BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * max(WSCALE, HSCALE)
-    BUTTON_BUFFER_X = 80 * WSCALE
-    BUTTON_BUFFER_Y = 20 * HSCALE
+    # BUTTONW = 150 * WSCALE
+    # BUTTONH = 50 * HSCALE
+    # BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * max(WSCALE, HSCALE)
+    # BUTTON_BUFFER_X = 80 * WSCALE
+    # BUTTON_BUFFER_Y = 20 * HSCALE
 
-    CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
+    # CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
 
-    pygame.display.set_caption("Poker Game")
+    # pygame.display.set_caption("Poker Game")
 
     
-    table_image_size = (868 * WSCALE, 423 * HSCALE)
-    tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
-    TableX = (screen.get_width() / 2) - (table_image_size[0] / 2)
-    TableY = (screen.get_height() / 2) - (table_image_size[1] / 2)
+    # table_image_size = (868 * WSCALE, 423 * HSCALE)
+    # tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
+    # TableX = (fake_screen.get_width() / 2) - (table_image_size[0] / 2)
+    # TableY = (fake_screen.get_height() / 2) - (table_image_size[1] / 2)
 
-    CARDW, CARDH, CARDB = (
-        59 / 1000 * table_image_size[0],
-        173 / 1000 * table_image_size[1],
-        7 / 1000 * table_image_size[1],
-    )
+    # CARDW, CARDH, CARDB = (
+    #     59 / 1000 * table_image_size[0],
+    #     173 / 1000 * table_image_size[1],
+    #     7 / 1000 * table_image_size[1],
+    # )
 
-    PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
-    X1 = TableX + 700 / 1000 * table_image_size[0]
-    Y1 = TableY + table_image_size[1]
+    # PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
+    # X1 = TableX + 700 / 1000 * table_image_size[0]
+    # Y1 = TableY + table_image_size[1]
 
-    X2 = screen.get_width() - X1
-    Y2 = screen.get_height() - Y1
+    # X2 = fake_screen.get_width() - X1
+    # Y2 = fake_screen.get_height() - Y1
 
-    X3 = TableX
-    Y3 = screen.get_height() / 2
+    # X3 = TableX
+    # Y3 = fake_screen.get_height() / 2
 
-    X4 = screen.get_width() - X3
+    # X4 = fake_screen.get_width() - X3
 
-    player_coords = [
-        (X1, Y1),
-        (X2, Y1),
-        (X3, Y3),
-        (X2, Y2),
-        (X1, Y2),
-        (X4, Y3),
-    ]
+    # player_coords = [
+    #     (X1, Y1),
+    #     (X2, Y1),
+    #     (X3, Y3),
+    #     (X2, Y2),
+    #     (X1, Y2),
+    #     (X4, Y3),
+    # ]
 
-    local_vars = locals()
-    for var_name, var_value in local_vars.items():
-        globals()[var_name] = var_value
-
-
+    # local_vars = locals()
+    # for var_name, var_value in local_vars.items():
+    #     globals()[var_name] = var_value
 init_images()
+small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
+main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
+large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
+title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
+
+BUTTONW = 150 * WSCALE
+BUTTONH = 50 * HSCALE
+BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * max(WSCALE, HSCALE)
+BUTTON_BUFFER_X = 80 * WSCALE
+BUTTON_BUFFER_Y = 20 * HSCALE
+
+CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
+
+pygame.display.set_caption("Poker Game")
+
+
+table_image_size = (868 * WSCALE, 423 * HSCALE)
+tableImage = pygame.transform.smoothscale(tableImage, table_image_size)
+TableX = (fake_screen.get_width() / 2) - (table_image_size[0] / 2)
+TableY = (fake_screen.get_height() / 2) - (table_image_size[1] / 2)
+
+CARDW, CARDH, CARDB = (
+    59 / 1000 * table_image_size[0],
+    173 / 1000 * table_image_size[1],
+    7 / 1000 * table_image_size[1],
+)
+
+PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
+X1 = TableX + 700 / 1000 * table_image_size[0]
+Y1 = TableY + table_image_size[1]
+
+X2 = fake_screen.get_width() - X1
+Y2 = fake_screen.get_height() - Y1
+
+X3 = TableX
+Y3 = fake_screen.get_height() / 2
+
+X4 = fake_screen.get_width() - X3
+
+player_coords = [
+    (X1, Y1),
+    (X2, Y1),
+    (X3, Y3),
+    (X2, Y2),
+    (X1, Y2),
+    (X4, Y3),
+]
+
 
 
 class Button:
@@ -157,8 +204,8 @@ class Button:
         )
 
     def draw(self):
-        screen.blit(self.background, (self.x, self.y))
-        screen.blit(self.text, self.text_rect)
+        fake_screen.blit(self.background, (self.x, self.y))
+        fake_screen.blit(self.text, self.text_rect)
 
     def add_table(self, table):
         self.table = table
@@ -217,7 +264,7 @@ class Zoom(Button):
 
     def draw(self):
         image = self.zoom_in if self.current < 2 else self.zoom_out
-        screen.blit(image, (self.x, self.y))
+        fake_screen.blit(image, (self.x, self.y))
 
     def pressed_action(self):
         global CARDW, CARDH, CARDB  # bad?
@@ -303,7 +350,7 @@ class BetButton(ActionButton):
             ]
         self.increase = CBetButton(
             x + self.BW,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            fake_screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
             main_font.render("+", True, WHITE),
             1,
@@ -311,7 +358,7 @@ class BetButton(ActionButton):
         )
         self.decrease = CBetButton(
             x - BUTTONW / 4,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            fake_screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
             main_font.render("-", True, WHITE),
             -1,
@@ -319,7 +366,7 @@ class BetButton(ActionButton):
         )
         self.slider = Slider(
             x,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            fake_screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
             main_font.render("", True, WHITE),
             self,
@@ -330,14 +377,14 @@ class BetButton(ActionButton):
         sb_count = len(s_buttons[0])
         e = 1.2
         TW = (self.increase.x - self.decrease.x + self.decrease.BW) * e
-        # TW = (screen.get_width() - self.decrease.x) * e
+        # TW = (fake_screen.get_width() - self.decrease.x) * e
         sb_buffer = TW // 30
         SW = (TW - sb_buffer * (sb_count - 1)) // sb_count
 
         for i in range(sb_count):
             self.set_buttons.append(
                 SetBetButton(
-                    # screen.get_width() - TW + (SW + sb_buffer) * i,
+                    # fake_screen.get_width() - TW + (SW + sb_buffer) * i,
                     round(self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i),
                     round(self.decrease.y - BUTTONH - 5),
                     (14, 74, 146),
@@ -357,7 +404,7 @@ class BetButton(ActionButton):
         text_rect = text.get_rect(
             center=(self.x + self.BW / 2, self.slider.y - BUTTONW / 2)
         )
-        screen.blit(text, text_rect)
+        fake_screen.blit(text, text_rect)
 
     def add_table(self, table):
         super().add_table(table)
@@ -431,20 +478,20 @@ class SetBetButton(Button):
 
         # print((self.x, self.y, self.BW, self.BH))
         pygame.draw.rect(
-            screen,
+            fake_screen,
             self.colour,
             (self.x, self.y, self.BW, self.BH),
             border_radius=min(self.BW, self.BH) // 3,
         )
         pygame.draw.rect(
-            screen,
+            fake_screen,
             BLACK,
             (self.x, self.y, self.BW, self.BH),
             border_radius=min(self.BW, self.BH) // 3,
             width=3,
         )
 
-        screen.blit(self.text, self.text_rect)
+        fake_screen.blit(self.text, self.text_rect)
 
 
 class Slider(Button):
@@ -468,11 +515,11 @@ class Slider(Button):
 
     def draw(self):
         pygame.draw.rect(
-            screen,
+            fake_screen,
             self.l_colour,
             (self.x, self.y + (self.BH - self.l_height) / 2, self.BW, self.l_height),
         )
-        pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
+        pygame.draw.rect(fake_screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
 
     def check_press(self, mx, my):
         if (
@@ -521,7 +568,7 @@ class Card:
         difference = self.get_difference()
 
         image = self.image if self.showing else self.card_back
-        screen.blit(
+        fake_screen.blit(
             image,
             (
                 self.STARTING_X + difference,
@@ -557,8 +604,8 @@ class HoleCard(Card):
 class CommunityCard(Card):
     def __init__(self, value, order, showing=True):
         super().__init__(value, order, showing)
-        self.STARTING_X = screen.get_width() / 2 - 5 / 2 * CARDW - 2 * CARDB
-        self.STARTING_Y = screen.get_height() / 2 - 1 / 2 * CARDH
+        self.STARTING_X = fake_screen.get_width() / 2 - 5 / 2 * CARDW - 2 * CARDB
+        self.STARTING_Y = fake_screen.get_height() / 2 - 1 / 2 * CARDH
 
 
 def get_r_i(player, table):
@@ -766,17 +813,17 @@ class PlayerGUI:
                 2 if pos <= 3 else 1,
             )
 
-            screen.blit(c_image, (cx, cy))
+            fake_screen.blit(c_image, (cx, cy))
 
     def draw(self):
 
-        screen.blit(self.profile, (self.PX, self.PY))
+        fake_screen.blit(self.profile, (self.PX, self.PY))
 
         text = main_font.render(str(self.player.chips), True, (255, 215, 0))
         text_rect = text.get_rect(
             center=(self.PX + PROFILE_SIZE[0] / 2, self.PY + 1 * PROFILE_SIZE[1])
         )
-        screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
+        fake_screen.blit(text, (text_rect[0], self.PY + PROFILE_SIZE[1]))
 
         if self.player.inactive:
             return
@@ -796,12 +843,12 @@ class PlayerGUI:
                 c.draw()
 
         if self.player.position_name == "Button":
-            screen.blit(self.button_image, (self.BX, self.BY))
+            fake_screen.blit(self.button_image, (self.BX, self.BY))
 
         if self.action_text:
             text = main_font.render(self.action_text, True, BLACK)
             text_rect = text.get_rect()
-            screen.blit(
+            fake_screen.blit(
                 text,
                 (
                     self.PX + (PROFILE_SIZE[1] - text_rect.width) / 2,
@@ -826,7 +873,7 @@ class Window:
             b.draw()
 
     def mid_frame(self):
-        global screen
+        global fake_screen, screen
 
         for event in self.events:
             if event.type == pygame.QUIT:
@@ -840,11 +887,14 @@ class Window:
                 screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
                 init_images()
 
+        screen.blit(pygame.transform.smoothscale(fake_screen, screen.get_rect().size), (0, 0))
+        # pygame.display.flip()
+
 
 class PlayWindow(Window):
     def __init__(self, frame_rate, cw):
         super().__init__(frame_rate, cw)
-        size = screen.get_height() / 16
+        size = fake_screen.get_height() / 16
         self.back_button = Menu_Button(
             size / 4,
             size / 4,
@@ -872,12 +922,12 @@ class Menu(Window):
         ).convert_alpha()
 
         self.background = pygame.transform.smoothscale(
-            background, (screen.get_width(), screen.get_height())
+            background, (fake_screen.get_width(), fake_screen.get_height())
         )
-        self.button_size = (screen.get_width() / 4, screen.get_height() / 8)
+        self.button_size = (fake_screen.get_width() / 4, fake_screen.get_height() / 8)
         self.play_button = Menu_Button(
-            (screen.get_width() - self.button_size[0]) / 2,
-            screen.get_height() / 4 - self.button_size[1] / 2,
+            (fake_screen.get_width() - self.button_size[0]) / 2,
+            fake_screen.get_height() / 4 - self.button_size[1] / 2,
             (99, 99, 99),
             large_font.render("Play", True, WHITE),
             1,
@@ -885,8 +935,8 @@ class Menu(Window):
         )
 
         self.explorer = Menu_Button(
-            (screen.get_width() - self.button_size[0]) / 2,
-            screen.get_height() / 2 - self.button_size[1] / 2,
+            (fake_screen.get_width() - self.button_size[0]) / 2,
+            fake_screen.get_height() / 2 - self.button_size[1] / 2,
             (99, 99, 99),
             large_font.render("Explorer", True, WHITE),
             2,
@@ -894,8 +944,8 @@ class Menu(Window):
         )
 
         self.trainer = Menu_Button(
-            (screen.get_width() - self.button_size[0]) / 2,
-            screen.get_height() * 3 / 4 - self.button_size[1] / 2,
+            (fake_screen.get_width() - self.button_size[0]) / 2,
+            fake_screen.get_height() * 3 / 4 - self.button_size[1] / 2,
             (99, 99, 99),
             large_font.render("Trainer", True, WHITE),
             3,
@@ -906,15 +956,16 @@ class Menu(Window):
         super().end_init()
 
     def single_frame(self):
-        global screen
+        global fake_screen
 
-        screen.blit(self.background, (0, 0))
+        fake_screen.blit(self.background, (0, 0))
         super().beg_frame()
 
-        pygame.display.flip()
+        
 
         self.events = pygame.event.get()
         end = super().mid_frame()
+        pygame.display.flip()
         if end == False:
             return False
         return True
@@ -934,41 +985,41 @@ class PokerGame(PlayWindow):
         # self.current_window = 1
 
         self.dealButton = DealButton(
-            screen.get_width() / 2 - (BUTTONW / 2),
-            screen.get_height() / 6 - BUTTONH / 2,
+            fake_screen.get_width() / 2 - (BUTTONW / 2),
+            fake_screen.get_height() / 6 - BUTTONH / 2,
             (169, 169, 169),
             main_font.render("Deal", True, WHITE),
         )
         self.foldButton = ActionButton(
-            screen.get_width()
+            fake_screen.get_width()
             - (BUTTONW + BUTTON_BUFFER_X) * 2
             - BUTTON_EDGE_BUFFER
             + BUTTON_BUFFER_X,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            fake_screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (255, 0, 0),
             main_font.render("Fold", True, WHITE),
             1,
         )
         self.checkButton = CheckButton(
-            screen.get_width()
+            fake_screen.get_width()
             - (BUTTONW + BUTTON_BUFFER_X) * 2
             - BUTTON_EDGE_BUFFER
             + BUTTON_BUFFER_X,
-            screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
+            fake_screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
             main_font.render("Check", True, WHITE),
             2,
         )
         self.betButton = BetButton(
-            screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
-            screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
+            fake_screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
+            fake_screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
             main_font.render("Bet", True, WHITE),
             3,
         )
 
-        zbw = screen.get_height() / 16
-        self.zoom = Zoom(screen.get_width() - zbw * 5 / 4, zbw / 4, zbw)
+        zbw = fake_screen.get_height() / 16
+        self.zoom = Zoom(fake_screen.get_width() - zbw * 5 / 4, zbw / 4, zbw)
         self.buttons.extend(
             [
                 self.dealButton,
@@ -983,7 +1034,7 @@ class PokerGame(PlayWindow):
         self.deal_tick = 0
         self.e_j = pygame.transform.scale(
             pygame.image.load(rf"{dirname}/images/misc/e-j.jpg").convert_alpha(),
-            (screen.get_width(), screen.get_height()),
+            (fake_screen.get_width(), fake_screen.get_height()),
         )
         for b in self.buttons:
             b.add_table(self.table)
@@ -1009,12 +1060,12 @@ class PokerGame(PlayWindow):
         self.w_for_deal = False
 
     def draw_pot(self):
-        x, y = screen.get_width() / 2, screen.get_height() / 2 - CARDH
+        x, y = fake_screen.get_width() / 2, fake_screen.get_height() / 2 - CARDH
         # self.chip_images = [chip] * 30 #testing
         PlayerGUI.draw_chips(x - CHIPW / 2, y - CARDH / 4, self.CXB, self.chip_images)
         text = main_font.render(str(self.pot), True, BLACK)
         text_rect = text.get_rect()
-        screen.blit(text, (x - text_rect.width / 2, y))
+        fake_screen.blit(text, (x - text_rect.width / 2, y))
 
     def set_community_cards(self):
         self.community_cards = [
@@ -1028,10 +1079,10 @@ class PokerGame(PlayWindow):
         self.set_community_cards()
 
     def single_frame(self):
-        global screen
+        global fake_screen
 
-        screen.fill((0, 119, 8))
-        screen.blit(tableImage, (TableX, TableY))
+        fake_screen.fill((0, 119, 8))
+        fake_screen.blit(tableImage, (TableX, TableY))
         super().beg_frame()
         current_tick = pygame.time.get_ticks()
 
@@ -1064,7 +1115,7 @@ class PokerGame(PlayWindow):
                     for p in self.players:
                         p.showdown(self.table)
 
-        pygame.display.flip()
+        
 
         if self.acted:
             if not self.testing:
@@ -1081,6 +1132,7 @@ class PokerGame(PlayWindow):
         self.events = pygame.event.get()
 
         end = super().mid_frame()
+        pygame.display.flip()
         if end == False:
             return False
 
@@ -1097,7 +1149,7 @@ class PokerGame(PlayWindow):
                     print(self.table.blinds)
 
                 if event.key == pygame.K_j:
-                    screen.blit(self.e_j, (0, 0))
+                    fake_screen.blit(self.e_j, (0, 0))
                     pygame.display.flip()
                     pygame.time.wait(500)
 
@@ -1163,20 +1215,20 @@ class Explorer(PlayWindow):
         self.buttons.extend([])
         self.text = title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
-            center=(screen.get_width() / 2, screen.get_height() / 3)
+            center=(fake_screen.get_width() / 2, fake_screen.get_height() / 3)
         )
         super().end_init()
 
     def single_frame(self):
-        screen.fill((0, 119, 8))
+        fake_screen.fill((0, 119, 8))
         super().beg_frame()
 
-        screen.blit(self.text, self.text_rect)
-        pygame.display.flip()
+        fake_screen.blit(self.text, self.text_rect)
 
         self.events = pygame.event.get()
 
         end = super().mid_frame()
+        pygame.display.flip()
         if end == False:
             return False
 
@@ -1190,20 +1242,20 @@ class Trainer(PlayWindow):
         self.buttons.extend([])
         self.text = title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
-            center=(screen.get_width() / 2, screen.get_height() / 3)
+            center=(fake_screen.get_width() / 2, fake_screen.get_height() / 3)
         )
         super().end_init()
 
     def single_frame(self):
-        screen.fill((0, 119, 8))
+        fake_screen.fill((0, 119, 8))
         super().beg_frame()
 
-        screen.blit(self.text, self.text_rect)
-        pygame.display.flip()
+        fake_screen.blit(self.text, self.text_rect)
 
         self.events = pygame.event.get()
 
         end = super().mid_frame()
+        pygame.display.flip()
         if end == False:
             return False
 
