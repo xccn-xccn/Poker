@@ -1051,6 +1051,8 @@ class PokerGame(PlayWindow):
     def resize(self):
         for p in self.players:
             p.resize()
+
+        self.set_community_cards()
         return super().resize()
 
     def set_test(self):
