@@ -166,10 +166,9 @@ class Button:
 
         self.resize()
 
-        
     def resize(self):
         self.x = self.original_x * WSCALE
-        self.y = self.original_y * HSCALE 
+        self.y = self.original_y * HSCALE
         self.BW = self.original_BW * WSCALE
         self.BH = self.original_BH * HSCALE
         if not isinstance(self, Zoom):
@@ -179,7 +178,9 @@ class Button:
                 self.background = pygame.Surface((self.BW, self.BH))
                 self.background.fill(self.colour)
             else:
-                self.background = pygame.transform.smoothscale(self.image, (self.BW, self.BH))
+                self.background = pygame.transform.smoothscale(
+                    self.image, (self.BW, self.BH)
+                )
 
             if self.border:
                 pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
@@ -388,7 +389,7 @@ class BetButton(ActionButton):
         super().draw()
         text = fonts.main_font.render(str(self.pbet), True, BLACK)
         text_rect = text.get_rect(
-            center=(self.x + self.BW / 2, self.slider.y - BUTTONW / 2)
+            center=(self.x + self.BW / 2, self.set_buttons[0].y - BUTTONH // 2)
         )
         screen.blit(text, text_rect)
 
@@ -492,12 +493,13 @@ class Slider(Button):
         l_height=10,
         SW=BUTTONW / 6,
     ):
-        super().__init__(x, y, colour, text)
         self.l_colour = l_colour
         self.l_height = l_height
         self.bet_button = bet_button
         self.s_x = x
-        self.SW = SW
+        self.original_SW = SW / WSCALE
+
+        super().__init__(x, y, colour, text)
 
     def draw(self):
         pygame.draw.rect(
@@ -505,7 +507,15 @@ class Slider(Button):
             self.l_colour,
             (self.x, self.y + (self.BH - self.l_height) / 2, self.BW, self.l_height),
         )
+
         pygame.draw.rect(screen, self.colour, (self.s_x, self.y, self.SW, self.BH))
+
+    def resize(self):
+        self.SW = self.original_SW * WSCALE
+        super().resize()
+
+        if hasattr(self, "table"):
+            self.update_slider()
 
     def check_press(self, mx, my):
         if (
