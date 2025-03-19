@@ -6,8 +6,7 @@ from backbone_misc import *
 
 # from main_misc import *
 
-# line 578
-# keep chips when resizing profile
+# line 578?, 744
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO scale window, all in button, speed button
@@ -596,11 +595,11 @@ class PlayerGUI:
         self.player = player
         self.showing = isinstance(self.player, Human)
         self.action_text = None
+        self.extra = 0
         self.resize()
         self.CXB = PlayerGUI.get_CXB()
 
     def resize(self):
-        self.set_chip_images(self.table.blinds[-1])
         self.x, self.y = player_coords[self.r_i]
         self.PX, self.PY = self.get_profile_pos(
             6 / 100 * table_image_size[0], PROFILE_SIZE[0]
@@ -639,7 +638,7 @@ class PlayerGUI:
         )
 
         self.profile.blit(rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN)
-
+        self.set_chip_images(self.table.blinds[-1], extra=self.extra)
     @staticmethod
     def get_CXB():
         l = [0]
@@ -739,11 +738,14 @@ class PlayerGUI:
             )
             return f"{word} {self.table.last_bet}"
 
-    def update(self, bb, extra=0):
+    def update(self, bb=None, extra=0):
+        if bb == None:
+            bb = self.table.blinds[-1]
         self.set_chip_images(bb, extra=extra)
         self.action_text = self.get_action()
 
     def set_chip_images(self, bb, extra=0):
+        self.extra = extra
         chips = max(self.player.round_invested, extra)
         self.chip_images = self.get_chip_images(chips, bb)
 
