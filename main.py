@@ -6,7 +6,7 @@ from backbone_misc import *
 
 # from main_misc import *
 
-# line 578?, 744
+# line 578?, 744, 174
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO scale window, all in button, speed button
@@ -151,28 +151,38 @@ init_images()
 class Button:
     def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
 
-        if BW == None:
-            BW = BUTTONW
-        if BH == None:
-            BH = BUTTONH
+        self.original_x = x / WSCALE
+        self.original_y = y / HSCALE
+        self.original_BW = (BW if BW else BUTTONW) / WSCALE
+        self.original_BH = (BH if BH else BUTTONH) / HSCALE
 
-        self.x = x
-        self.y = y
         self.colour = colour
         self.text = text
-        self.BW = BW
-        self.BH = BH
 
-        self.set_text_rect()
+        # self.set_text_rect()
 
-        if image == None:
-            self.background = pygame.Surface((self.BW, self.BH))
-            self.background.fill(colour)
-        else:
-            self.background = pygame.transform.smoothscale(image, (self.BW, self.BH))
+        self.image = image
+        self.border = border
 
-        if border:
-            pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
+        self.resize()
+
+        
+    def resize(self):
+        self.x = self.original_x * WSCALE
+        self.y = self.original_y * HSCALE 
+        self.BW = self.original_BW * WSCALE
+        self.BH = self.original_BH * HSCALE
+        if not isinstance(self, Zoom):
+            self.set_text_rect()
+
+            if self.image == None:
+                self.background = pygame.Surface((self.BW, self.BH))
+                self.background.fill(self.colour)
+            else:
+                self.background = pygame.transform.smoothscale(self.image, (self.BW, self.BH))
+
+            if self.border:
+                pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
 
     def set_text_rect(self):
         self.text_rect = self.text.get_rect(
@@ -221,9 +231,10 @@ class Menu_Button(Button):
 
 class Zoom(Button):
     def __init__(self, x, y, width):
-
-        self.x = x
-        self.y = y
+        self.original_x = x / WSCALE
+        self.original_y = y / HSCALE
+        self.original_BW = (width if width else BUTTONW) / WSCALE
+        self.original_BH = (width if width else BUTTONH) / HSCALE
         self.current = 0
 
         self.BW = self.BH = width
@@ -236,6 +247,8 @@ class Zoom(Button):
             pygame.image.load(rf"{dirname}/images/misc/zoom-out.png").convert_alpha(),
             (width, width),
         )
+
+        self.resize()
 
     def draw(self):
         image = self.zoom_in if self.current < 2 else self.zoom_out
@@ -639,6 +652,7 @@ class PlayerGUI:
 
         self.profile.blit(rect_image, (0, 0), None, pygame.BLEND_RGBA_MIN)
         self.set_chip_images(self.table.blinds[-1], extra=self.extra)
+
     @staticmethod
     def get_CXB():
         l = [0]
@@ -852,6 +866,8 @@ class Window:
             b.draw()
 
     def resize(self):
+        for b in self.buttons:
+            b.resize()
         return
 
     def mid_frame(self):
