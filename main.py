@@ -135,7 +135,7 @@ class Fonts:
             rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE
         )
         self.main_font = pygame.font.Font(
-            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 45 * WSCALE
+            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 40 * WSCALE
         )
         self.large_font = pygame.font.Font(
             rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE
