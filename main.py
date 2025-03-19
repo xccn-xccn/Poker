@@ -135,7 +135,7 @@ class Fonts:
             rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE
         )
         self.main_font = pygame.font.Font(
-            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE
+            rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 45 * WSCALE
         )
         self.large_font = pygame.font.Font(
             rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE
@@ -149,7 +149,7 @@ init_images()
 
 
 class Button:
-    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
+    def __init__(self, x, y, colour, label, BW=None, BH=None, image=None, border=True, font=fonts.main_font, text_colour=WHITE):
 
         self.original_x = x / WSCALE
         self.original_y = y / HSCALE
@@ -157,8 +157,9 @@ class Button:
         self.original_BH = (BH if BH else BUTTONH) / HSCALE
 
         self.colour = colour
-        self.text = text
-
+        self.label = label
+        self.font = font
+        self.text_colour = text_colour
         # self.set_text_rect()
 
         self.image = image
@@ -171,6 +172,9 @@ class Button:
         self.y = self.original_y * HSCALE
         self.BW = self.original_BW * WSCALE
         self.BH = self.original_BH * HSCALE
+
+        if hasattr(self, "font"):
+            self.text = self.font.render(self.label, True, self.text_colour)
         if not isinstance(self, Zoom):
             self.set_text_rect()
 
@@ -218,8 +222,9 @@ class Menu_Button(Button):
         image=None,
         border=True,
         see=True,
+        font=fonts.main_font, text_colour=WHITE
     ):
-        super().__init__(x, y, colour, text, BW, BH, image, border)
+        super().__init__(x, y, colour, text, BW, BH, image, border, font=font, text_colour=text_colour)
 
         if see:
             self.background.set_alpha(128)
@@ -269,8 +274,8 @@ class Zoom(Button):
 class DealButton(Button):
     pressed = False
 
-    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True):
-        super().__init__(x, y, colour, text, BW, BH, image, border)
+    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True, font=fonts.main_font, text_colour=WHITE):
+        super().__init__(x, y, colour, text, BW, BH, image, border, font=font, text_colour=text_colour)
 
         self.pressed = False
 
@@ -285,8 +290,8 @@ class DealButton(Button):
 
 
 class ActionButton(Button):
-    def __init__(self, x, y, colour, text, action, BW=None, BH=None, border=True):
-        super().__init__(x, y, colour, text, BW, BH, border=border)
+    def __init__(self, x, y, colour, text, action, BW=None, BH=None, border=True, font=fonts.main_font, text_colour=WHITE):
+        super().__init__(x, y, colour, text, BW, BH, border=border, font=font, text_colour=text_colour)
         self.action = action
 
     def pressed_action(self):
@@ -327,8 +332,8 @@ class CheckButton(ActionButton):
 
 class BetButton(ActionButton):
 
-    def __init__(self, x, y, colour, text, action, s_buttons=None):
-        super().__init__(x, y, colour, text, action)
+    def __init__(self, x, y, colour, text, action, s_buttons=None, font=fonts.main_font, text_colour=WHITE):
+        super().__init__(x, y, colour, text, action, font=font, text_colour=text_colour)
 
         if s_buttons == None:
             s_buttons = [
@@ -339,7 +344,7 @@ class BetButton(ActionButton):
             x + self.BW,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            fonts.main_font.render("+", True, WHITE),
+            "+",
             1,
             self,
         )
@@ -347,7 +352,7 @@ class BetButton(ActionButton):
             x - BUTTONW / 4,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            fonts.main_font.render("-", True, WHITE),
+            "-",
             -1,
             self,
         )
@@ -355,7 +360,7 @@ class BetButton(ActionButton):
             x,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            fonts.main_font.render("", True, WHITE),
+            "",
             self,
         )
 
@@ -375,10 +380,11 @@ class BetButton(ActionButton):
                     round(self.decrease.x - (TW - TW / e) / 2 + (SW + sb_buffer) * i),
                     round(self.decrease.y - BUTTONH - 5),
                     (14, 74, 146),
-                    fonts.main_font.render("", True, WHITE),
+                    "",
                     self,
                     [x[i] for x in s_buttons],
                     BW=round(SW),
+                    font=fonts.small_font
                 )
             )
 
@@ -398,8 +404,8 @@ class BetButton(ActionButton):
 
 
 class CBetButton(Button):
-    def __init__(self, x, y, colour, text, co, bet_button, border=True):
-        super().__init__(x, y, colour, text, BW=BUTTONW // 4)
+    def __init__(self, x, y, colour, text, co, bet_button, border=True, font=fonts.main_font, text_colour=WHITE):
+        super().__init__(x, y, colour, text, BW=BUTTONW // 4, font=font, text_colour=text_colour)
         self.co = co
         self.bet_button = bet_button
 
@@ -426,8 +432,9 @@ class SetBetButton(Button):
         BH=None,
         image=None,
         border=True,
+        font=fonts.small_font, text_colour=WHITE
     ):
-        super().__init__(x, y, colour, text, BW, BH, image, border)
+        super().__init__(x, y, colour, text, BW, BH, image, border, font=font, text_colour=text_colour)
 
         self.bet_button = bet_button
         self.set_action = set_action
@@ -906,7 +913,7 @@ class PlayWindow(Window):
             size / 4,
             size / 4,
             (99, 99, 99),
-            fonts.large_font.render("", True, WHITE),
+            "",
             0,
             size,
             size,
@@ -936,27 +943,31 @@ class Menu(Window):
             (screen.get_width() - self.button_size[0]) / 2,
             screen.get_height() / 4 - self.button_size[1] / 2,
             (99, 99, 99),
-            fonts.large_font.render("Play", True, WHITE),
+            "Play",
             1,
             *self.button_size,
+            font=fonts.large_font
         )
 
         self.explorer = Menu_Button(
             (screen.get_width() - self.button_size[0]) / 2,
             screen.get_height() / 2 - self.button_size[1] / 2,
             (99, 99, 99),
-            fonts.large_font.render("Explorer", True, WHITE),
+            "Explorer",
             2,
             *self.button_size,
+            font=fonts.large_font
         )
 
         self.trainer = Menu_Button(
             (screen.get_width() - self.button_size[0]) / 2,
             screen.get_height() * 3 / 4 - self.button_size[1] / 2,
             (99, 99, 99),
-            fonts.large_font.render("Trainer", True, WHITE),
+            "Trainer",
             3,
             *self.button_size,
+            font=fonts.large_font
+
         )
         self.buttons.extend([self.play_button, self.explorer, self.trainer])
 
@@ -994,7 +1005,7 @@ class PokerGame(PlayWindow):
             screen.get_width() / 2 - (BUTTONW / 2),
             screen.get_height() / 6 - BUTTONH / 2,
             (169, 169, 169),
-            fonts.main_font.render("Deal", True, WHITE),
+            "Deal",
         )
         self.foldButton = ActionButton(
             screen.get_width()
@@ -1003,7 +1014,7 @@ class PokerGame(PlayWindow):
             + BUTTON_BUFFER_X,
             screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
             (255, 0, 0),
-            fonts.main_font.render("Fold", True, WHITE),
+            "Fold",
             1,
         )
         self.checkButton = CheckButton(
@@ -1013,14 +1024,14 @@ class PokerGame(PlayWindow):
             + BUTTON_BUFFER_X,
             screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
             (169, 169, 169),
-            fonts.main_font.render("Check", True, WHITE),
+            "Check",
             2,
         )
         self.betButton = BetButton(
             screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
             screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
             (34, 140, 34),
-            fonts.main_font.render("Bet", True, WHITE),
+            "Bet",
             3,
         )
 
