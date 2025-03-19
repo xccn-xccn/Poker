@@ -601,7 +601,7 @@ class PlayerGUI:
 
     def resize(self):
         self.set_chip_images(self.table.blinds[-1])
-
+        self.x, self.y = player_coords[self.r_i]
         self.PX, self.PY = self.get_profile_pos(
             6 / 100 * table_image_size[0], PROFILE_SIZE[0]
         )
