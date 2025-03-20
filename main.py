@@ -6,6 +6,7 @@ from backbone_misc import *
 
 # from main_misc import *
 
+# TODO scale once
 # line 578?, 744, 174
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
@@ -124,9 +125,8 @@ def init_images():
     ]
 
     fonts = Fonts()
-    # local_vars = locals()
-    # for var_name, var_value in local_vars.items():
-    #     globals()[var_name] = var_value
+    # for button in window.buttons:
+    #     button.update_font()
 
 
 class Fonts:
@@ -149,8 +149,19 @@ init_images()
 
 
 class Button:
-    def __init__(self, x, y, colour, label, BW=None, BH=None, image=None, border=True, font=fonts.main_font, text_colour=WHITE):
-
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        label,
+        BW=None,
+        BH=None,
+        image=None,
+        border=True,
+        font_attr="main_font",
+        text_colour=WHITE,
+    ):
         self.original_x = x / WSCALE
         self.original_y = y / HSCALE
         self.original_BW = (BW if BW else BUTTONW) / WSCALE
@@ -158,14 +169,17 @@ class Button:
 
         self.colour = colour
         self.label = label
-        self.font = font
+        self.font_attr = font_attr
         self.text_colour = text_colour
-        # self.set_text_rect()
-
         self.image = image
         self.border = border
 
         self.resize()
+
+    def update_font(self):
+        self.font = getattr(fonts, self.font_attr)
+        self.text = self.font.render(self.label, True, self.text_colour)
+        self.set_text_rect()
 
     def resize(self):
         self.x = self.original_x * WSCALE
@@ -173,11 +187,8 @@ class Button:
         self.BW = self.original_BW * WSCALE
         self.BH = self.original_BH * HSCALE
 
-        if hasattr(self, "font"):
-            self.text = self.font.render(self.label, True, self.text_colour)
+        
         if not isinstance(self, Zoom):
-            self.set_text_rect()
-
             if self.image == None:
                 self.background = pygame.Surface((self.BW, self.BH))
                 self.background.fill(self.colour)
@@ -189,6 +200,7 @@ class Button:
             if self.border:
                 pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
 
+            self.update_font()
     def set_text_rect(self):
         self.text_rect = self.text.get_rect(
             center=(self.x + self.BW / 2, self.y + self.BH / 2)
@@ -222,9 +234,21 @@ class Menu_Button(Button):
         image=None,
         border=True,
         see=True,
-        font=fonts.main_font, text_colour=WHITE
+        font_attr="main_font",
+        text_colour=WHITE,
     ):
-        super().__init__(x, y, colour, text, BW, BH, image, border, font=font, text_colour=text_colour)
+        super().__init__(
+            x,
+            y,
+            colour,
+            text,
+            BW,
+            BH,
+            image,
+            border,
+            font_attr=font_attr,
+            text_colour=text_colour,
+        )
 
         if see:
             self.background.set_alpha(128)
@@ -274,8 +298,31 @@ class Zoom(Button):
 class DealButton(Button):
     pressed = False
 
-    def __init__(self, x, y, colour, text, BW=None, BH=None, image=None, border=True, font=fonts.main_font, text_colour=WHITE):
-        super().__init__(x, y, colour, text, BW, BH, image, border, font=font, text_colour=text_colour)
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        BW=None,
+        BH=None,
+        image=None,
+        border=True,
+        font_attr="main_font",
+        text_colour=WHITE,
+    ):
+        super().__init__(
+            x,
+            y,
+            colour,
+            text,
+            BW,
+            BH,
+            image,
+            border,
+            font_attr=font_attr,
+            text_colour=text_colour,
+        )
 
         self.pressed = False
 
@@ -290,8 +337,30 @@ class DealButton(Button):
 
 
 class ActionButton(Button):
-    def __init__(self, x, y, colour, text, action, BW=None, BH=None, border=True, font=fonts.main_font, text_colour=WHITE):
-        super().__init__(x, y, colour, text, BW, BH, border=border, font=font, text_colour=text_colour)
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        action,
+        BW=None,
+        BH=None,
+        border=True,
+        font_attr="main_font",
+        text_colour=WHITE,
+    ):
+        super().__init__(
+            x,
+            y,
+            colour,
+            text,
+            BW,
+            BH,
+            border=border,
+            font_attr=font_attr,
+            text_colour=text_colour,
+        )
         self.action = action
 
     def pressed_action(self):
@@ -332,8 +401,20 @@ class CheckButton(ActionButton):
 
 class BetButton(ActionButton):
 
-    def __init__(self, x, y, colour, text, action, s_buttons=None, font=fonts.main_font, text_colour=WHITE):
-        super().__init__(x, y, colour, text, action, font=font, text_colour=text_colour)
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        action,
+        s_buttons=None,
+        font_attr="main_font",
+        text_colour=WHITE,
+    ):
+        super().__init__(
+            x, y, colour, text, action, font_attr=font_attr, text_colour=text_colour
+        )
 
         if s_buttons == None:
             s_buttons = [
@@ -384,7 +465,7 @@ class BetButton(ActionButton):
                     self,
                     [x[i] for x in s_buttons],
                     BW=round(SW),
-                    font=fonts.small_font
+                    font_attr="small_font",
                 )
             )
 
@@ -404,8 +485,27 @@ class BetButton(ActionButton):
 
 
 class CBetButton(Button):
-    def __init__(self, x, y, colour, text, co, bet_button, border=True, font=fonts.main_font, text_colour=WHITE):
-        super().__init__(x, y, colour, text, BW=BUTTONW // 4, font=font, text_colour=text_colour)
+    def __init__(
+        self,
+        x,
+        y,
+        colour,
+        text,
+        co,
+        bet_button,
+        border=True,
+        font_attr="main_font",
+        text_colour=WHITE,
+    ):
+        super().__init__(
+            x,
+            y,
+            colour,
+            text,
+            BW=BUTTONW // 4,
+            font_attr=font_attr,
+            text_colour=text_colour,
+        )
         self.co = co
         self.bet_button = bet_button
 
@@ -432,9 +532,21 @@ class SetBetButton(Button):
         BH=None,
         image=None,
         border=True,
-        font=fonts.small_font, text_colour=WHITE
+        font_attr="small_font",
+        text_colour=WHITE,
     ):
-        super().__init__(x, y, colour, text, BW, BH, image, border, font=font, text_colour=text_colour)
+        super().__init__(
+            x,
+            y,
+            colour,
+            text,
+            BW,
+            BH,
+            image,
+            border,
+            font_attr=font_attr,
+            text_colour=text_colour,
+        )
 
         self.bet_button = bet_button
         self.set_action = set_action
@@ -946,7 +1058,7 @@ class Menu(Window):
             "Play",
             1,
             *self.button_size,
-            font=fonts.large_font
+            font_attr="large_font",
         )
 
         self.explorer = Menu_Button(
@@ -956,7 +1068,7 @@ class Menu(Window):
             "Explorer",
             2,
             *self.button_size,
-            font=fonts.large_font
+            font_attr="large_font",
         )
 
         self.trainer = Menu_Button(
@@ -966,8 +1078,7 @@ class Menu(Window):
             "Trainer",
             3,
             *self.button_size,
-            font=fonts.large_font
-
+            font_attr="large_font",
         )
         self.buttons.extend([self.play_button, self.explorer, self.trainer])
 
