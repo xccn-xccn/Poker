@@ -65,7 +65,7 @@ screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 
 def init_images():
-    global WSCALE, HSCALE
+    global WSCALE, HSCALE, MSCALE
     global tableImage, TableX, TableY, table_image_size
     global BUTTONW, BUTTONH, BUTTON_EDGE_BUFFER, BUTTON_BUFFER_X, BUTTON_BUFFER_Y
     global CHIPW, CHIPH, CARDW, CARDH, CARDB, PROFILE_SIZE
@@ -73,6 +73,7 @@ def init_images():
     global fonts
 
     WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
+    MSCALE = min(WSCALE, HSCALE)
 
     # fonts.text_font = pygame.font.SysFont("Comic Sans", 35)
     # fonts.small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
@@ -103,7 +104,7 @@ def init_images():
         7 / 1000 * table_image_size[1],
     )
 
-    PROFILE_SIZE = (125 * WSCALE, 125 * WSCALE)
+    PROFILE_SIZE = (125 * MSCALE, 125 * MSCALE)
     X1 = TableX + 700 / 1000 * table_image_size[0]
     Y1 = TableY + table_image_size[1]
 
@@ -125,8 +126,6 @@ def init_images():
     ]
 
     fonts = Fonts()
-    # for button in window.buttons:
-    #     button.update_font()
 
 
 class Fonts:
@@ -187,7 +186,6 @@ class Button:
         self.BW = self.original_BW * WSCALE
         self.BH = self.original_BH * HSCALE
 
-        
         if not isinstance(self, Zoom):
             if self.image == None:
                 self.background = pygame.Surface((self.BW, self.BH))
@@ -201,6 +199,7 @@ class Button:
                 pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
 
             self.update_font()
+
     def set_text_rect(self):
         self.text_rect = self.text.get_rect(
             center=(self.x + self.BW / 2, self.y + self.BH / 2)
@@ -747,7 +746,7 @@ class PlayerGUI:
             6 / 100 * table_image_size[0], PROFILE_SIZE[0]
         )
 
-        DBUTTONW = 30
+        DBUTTONW = 30 * MSCALE
         self.button_image = pygame.transform.smoothscale(
             pygame.image.load(rf"{dirname}/images/misc/Button.png").convert_alpha(),
             (DBUTTONW, DBUTTONW),
@@ -1347,11 +1346,16 @@ class Explorer(PlayWindow):
         super().__init__(frame_rate, cw)
 
         self.buttons.extend([])
+        self.resize()
+
+        super().end_init()
+
+    def resize(self):
         self.text = fonts.title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
-        super().end_init()
+        return super().resize()
 
     def single_frame(self):
         screen.fill((0, 119, 8))
@@ -1374,11 +1378,15 @@ class Trainer(PlayWindow):
         super().__init__(frame_rate, cw)
 
         self.buttons.extend([])
+        self.resize()
+        super().end_init()
+
+    def resize(self):
         self.text = fonts.title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
-        super().end_init()
+        return super().resize()
 
     def single_frame(self):
         screen.fill((0, 119, 8))
