@@ -160,6 +160,7 @@ class Button:
         border=True,
         font_attr="main_font",
         text_colour=WHITE,
+        square=False,
     ):
         self.original_x = x / WSCALE
         self.original_y = y / HSCALE
@@ -172,7 +173,7 @@ class Button:
         self.text_colour = text_colour
         self.image = image
         self.border = border
-
+        self.square = square
         self.resize()
 
     def update_font(self):
@@ -184,7 +185,8 @@ class Button:
         self.x = self.original_x * WSCALE
         self.y = self.original_y * HSCALE
         self.BW = self.original_BW * WSCALE
-        self.BH = self.original_BH * HSCALE
+
+        self.BH = self.BW if self.square else self.original_BH * HSCALE
 
         if not isinstance(self, Zoom):
             if self.image == None:
@@ -235,6 +237,7 @@ class Menu_Button(Button):
         see=True,
         font_attr="main_font",
         text_colour=WHITE,
+        square=False,
     ):
         super().__init__(
             x,
@@ -247,6 +250,7 @@ class Menu_Button(Button):
             border,
             font_attr=font_attr,
             text_colour=text_colour,
+            square=square,
         )
 
         if see:
@@ -265,17 +269,9 @@ class Zoom(Button):
         self.original_BW = (width if width else BUTTONW) / WSCALE
         self.original_BH = (width if width else BUTTONH) / HSCALE
         self.current = 0
-
-        self.BW = self.BH = width
-        self.zoom_in = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}/images/misc/zoom-in.png").convert_alpha(),
-            (width, width),
-        )
-
-        self.zoom_out = pygame.transform.smoothscale(
-            pygame.image.load(rf"{dirname}/images/misc/zoom-out.png").convert_alpha(),
-            (width, width),
-        )
+        self.initial = True
+        self.square = True
+        # self.BW = self.BH = width
 
         self.resize()
 
@@ -283,12 +279,36 @@ class Zoom(Button):
         image = self.zoom_in if self.current < 2 else self.zoom_out
         screen.blit(image, (self.x, self.y))
 
-    def pressed_action(self):
-        global CARDW, CARDH, CARDB  # bad?
+    def resize(self):
+        super().resize()
 
+        self.zoom_in = pygame.transform.smoothscale(
+            pygame.image.load(rf"{dirname}/images/misc/zoom-in.png").convert_alpha(),
+            (self.BW, self.BW),
+        )
+
+        self.zoom_out = pygame.transform.smoothscale(
+            pygame.image.load(rf"{dirname}/images/misc/zoom-out.png").convert_alpha(),
+            (self.BW, self.BW),
+        )
+
+        if not self.initial:
+            c = self.current
+            self.current = 0
+            for r in range(c):
+                self.pressed_action()
+
+        self.initial = False
+
+    def change_card_size(self):
+        global CARDW, CARDH, CARDB
         CARDW = [1.5, 2 / 1.5, 1 / 2][self.current] * CARDW
         CARDH = [1.5, 2 / 1.5, 1 / 2][self.current] * CARDH
-        CARDB = [0, 0, 7 / 1000 * table_image_size[1]][self.current]
+        # CARDB = [0, 0, 7 / 1000 * table_image_size[1]][self.current]
+
+    def pressed_action(self):
+
+        self.change_card_size()
         self.current = (self.current + 1) % 3
 
         self.window.reset_cards()
@@ -1033,6 +1053,7 @@ class PlayWindow(Window):
             ).convert_alpha(),
             border=False,
             see=False,
+            square=True,
         )
 
         self.buttons.extend([self.back_button])
