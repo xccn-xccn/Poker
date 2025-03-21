@@ -8,9 +8,11 @@ from backbone_misc import *
 # python -m http.server 8000
 # TODO scale once
 # line 578?, 744, 174
+# BUG < 1 bb all in bug?
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
-# TODO scale window, all in button, speed button
+# TODO set buttons depending on left not right
+# TODO all in button, speed button
 # BUG slider doesnt allow all in
 # BUG action text glitch when player is choosing bet and opp has done a large bet (only when player on right?)
 # TODO make LHS buttons and RHS buttons
@@ -31,7 +33,8 @@ def draw_text(text, font, text_colour, x, y):
 dirname = os.path.dirname(__file__)
 
 # SCREENSIZE = (1400, 900)
-INTENDEDSIZE = (1400, 900)
+INTENDEDSIZE = (1700, 900)
+# INTENDEDSIZE = (1400, 900)
 
 # ENTIRESCREEN = (pygame.display.Info().current_w, pygame.display.Info().current_h)
 TEMPSCALE = Scale(
@@ -45,7 +48,6 @@ FULLSCREEN = (
     INTENDEDSIZE[0] * TEMPSCALE * 0.90,
     INTENDEDSIZE[1] * TEMPSCALE * 0.90,
 )
-# screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
 SCREENSIZE = FULLSCREEN
 
@@ -61,18 +63,23 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 clock = pygame.time.Clock()
-screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
+# screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
+
+
+# uncomment to build pygbag
+# SCREENSIZE = (1700 * 1.5, 900 * 1.5)
+screen = pygame.display.set_mode(SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE |pygame.RESIZABLE)
 
 
 def init_images():
     global WSCALE, HSCALE, MSCALE
     global tableImage, TableX, TableY, table_image_size
-    global BUTTONW, BUTTONH, BUTTON_EDGE_BUFFER, BUTTON_BUFFER_X, BUTTON_BUFFER_Y
+    global BUTTONW, BUTTONH, BUTTON_WDGE_BUFFER, BUTTON_HDGE_BUFFER, BUTTON_BUFFER_X, BUTTON_BUFFER_Y
     global CHIPW, CHIPH, CARDW, CARDH, CARDB, PROFILE_SIZE
     global player_coords
     global fonts
 
-    WSCALE, HSCALE = Scale(screen.get_width() / 1400), Scale(screen.get_height() / 900)
+    WSCALE, HSCALE = Scale(screen.get_width() / INTENDEDSIZE[0]), Scale(screen.get_height() / INTENDEDSIZE[1])
     MSCALE = min(WSCALE, HSCALE)
 
     # fonts.text_font = pygame.font.SysFont("Comic Sans", 35)
@@ -82,7 +89,8 @@ def init_images():
     # fonts.title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
     BUTTONW = 150 * WSCALE
     BUTTONH = 50 * HSCALE
-    BUTTON_EDGE_BUFFER = 2 / 5 * BUTTONW * max(WSCALE, HSCALE)
+    BUTTON_WDGE_BUFFER = 4 / 5 * BUTTONW * WSCALE
+    BUTTON_HDGE_BUFFER = 2 / 5 * BUTTONW * HSCALE
     BUTTON_BUFFER_X = 80 * WSCALE
     BUTTON_BUFFER_Y = 20 * HSCALE
 
@@ -442,7 +450,7 @@ class BetButton(ActionButton):
             ]
         self.increase = CBetButton(
             x + self.BW,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_HDGE_BUFFER,
             (34, 140, 34),
             "+",
             1,
@@ -450,7 +458,7 @@ class BetButton(ActionButton):
         )
         self.decrease = CBetButton(
             x - BUTTONW / 4,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_HDGE_BUFFER,
             (34, 140, 34),
             "-",
             -1,
@@ -458,7 +466,7 @@ class BetButton(ActionButton):
         )
         self.slider = Slider(
             x,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_HDGE_BUFFER,
             (169, 169, 169),
             "",
             self,
@@ -1141,9 +1149,9 @@ class PokerGame(PlayWindow):
         self.foldButton = ActionButton(
             screen.get_width()
             - (BUTTONW + BUTTON_BUFFER_X) * 2
-            - BUTTON_EDGE_BUFFER
+            - BUTTON_WDGE_BUFFER
             + BUTTON_BUFFER_X,
-            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_EDGE_BUFFER,
+            screen.get_height() - (BUTTONH + BUTTON_BUFFER_Y) * 2 - BUTTON_HDGE_BUFFER,
             (255, 0, 0),
             "Fold",
             1,
@@ -1151,16 +1159,16 @@ class PokerGame(PlayWindow):
         self.checkButton = CheckButton(
             screen.get_width()
             - (BUTTONW + BUTTON_BUFFER_X) * 2
-            - BUTTON_EDGE_BUFFER
+            - BUTTON_WDGE_BUFFER
             + BUTTON_BUFFER_X,
-            screen.get_height() - (BUTTONH) * 1 - BUTTON_EDGE_BUFFER,
+            screen.get_height() - (BUTTONH) * 1 - BUTTON_HDGE_BUFFER,
             (169, 169, 169),
             "Check",
             2,
         )
         self.betButton = BetButton(
-            screen.get_width() - (BUTTONW) - BUTTON_EDGE_BUFFER,
-            screen.get_height() - (BUTTONH) - BUTTON_EDGE_BUFFER,
+            screen.get_width() - (BUTTONW) - BUTTON_WDGE_BUFFER,
+            screen.get_height() - (BUTTONH) - BUTTON_HDGE_BUFFER,
             (34, 140, 34),
             "Bet",
             3,
