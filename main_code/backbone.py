@@ -581,7 +581,7 @@ class Table:
             self.cPI = self.last_agg = (
                 self.sb_i + (2 if self.no_players != 2 else 1)
             ) % self.no_players
-            self.last_bet = max(x.round_invested for x in self.active_players)
+            self.last_bet = self.blinds[-1]
             self.community = []
             self.bet_count = 1
 
@@ -716,9 +716,10 @@ class Table:
 
         print("pot", self.pot)
 
-        self.active_in_hand = self.players_remaining = sum(
+        self.active_in_hand = sum(
             [1 for p in self.active_players if not p.fold and not p.all_in]
         )
+        self.players_remaining = sum([1 for p in self.active_players if not p.fold])
         self.communityCard_i = self.no_players * 2
 
         self.end_round(start=True)
