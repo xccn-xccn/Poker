@@ -6,21 +6,17 @@ from backbone_misc import *
 
 # from main_misc import *
 # python -m http.server 8000
-# TODO scale once
+# TODO scale once (black screen when scaling)
 # line 578?, 744, 174
-# BUG < 1 bb all in bug?
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
-# TODO set buttons depending on left not right
-# TODO all in button, speed button
+# TODO speed button
 # BUG slider doesnt allow all in
 # BUG action text glitch when player is choosing bet and opp has done a large bet (only when player on right?)
 # TODO make LHS buttons and RHS buttons
 # TODO double blinds button
-# BUG sometimes can click close window button (maybe lag or because of event loop)
-# BUG sometimes dimensions can cause non integer number of pixels
+# BUG sometimes click cant close window button (maybe lag or because of event loop)
 # BUG cant go all in
-# BUG default variables (in button) do not get reset after the variable itself is reset
 
 pygame.init()
 
