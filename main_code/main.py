@@ -63,7 +63,7 @@ clock = pygame.time.Clock()
 
 
 # uncomment to build pygbag
-SCREENSIZE = (1700 * 1.5, 900 * 1.5)
+# SCREENSIZE = (1700 * 1.5, 900 * 1.5)
 screen = pygame.display.set_mode(
     SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE
 )
