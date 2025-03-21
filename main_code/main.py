@@ -63,8 +63,10 @@ clock = pygame.time.Clock()
 
 
 # uncomment to build pygbag
-# SCREENSIZE = (1700 * 1.5, 900 * 1.5)
-screen = pygame.display.set_mode(SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE |pygame.RESIZABLE)
+SCREENSIZE = (1700 * 1.5, 900 * 1.5)
+screen = pygame.display.set_mode(
+    SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE
+)
 
 
 def init_images():
@@ -75,7 +77,9 @@ def init_images():
     global player_coords
     global fonts
 
-    WSCALE, HSCALE = Scale(screen.get_width() / INTENDEDSIZE[0]), Scale(screen.get_height() / INTENDEDSIZE[1])
+    WSCALE, HSCALE = Scale(screen.get_width() / INTENDEDSIZE[0]), Scale(
+        screen.get_height() / INTENDEDSIZE[1]
+    )
     MSCALE = min(WSCALE, HSCALE)
 
     # fonts.text_font = pygame.font.SysFont("Comic Sans", 35)
@@ -1432,13 +1436,14 @@ class Trainer(PlayWindow):
 async def main():
     running = True
     FRAME_RATE = 30
-    # window = Poker_game(FRAME_RATE)
-    # window.set_test()
     window = Menu(FRAME_RATE)
     states = [Menu, PokerGame, Explorer, Trainer]
     while running:
         old_state = window.current_window
         running = window.single_frame()
+
+        # if isinstance(window, PokerGame) and window.table.human_player.chips == 0:
+        #     window.set_test()
 
         if old_state != window.current_window:
             window = states[window.current_window](FRAME_RATE, window.current_window)

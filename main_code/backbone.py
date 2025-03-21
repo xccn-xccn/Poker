@@ -17,6 +17,8 @@ from backbone_misc import *
 # TODO hold invested of each player? currently inefficient replace the functions
 # TODO if big bet and 1 player calls, bb will also call with nothing
 # TODO consider hand strength with betsize
+# TODO should end when folds to bb
+# TODO BOT v1 is very bad heads up (worse than random)
 # 3bet more oop
 # underbluffs?
 # Use mdf or pot odds
@@ -783,14 +785,17 @@ class Table:
 
 def start():
     table1 = Table()
-    profile_pictures = ["calvin", "elliot", "teddy", "bot", "daniel_n"]
+    profile_pictures = ["calvin", "elliot", "teddy", "daniel_n"]
     random.shuffle(profile_pictures)
+    profile_pictures = ["bot"] + profile_pictures
     for r, p in enumerate(profile_pictures):
-        if r == 0:
+        if r <= 0:
             chips = 2000
+            table1.add_player(RandomBot(r, p, table1, str(r), chips=chips))
+
         else:
             chips = 2000
-        table1.add_player(BotV1(r, p, table1, str(r), chips=chips))
+            table1.add_player(BotV1(r, p, table1, str(r), chips=chips))
 
     table1.add_player(
         Human(
