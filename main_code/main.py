@@ -8,6 +8,7 @@ from backbone_misc import *
 # python -m http.server 8000
 # TODO scale once (black screen when scaling)
 # line 578?, 744, 174
+# BUG pygbag is not random
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO speed button
