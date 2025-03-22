@@ -1376,13 +1376,16 @@ class Explorer(PlayWindow):
 
         self.buttons.extend([])
         self.resize()
-
         super().end_init()
 
     def resize(self):
         self.text = fonts.title_font.render("Coming Soon!", True, WHITE)
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
+        )
+        self.back = fonts.large_font.render("Click the top left button to exit", True, WHITE)
+        self.back_rect = self.back.get_rect(
+            center=(screen.get_width() / 2, screen.get_height() * 2 / 3)
         )
         return super().resize()
 
@@ -1391,6 +1394,7 @@ class Explorer(PlayWindow):
         super().beg_frame()
 
         screen.blit(self.text, self.text_rect)
+        screen.blit(self.back, self.back_rect)
         pygame.display.flip()
 
         self.events = pygame.event.get()
@@ -1415,6 +1419,10 @@ class Trainer(PlayWindow):
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
+        self.back = fonts.large_font.render("Click the top left button to exit", True, WHITE)
+        self.back_rect = self.back.get_rect(
+            center=(screen.get_width() / 2, screen.get_height() * 2 / 3)
+        )
         return super().resize()
 
     def single_frame(self):
@@ -1422,6 +1430,7 @@ class Trainer(PlayWindow):
         super().beg_frame()
 
         screen.blit(self.text, self.text_rect)
+        screen.blit(self.back, self.back_rect)
         pygame.display.flip()
 
         self.events = pygame.event.get()
