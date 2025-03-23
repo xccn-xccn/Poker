@@ -83,11 +83,6 @@ def init_images():
     )
     MSCALE = min(WSCALE, HSCALE)
 
-    # fonts.text_font = pygame.font.SysFont("Comic Sans", 35)
-    # fonts.small_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 30 * WSCALE)
-    # fonts.main_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 35 * WSCALE)
-    # fonts.large_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 80 * WSCALE)
-    # fonts.title_font = pygame.font.Font(rf"{dirname}/misc/JqkasWild-w1YD6.ttf", 120 * WSCALE)
     BUTTONW = 150 * WSCALE
     BUTTONH = 50 * HSCALE
     BUTTON_WDGE_BUFFER = 4 / 5 * BUTTONW * WSCALE
