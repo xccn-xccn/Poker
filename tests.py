@@ -48,8 +48,8 @@ def set_variables():
 
 set_variables()
 
-print(var1)  
-print(var2)  
-print(var3)  
+# print(var1)  
+# print(var2)  
+# print(var3)  
 
 print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")

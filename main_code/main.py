@@ -202,7 +202,9 @@ class Button:
                 )
 
             if self.border:
-                pygame.draw.rect(self.background, BLACK, (0, 0, self.BW, self.BH), 3)
+                pygame.draw.rect(
+                    self.background, BLACK, (0, 0, self.BW, self.BH), 3 * MSCALE
+                )
 
             self.update_font()
 
@@ -263,7 +265,7 @@ class Menu_Button(Button):
         self.w_change = w_change
 
     def pressed_action(self):
-        self.window.current_window = self.w_change
+        self.window.set_current_window(self.w_change)
 
 
 class Zoom(Button):
@@ -297,12 +299,17 @@ class Zoom(Button):
         )
 
         if not self.initial:
-            c = self.current
-            self.current = 0
-            for r in range(c):
-                self.pressed_action()
+            # c = self.current
+            # self.current = 0
+            # for r in range(c):
+            #     self.pressed_action()
+            self.set_current(0)
 
         self.initial = False
+
+    def set_current(self, current):
+        while self.current != current:
+            self.pressed_action()
 
     def change_card_size(self):
         global CARDW, CARDH, CARDB
@@ -1039,6 +1046,9 @@ class Window:
                 init_images()
                 self.resize()
 
+    def set_current_window(self, w_change):
+        self.current_window = w_change
+
 
 class PlayWindow(Window):
     def __init__(self, frame_rate, cw):
@@ -1193,6 +1203,10 @@ class PokerGame(PlayWindow):
 
         super().end_init()
         self.count = 0
+
+    def set_current_window(self, w_change):
+        self.zoom.set_current(0)
+        return super().set_current_window(w_change)
 
     def resize(self):
         for p in self.players:
@@ -1379,7 +1393,9 @@ class Explorer(PlayWindow):
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
-        self.back = fonts.large_font.render("Click the top left button to exit", True, WHITE)
+        self.back = fonts.large_font.render(
+            "Click the top left button to exit", True, WHITE
+        )
         self.back_rect = self.back.get_rect(
             center=(screen.get_width() / 2, screen.get_height() * 2 / 3)
         )
@@ -1415,7 +1431,9 @@ class Trainer(PlayWindow):
         self.text_rect = self.text.get_rect(
             center=(screen.get_width() / 2, screen.get_height() / 3)
         )
-        self.back = fonts.large_font.render("Click the top left button to exit", True, WHITE)
+        self.back = fonts.large_font.render(
+            "Click the top left button to exit", True, WHITE
+        )
         self.back_rect = self.back.get_rect(
             center=(screen.get_width() / 2, screen.get_height() * 2 / 3)
         )
