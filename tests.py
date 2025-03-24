@@ -2,9 +2,11 @@ import test_mod
 import random
 from time import perf_counter
 from collections import Counter
-
+from sys import argv
+import os, sys
 start = perf_counter()
 
+print(sys.executable, argv, argv[0], "python" in os.path.basename(sys.executable), 'python' in os.path.basename(argv[0]))
 string = "smoooodles aa"
 # for r in range(100_000):
 #     result = test_mod.count_words(string)

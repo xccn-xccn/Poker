@@ -3,6 +3,7 @@ import pygame.image
 from backbone import start, Bot, Human
 from chips import get_chips
 from backbone_misc import *
+import sys, os
 
 # from main_misc import *
 # python -m http.server 8000
@@ -64,7 +65,9 @@ clock = pygame.time.Clock()
 
 
 # uncomment to build pygbag
-# SCREENSIZE = (1700 * 1.5, 900 * 1.5)
+if "python" not in os.path.basename(sys.executable):
+    SCREENSIZE = (1700 * 1.5, 900 * 1.5)
+    
 screen = pygame.display.set_mode(
     SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE
 )
