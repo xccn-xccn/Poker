@@ -269,6 +269,10 @@ class RandomBot(Bot):
 
 
 class BotV1(Bot):
+    def __init__(self, position_i, profile_picture, table, id, chips=1000):
+        super().__init__(position_i, profile_picture, table, id, chips)
+        self.MDFC = 1
+        self.RMDFC = 1.3
 
     def new_hand(self, i):
         self.c_range = None
@@ -429,7 +433,7 @@ class BotV1(Bot):
         else:
             action = (3, self.get_bet(table))
 
-            min_rank *= self.calc_mdf(applied=False, bet=action[1] - table.last_bet)
+            min_rank *= self.calc_mdf(applied=False, bet=action[1] - table.last_bet) * self.RMDFC
 
             print(self.calc_mdf(applied=False, bet=action[1] - table.last_bet))
 

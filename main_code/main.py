@@ -701,7 +701,9 @@ class Card:
 
     def set_image(self):
         card_path = f"{valFilename[self.value[0]]}_of_{suitFilename[self.value[1]]}"
+        card_path = card_path + '2' if self.value[0] in "JQK" else card_path
         imagePath = rf"{dirname}/images/cards/{card_path}.png"
+        # imagePath = rf"{dirname}/images/cards/SVG/{card_path}.svg"
 
         self.image = pygame.transform.smoothscale(
             pygame.image.load(imagePath).convert_alpha(), (CARDW, CARDH)
