@@ -45,11 +45,12 @@ impl RpsBot {
             let rr2 = -rr1;
 
             for o in RpsBot::other(a) {
-                self.strategy[o] +=  RpsBot::reward(o, b) - rr1
+                self.strategy[o] +=  RpsBot::reward(o, b) - rr1;
+                // self.strategy[o] = max(self.strategy[0], 0);
             }
 
             for o in RpsBot::other(b) {
-                self.strategy[o] += RpsBot::reward(o, a) - rr2
+                self.strategy[o] += RpsBot::reward(o, a) - rr2;
             }
 
         }
