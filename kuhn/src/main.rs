@@ -1,9 +1,10 @@
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
+use itertools::Itertools;
 use std::time::Instant;
 
 const WINNER: [[f64; 3]; 3] = [[0.0, -1.0, 1.0], [1.0, 0.0, -1.0], [-1.0, 1.0, 0.0]];
-
+// const DECK: 
 struct Node {
     strategy: [f64; 2],
     strategy_p: Vec<f64>,
@@ -19,6 +20,14 @@ impl Kuhn {
         0
     }
 
+    fn train(&self, iterations: usize) -> Vec<f64> {
+        for _ in 1..iterations {
+            for (c1, c2) in (0..3).permutations(2) {
+                self.cfr(c1, c2)
+            }
+        }
+        vec![0.0]
+    }
     fn cfr(&self) -> isize{
         0 
     }
