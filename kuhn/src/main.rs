@@ -62,8 +62,10 @@ impl Kuhn {
         let mut curr_regrets = [0; 2];
         for (i, act) in enumerate(['p', 'q']) {
             self.history.push(act);
-            curr_regrets[i] += -self.cfr((cpi + 1) % 2, c2, c1) 
+            curr_regrets[i] += -self.cfr((cpi + 1) % 2, c2, c1);
             //negative because it will get the reward of the other player (cards and cpi switch)
+
+            self.history.pop(); //think to check
         }
         0 
     }
