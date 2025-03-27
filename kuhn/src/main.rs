@@ -22,13 +22,18 @@ impl Kuhn {
 
     fn train(&self, iterations: usize) -> Vec<f64> {
         for _ in 1..iterations {
-            for (c1, c2) in (0..3).permutations(2) {
-                self.cfr(c1, c2)
+            for (c1, c2) in (0..3).permutations(2).map(|v|(v[0], v[1])) {
+                self.cfr(c1, c2);
             }
         }
         vec![0.0]
     }
-    fn cfr(&self) -> isize{
+
+    fn calc_reward(&self) -> usize {
+        0
+    }
+    
+    fn cfr(&self, c1: usize, c2: usize) -> isize{
         0 
     }
 }
@@ -84,8 +89,8 @@ fn make_start() -> Node {
 
 fn main() {
     let start = Instant::now();
-    let mut a = make_start();
+    let mut a = Kuhn{node_map:Vec::new()};
 
-    println!("{:?}", a.get_strategy(100_000));
+    println!("{:?}", a.train(100_000));
     println!("Elapsed: {:.2?}", start.elapsed());
 }
