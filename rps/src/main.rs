@@ -63,9 +63,9 @@ impl RpsBot {
 
 fn make_start() -> RpsBot {
     RpsBot {
-        strategy: [1.0; 3],
-        strategy_sum: [1.0 / 3.0 ; 3],
-        strategy_p: vec![1.0 / 3.0 ; 3],
+        strategy: [1.0; 3],  //The current regrets for each action
+        strategy_p: vec![1.0 / 3.0 ; 3], // The current strategy which is formed from normalizing strategy
+        strategy_sum: [1.0 / 3.0 ; 3], // The sum of all of the strategies which will be normalized to get the final strategy at the end
     }
 }
 
