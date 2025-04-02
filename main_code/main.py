@@ -1313,7 +1313,6 @@ class PokerGame(PlayWindow):
         if end == False:
             return False
 
-        # print(pygame.event.get())
         for event in self.events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_d:
@@ -1321,7 +1320,9 @@ class PokerGame(PlayWindow):
 
                 if event.key == pygame.K_q:  # TODO
                     print("q", self.table.blinds)
-                    self.table.blinds = [n * 2 for n in self.table.blinds]
+
+                    if self.table.blinds < sum(p.chips for p in self.players) / 10:
+                        self.table.blinds = [n * 2 for n in self.table.blinds]
 
                     print(self.table.blinds)
 
