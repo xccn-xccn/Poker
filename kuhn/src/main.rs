@@ -22,6 +22,7 @@ struct Kuhn{
     pot: [usize; 2],
     cards: [usize; 2]
 }
+
 fn make_node() -> Node {
     Node {
         regrets: [0.0, 0.0],
@@ -29,11 +30,12 @@ fn make_node() -> Node {
         strategy_sum: [1.0 / 3.0; 2],
         strategy_p: vec![1.0 / 3.0; 2],
         reach_pr: 0.0,
+        reach_pr_sum: 0.0,
     }
 }
 
 fn make_new() -> Kuhn {
-    Kuhn { node_map: vec![], history: vec![], pot: [0; 2]}
+    Kuhn { node_map: vec![], history: vec![], pot: [0; 2], cards: [0, 0]}
 }
 
 impl Kuhn {
