@@ -1,26 +1,24 @@
+use itertools::{enumerate, Itertools};
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
-use itertools::{enumerate, Itertools};
-use std::time::Instant;
+use std::{intrinsics::raw_eq, time::Instant};
 
-
-// TODO update pot, not allow pb (return False)
 const WINNER: [[f64; 3]; 3] = [[0.0, -1.0, 1.0], [1.0, 0.0, -1.0], [-1.0, 1.0, 0.0]];
-// const DECK: 
+// const DECK:
 struct Node {
-    regrets: [f64; 2], //current regrets to create strategy
-    strategy: [f64; 2], //current strategy 
-    strategy_p: Vec<f64>, //strategy normalised
+    regrets: [f64; 2],      //current regrets to create strategy
+    strategy: [f64; 2],     //current strategy
+    strategy_p: Vec<f64>,   //strategy normalised
     strategy_sum: [f64; 2], //sum of the strategies to work out average strategy
-    reach_pr: f64, //reach probability of this node on the current iteration
-    reach_pr_sum: f64, //sum of reach probability to normalise strategy_sum
+    reach_pr: f64,          //reach probability of this node on the current iteration
+    reach_pr_sum: f64,      //sum of reach probability to normalise strategy_sum
 }
 
-struct Kuhn{
+struct Kuhn {
     node_map: Vec<Node>,
     history: Vec<char>,
     pot: [usize; 2],
-    cards: [usize; 2]
+    cards: [usize; 2],
 }
 
 fn make_node() -> Node {
@@ -35,14 +33,18 @@ fn make_node() -> Node {
 }
 
 fn make_new() -> Kuhn {
-    Kuhn { node_map: vec![], history: vec![], pot: [0; 2], cards: [0, 0]}
+    Kuhn {
+        node_map: vec![],
+        history: vec![],
+        pot: [0; 2],
+        cards: [0, 0],
+    }
 }
 
 impl Kuhn {
-
     fn train(&mut self, iterations: usize) -> Vec<f64> {
         for _ in 1..iterations {
-            for (c1, c2) in (0..3).permutations(2).map(|v|(v[0], v[1])) {
+            for (c1, c2) in (0..3).permutations(2).map(|v| (v[0], v[1])) {
                 self.reset();
                 self.cards = [c1, c2];
                 self.cfr(0, [1.0, 1.0]);
@@ -55,50 +57,60 @@ impl Kuhn {
         self.history = vec![];
         self.pot = [0; 2];
     }
-    
-    fn is_terminal(&self) -> bool{
-        return self.history.len() >= 2
+
+    fn is_terminal(&self) -> bool {
+        if self.history.len() > 3 {
+            panic!("Invalid history {:?}", self.history)
+        }
+
+        self.history.len() < 2 && self.history[self.history.len() - 2..] != ['p', 'b']
     }
 
-    fn get_reward(&self, cpi: usize, c1: usize, c2: usize) -> isize {
-        if c1 > c2 || self.history[self.history.len() - 1] == 'p' {
-            self.pot[(cpi + 1) % 2] as isize
+    fn get_reward(&self, c1: usize, c2: usize) -> isize {
+        if self.history[self.history.len() - 2..] == ['b', 'p'] {
+            return 1;
         }
-        else if c2 > c1{
-            self.pot[cpi] as isize
+        let reward = self.history[self.history.len() - 2..]
+            .iter()
+            .filter(|&c| *c == 'b')
+            .count()
+            / 2
+            + 1;
+        if c1 > c2 {
+            reward as isize
         } else {
-            0
+            -(reward as isize)
         }
     }
 
     fn get_node(&mut self) -> &mut Node {
         &mut self.node_map[0]
     }
-    fn cfr(&mut self, cpi: usize, r_pr: [f64; 2]) -> f64{
+    fn cfr(&mut self, cpi: usize, r_pr: [f64; 2]) -> f64 {
         let opi = (cpi + 1) % 2;
         let (c1, c2) = (self.cards[cpi], self.cards[opi]);
 
         if self.is_terminal() {
-            return self.get_reward(cpi, c1, c2) as f64;
+            return self.get_reward(c1, c2) as f64;
         }
 
         let mut curr_regrets = [0.0; 2];
         let node_strategy = self.get_node().strategy;
         for (i, act) in enumerate(['p', 'q']) {
             self.history.push(act);
-            let mut n_pr = r_pr.clone();
+            let mut n_pr = r_pr; // array of f64 has copy trait
             n_pr[cpi] *= node_strategy[i];
-            
+
             curr_regrets[i] -= self.cfr(opi, n_pr);
             //negative because it will get the reward of the other player (cards and cpi switch)
-            
+
             self.history.pop(); //think to check
         }
-        
+
         let node: &mut Node = self.get_node();
 
         let mut average_regret = 0f64;
-        for (r ,s) in curr_regrets.iter().zip(node.strategy.iter()) {
+        for (r, s) in curr_regrets.iter().zip(node.strategy.iter()) {
             average_regret += r * s; //normalised by s
         }
 
@@ -127,17 +139,23 @@ impl Node {
     fn get_strategy(&self) -> [f64; 2] {
         [0.5, 0.5]
     }
-    fn convert_percentage(&self, last: bool) -> Vec<f64>{
-        let c = if !last {self.strategy} else {self.strategy_sum};
+    fn convert_percentage(&self, last: bool) -> Vec<f64> {
+        let c = if !last {
+            self.strategy
+        } else {
+            self.strategy_sum
+        };
         let s_sum: f64 = c.iter().filter(|&&x| x > 0.0).sum();
-        c.iter().map(|&x| if x > 0.0 {x / s_sum} else {0.0}).collect::<Vec<f64>>()
+        c.iter()
+            .map(|&x| if x > 0.0 { x / s_sum } else { 0.0 })
+            .collect::<Vec<f64>>()
     }
 
     // fn get_strategy(&mut self, opp_move: &str) -> Vec<f64> {
     //     let mut rng = thread_rng();
-  
+
     //     self.strategy_p = self.convert_percentage(false);
-        
+
     //     for (i, p) in self.strategy_p.iter().enumerate() {
     //         self.strategy_sum[i] += p
     //     }
@@ -150,15 +168,12 @@ impl Node {
     //         self.strategy[o] +=  Node::reward(o, b) - rr1
     //     }
 
-        
     //     println!("{:?}", self.strategy_sum);
 
     //     self.convert_percentage(true)
 
     // }
 }
-
-
 
 fn main() {
     let start = Instant::now();
