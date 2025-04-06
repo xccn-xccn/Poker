@@ -38,7 +38,7 @@ impl Kuhn {
                 self.cards = [c1, c2];
                 self.cfr(0, [1.0, 1.0]);
 
-                for (_, node) in &mut self.node_map {
+                for node in self.node_map.values_mut() {
                     node.update();
                 }
             }
