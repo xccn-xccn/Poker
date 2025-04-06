@@ -1,15 +1,14 @@
-use itertools::{enumerate, Itertools};
-use std::{array, str};
+use itertools::Itertools;
 // use rand::distributions::WeightedIndex;
 // use rand::prelude::*;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::time::Instant;
 
+#[derive(Clone)]
 struct Node {
     regrets: [f64; 2],      //current regrets to create strategy
     strategy: [f64; 2],     //current strategy
-    strategy_p: Vec<f64>,   //strategy normalised
+    // strategy_p: Vec<f64>,   //strategy normalised
     strategy_sum: [f64; 2], //sum of the strategies to work out average strategy
     reach_pr: f64,          //reach probability of this node on the current iteration
     reach_pr_sum: f64,      //sum of reach probability to normalise strategy_sum
@@ -32,7 +31,7 @@ fn make_new() -> Kuhn {
 }
 
 impl Kuhn {
-    fn train(mut self, iterations: usize) -> HashMap<String, Node> {
+    fn train(&mut self, iterations: usize) -> HashMap<String, Node> {
         for _ in 1..iterations {
             for (c1, c2) in (0..3).permutations(2).map(|v| (v[0], v[1])) {
                 self.reset();
@@ -44,7 +43,7 @@ impl Kuhn {
                 }
             }
         }
-        self.node_map
+        self.node_map.clone()
     }
 
     fn reset(&mut self) {
@@ -91,8 +90,8 @@ impl Kuhn {
 
         let mut curr_regrets = [0.0; 2];
         let node_strategy = self.get_node(cpi).strategy;
-        for (i, act) in enumerate(['p', 'q']) {
-            self.history.push(act);
+        for (i, act) in ['p', 'b'].iter().enumerate(){
+            self.history.push(*act);
             let mut n_pr = r_pr; // array of f64 has copy trait
             n_pr[cpi] *= node_strategy[i];
 
@@ -124,8 +123,8 @@ impl Node {
         Node {
             regrets: [0.0, 0.0],
             strategy: [0.5; 2],
-            strategy_sum: [1.0 / 3.0; 2],
-            strategy_p: vec![1.0 / 3.0; 2],
+            strategy_sum: [0.0; 2],
+            // strategy_p: vec![1.0 / 3.0; 2],
             reach_pr: 0.0,
             reach_pr_sum: 0.0,
         }
@@ -144,13 +143,14 @@ impl Node {
     fn get_strategy(&self) -> [f64; 2] {
         let pos_regrets: [f64; 2] = self.regrets.map(|n| n.max(0.0));
         let regret_sum: f64 = pos_regrets.iter().sum();
-        if regret_sum < 0.0 {
+        if regret_sum <= 0.0 {
             [0.5; 2]
         } else {
             pos_regrets.map(|n| n / regret_sum)
         }
     }
     fn get_final_strategy(&self) -> [f64; 2] {
+        // println!("strategy sum {:?} {:?}", self.strategy_sum, self.strategy);
         let strategy: [f64; 2] = self.strategy_sum.map(|s| s / self.reach_pr_sum);
         let s_sum: f64 = strategy.iter().sum();
         strategy.map(|s| s / s_sum)
@@ -159,10 +159,15 @@ impl Node {
 
 fn main() {
     let start = Instant::now();
-    let a = make_new();
-
+    let mut a = make_new();
     // println!("{:?}", a.train(100_000));
-    for (k, node) in a.train(100_000) {
+    let mut strategy: Vec<(String, Node)> = a.train(10_000)
+    .iter()
+    .map(|(k, v)| (k.clone(), v.clone()))
+    .collect();
+
+    strategy.sort_by_key(|(k, _)| k.clone());
+    for (k, node) in strategy {
         println!("{} {:?}", k, node.get_final_strategy())
     }
     println!("Elapsed: {:.2?}", start.elapsed());
