@@ -11,7 +11,7 @@ struct Node {
     // strategy_p: Vec<f64>,   //strategy normalised
     strategy_sum: [f64; 2], //sum of the strategies to work out average strategy
     reach_pr: f64,          //reach probability of this node on the current iteration
-    reach_pr_sum: f64,      //sum of reach probability to normalise strategy_sum
+    // reach_pr_sum: f64,      //sum of reach probability to normalise strategy_sum but not actually needed
 }
 
 struct Kuhn {
@@ -126,7 +126,7 @@ impl Node {
             strategy_sum: [0.0; 2],
             // strategy_p: vec![1.0 / 3.0; 2],
             reach_pr: 0.0,
-            reach_pr_sum: 0.0,
+            // reach_pr_sum: 0.0,
         }
     }
     fn update(&mut self) {
@@ -134,7 +134,7 @@ impl Node {
             self.strategy_sum[i] += self.reach_pr * self.strategy[i];
         } //get the sum of strategies for the average strategy
 
-        self.reach_pr_sum += self.reach_pr;
+        // self.reach_pr_sum += self.reach_pr;
         self.reach_pr = 0.0;
 
         self.strategy = self.get_strategy();
@@ -151,9 +151,10 @@ impl Node {
     }
     fn get_final_strategy(&self) -> [f64; 2] {
         // println!("strategy sum {:?} {:?}", self.strategy_sum, self.strategy);
-        let strategy: [f64; 2] = self.strategy_sum.map(|s| s / self.reach_pr_sum);
-        let s_sum: f64 = strategy.iter().sum();
-        strategy.map(|s| s / s_sum)
+        // self.strategy_sum.map(|s| s / self.reach_pr_sum)
+        // let strategy: [f64; 2] = self.strategy_sum;
+        let s_sum: f64 = self.strategy_sum.iter().sum();
+        self.strategy_sum.map(|s| s / s_sum)
     }
 }
 
@@ -161,14 +162,15 @@ fn main() {
     let start = Instant::now();
     let mut a = make_new();
     // println!("{:?}", a.train(100_000));
-    let mut strategy: Vec<(String, Node)> = a.train(10_000)
+    let mut strategy: Vec<(String, Node)> = a.train(100_000)
     .iter()
     .map(|(k, v)| (k.clone(), v.clone()))
     .collect();
 
     strategy.sort_by_key(|(k, _)| k.clone());
     for (k, node) in strategy {
-        println!("{} {:?}", k, node.get_final_strategy())
+        let fs: [f64; 2] = node.get_final_strategy();
+        println!("{} {:?} {}", k, fs, fs.iter().sum::<f64>())
     }
     println!("Elapsed: {:.2?}", start.elapsed());
 }
