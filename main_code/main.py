@@ -1024,10 +1024,18 @@ class Window:
         for b in self.buttons:
             b.add_window(self)
 
+
+    def random(self):
+        if pygame.time.get_ticks() % 200 == 0:
+            random.random()
+
     def beg_frame(self):
         self.mouse = pygame.mouse.get_pos()
+        
         for b in self.buttons:
             b.draw()
+
+        self.random()
 
     def resize(self):
         for b in self.buttons:
@@ -1136,6 +1144,9 @@ class Menu(Window):
         if end == False:
             return False
         return True
+
+    def random(self):
+        random.random()
 
 
 class PokerGame(PlayWindow):
@@ -1263,7 +1274,6 @@ class PokerGame(PlayWindow):
         screen.blit(tableImage, (TableX, TableY))
         super().beg_frame()
         current_tick = pygame.time.get_ticks()
-
         skip = False
 
         if self.dealButton.pressed:
