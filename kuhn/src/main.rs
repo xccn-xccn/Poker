@@ -4,6 +4,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::time::Instant;
 
+
 #[derive(Clone)]
 struct Node {
     regrets: [f64; 2],      //current regrets to create strategy
