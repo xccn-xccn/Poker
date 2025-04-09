@@ -1040,10 +1040,11 @@ class Window:
     def resize(self):
         for b in self.buttons:
             b.resize()
-        return
 
     def mid_frame(self):
         global screen
+
+        self.events = pygame.event.get()
 
         for event in self.events:
             if event.type == pygame.QUIT:
@@ -1139,7 +1140,6 @@ class Menu(Window):
 
         pygame.display.flip()
 
-        self.events = pygame.event.get()
         end = super().mid_frame()
         if end == False:
             return False
@@ -1317,7 +1317,6 @@ class PokerGame(PlayWindow):
         if skip:
             return True
 
-        self.events = pygame.event.get()
 
         end = super().mid_frame()
         if end == False:
@@ -1425,7 +1424,6 @@ class Explorer(PlayWindow):
         screen.blit(self.back, self.back_rect)
         pygame.display.flip()
 
-        self.events = pygame.event.get()
 
         end = super().mid_frame()
         if end == False:
@@ -1463,7 +1461,6 @@ class Trainer(PlayWindow):
         screen.blit(self.back, self.back_rect)
         pygame.display.flip()
 
-        self.events = pygame.event.get()
 
         end = super().mid_frame()
         if end == False:
