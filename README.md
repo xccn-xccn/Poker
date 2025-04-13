@@ -1,4 +1,4 @@
-My implementation of poker in python (made with pygame)
+My implementation of poker in python made with pygame
 
 Currently Bots use MDR (Minimum Defense Frequency)
 
