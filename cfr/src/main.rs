@@ -8,6 +8,7 @@ use std::time::Instant;
 // use monte carlo simulation
 // store regret like values
 #[derive(Clone)]
+
 struct Node {
     regrets: [f64; 2],      //current regrets to create strategy
     strategy: [f64; 2],     //current strategy
@@ -15,17 +16,18 @@ struct Node {
     strategy_sum: [f64; 2], //sum of the strategies to work out average strategy
     reach_pr: f64,          //reach probability of this node on the current iteration
     // reach_pr_sum: f64,      //sum of reach probability to normalise strategy_sum but not actually needed
+    actions: &String,
 }
 
-struct Kuhn {
+struct Pokerbot {
     node_map: HashMap<String, Node>,
     history: String,
     pot: [usize; 2],
     cards: [usize; 2],
 }
 
-fn make_new() -> Kuhn {
-    Kuhn {
+fn make_new() -> Pokerbot {
+    Pokerbot {
         node_map: HashMap::new(),
         history: String::new(),
         pot: [0; 2],
@@ -33,7 +35,7 @@ fn make_new() -> Kuhn {
     }
 }
 
-impl Kuhn {
+impl Pokerbot {
     fn train(&mut self, iterations: usize) -> HashMap<String, Node> {
         for _ in 1..iterations {
             for (c1, c2) in (0..3).permutations(2).map(|v| (v[0], v[1])) {
