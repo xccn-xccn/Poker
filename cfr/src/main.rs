@@ -16,7 +16,7 @@ struct Node {
     strategy_sum: [f64; 2], //sum of the strategies to work out average strategy
     reach_pr: f64,          //reach probability of this node on the current iteration
     // reach_pr_sum: f64,      //sum of reach probability to normalise strategy_sum but not actually needed
-    actions: &String,
+    // actions: str, grr
 }
 
 struct Pokerbot {
@@ -166,7 +166,7 @@ fn main() {
     let start = Instant::now();
     let mut a = make_new();
     // println!("{:?}", a.train(100_000));
-    let mut strategy: Vec<(String, Node)> = a.train(100_000)
+    let mut strategy: Vec<(String, Node)> = a.train(100_000).clone()
     .iter()
     .map(|(k, v)| (k.clone(), v.clone()))
     .collect();
