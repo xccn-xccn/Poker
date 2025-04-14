@@ -265,6 +265,7 @@ class RandomBot(Bot):
             bet = 0
 
         # return 2, 0
+        # return 3, self.chips
         return action, bet
 
 

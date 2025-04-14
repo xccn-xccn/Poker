@@ -67,10 +67,11 @@ clock = pygame.time.Clock()
 # uncomment to build pygbag
 if "python" not in os.path.basename(sys.executable):
     SCREENSIZE = (1700 * 1.5, 900 * 1.5)
-    
+
 screen = pygame.display.set_mode(
     SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE
 )
+pygame.display.set_caption("Poker Game")
 
 
 def init_images():
@@ -94,8 +95,6 @@ def init_images():
     BUTTON_BUFFER_Y = 20 * HSCALE
 
     CHIPW, CHIPH = 40 * WSCALE, 20 * HSCALE
-
-    pygame.display.set_caption("Poker Game")
 
     tableImage = pygame.image.load(
         rf"{dirname}/images/misc/poker-table.png"
@@ -701,7 +700,7 @@ class Card:
 
     def set_image(self):
         card_path = f"{valFilename[self.value[0]]}_of_{suitFilename[self.value[1]]}"
-        card_path = card_path + '2' if self.value[0] in "JQK" else card_path
+        card_path = card_path + "2" if self.value[0] in "JQK" else card_path
         imagePath = rf"{dirname}/images/cards/{card_path}.png"
         # imagePath = rf"{dirname}/images/cards/SVG/{card_path}.svg"
 
@@ -745,10 +744,6 @@ class HoleCard(Card):
 
     def get_difference(self):
         return (CARDW - (0 if self.showing else 0.5)) * (self.order - 1)
-
-    def show(self):
-        self.showing = True
-        self.set_image()
 
 
 class CommunityCard(Card):
@@ -893,10 +888,6 @@ class PlayerGUI:
             card_info[0] = self.player.hole_cards[1]
             card_info[1] += 1
 
-    def show_cards(self):
-        for c in self.cards:
-            c.show()
-
     def get_action(self):
         # BUG when action is reset such as through button press
         # the new action is the last players action
@@ -939,9 +930,14 @@ class PlayerGUI:
             for c in get_chips(bb, value + extra)
         ]
 
-    def showdown(self, table):
-        self.showing = not self.player.fold and table.players_remaining > 1
+    def set_show(self, table):
+        self.showing = not self.player.fold and (table.players_remaining > 1 and table.running == False or table.r >= table.skip_round)
 
+        #This only works for main player because if self.showing == False the cards are never updated but this is probably bad
+        if self.showing:
+            self.show_cards()
+
+    def show_cards(self):
         for c in self.cards:
             c.showing = self.showing
 
@@ -1024,14 +1020,13 @@ class Window:
         for b in self.buttons:
             b.add_window(self)
 
-
     def random(self):
         if pygame.time.get_ticks() % 200 == 0:
             random.random()
 
     def beg_frame(self):
         self.mouse = pygame.mouse.get_pos()
-        
+
         for b in self.buttons:
             b.draw()
 
@@ -1235,7 +1230,7 @@ class PokerGame(PlayWindow):
         self.deal_c = 0
         self.testing = True
 
-    def start_hand(self):
+    def start_hand(self):  # TODO
         self.players = sorted(
             [PlayerGUI(p, self.table) for p in self.table.players],
             key=lambda x: get_r_i(x.player, self.table),
@@ -1299,9 +1294,8 @@ class PokerGame(PlayWindow):
 
                 skip = True
 
-                if self.table.running == False:
-                    for p in self.players:
-                        p.showdown(self.table)
+                for p in self.players:
+                    p.set_show(self.table)
 
         pygame.display.flip()
 
@@ -1316,7 +1310,6 @@ class PokerGame(PlayWindow):
 
         if skip:
             return True
-
 
         end = super().mid_frame()
         if end == False:
@@ -1424,7 +1417,6 @@ class Explorer(PlayWindow):
         screen.blit(self.back, self.back_rect)
         pygame.display.flip()
 
-
         end = super().mid_frame()
         if end == False:
             return False
@@ -1460,7 +1452,6 @@ class Trainer(PlayWindow):
         screen.blit(self.text, self.text_rect)
         screen.blit(self.back, self.back_rect)
         pygame.display.flip()
-
 
         end = super().mid_frame()
         if end == False:
