@@ -9,7 +9,6 @@ import sys, os
 # python -m http.server 8000
 # TODO scale once (black screen when scaling)
 # line 578?, 744, 174
-# BUG pygbag is not random
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
 # BUG when changing bet action text changed ?
 # TODO speed button
@@ -61,13 +60,12 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 clock = pygame.time.Clock()
-# screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 
-
-# uncomment to build pygbag
 if "python" not in os.path.basename(sys.executable):
     SCREENSIZE = (1700 * 1.5, 900 * 1.5)
 
+#figure out what this actually does
+# screen = pygame.display.set_mode(SCREENSIZE, pygame.RESIZABLE)
 screen = pygame.display.set_mode(
     SCREENSIZE, pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.RESIZABLE
 )
