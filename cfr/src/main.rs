@@ -85,6 +85,14 @@ impl Pokerbot {
         let key = self.cards[cpi].to_string() + &self.history;
         self.node_map.entry(key).or_insert(Node::new())
     }
+
+    fn get_actions(&self) -> std::str::Chars{
+        if &self.history[self.history.len() - 1..] == "r"{
+            "fcr".chars()
+        } else {
+            "cr".chars()
+        }
+    }
     fn cfr(&mut self, cpi: usize, r_pr: [f64; 2]) -> f64 {
         let opi = (cpi + 1) % 2;
         let (c1, c2) = (self.cards[cpi], self.cards[opi]);
@@ -95,8 +103,10 @@ impl Pokerbot {
 
         let mut curr_regrets = [0.0; 2];
         let node_strategy = self.get_node(cpi).strategy;
-        for (i, act) in ['p', 'b'].iter().enumerate(){
-            self.history.push(*act);
+
+        let actions: Vec<char> = self.get_actions().collect();
+        for (i, act) in actions.enumerate(){
+            self.history.push(act);
             let mut n_pr = r_pr; // array of f64 has copy trait
             n_pr[cpi] *= node_strategy[i];
 
