@@ -22,7 +22,8 @@ from datetime import datetime
 # BUG cant go all in
 
 pygame.init()
-random.seed(datetime.now().microsecond)
+t = datetime.now()
+random.seed(t.microsecond * t.second * t.minute)
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
