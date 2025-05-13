@@ -4,6 +4,7 @@ from time import perf_counter
 from collections import Counter
 from sys import argv
 import os, sys
+from datetime import datetime
 start = perf_counter()
 
 print(sys.executable, argv, argv[0], "python" in os.path.basename(sys.executable), 'python' in os.path.basename(argv[0]))
@@ -17,41 +18,7 @@ string = "smoooodles aa"
 # n = 10_000
 # l = [random.randint(0, n) for _ in range(n)]
 
-# print(list(sorted(l)))
-
-
-class Scale(float):
-    def __mul__(self, value):
-
-        return round(super().__mul__(value))
-
-    def __rmul__(self, value):
-
-        return round(super().__mul__(value))
-
-
-def make_globals():
-    local_vars = locals()
-    print(local_vars)
-    for var_name, var_value in local_vars.items():
-        print(var_name)
-        globals()[var_name] = var_value
-
-def set_variables():
-    var1 = "Hello, World!"
-    var2 = 123
-    var3 = [4, 5, 6]
-    
-    local_vars = locals()
-
-    for var_name, var_value in local_vars.items():
-        print(var_name)
-        globals()[var_name] = var_value
-
-set_variables()
-
-# print(var1)  
-# print(var2)  
-# print(var3)  
-
+# random.seed(datetime.now().microsecond)
+# random.seed(1)
+print(random.random())
 print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")

@@ -1,9 +1,10 @@
 import pygame, random, os, asyncio
 import pygame.image
+import sys
 from backbone import start, Bot, Human
 from chips import get_chips
 from backbone_misc import *
-import sys, os
+from datetime import datetime
 
 # from main_misc import *
 # python -m http.server 8000
@@ -21,7 +22,7 @@ import sys, os
 # BUG cant go all in
 
 pygame.init()
-
+random.seed(datetime.now().microsecond)
 
 def draw_text(text, font, text_colour, x, y):
     img = font.render(text, True, text_colour)
@@ -1029,7 +1030,7 @@ class Window:
         for b in self.buttons:
             b.draw()
 
-        self.random()
+        # self.random()
 
     def resize(self):
         for b in self.buttons:

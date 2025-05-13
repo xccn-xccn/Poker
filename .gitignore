@@ -2,3 +2,4 @@ __pycache__/
 cfr/target
 main_code/build/web-cache
 main_code/__pycache__
+docs/web-cache
