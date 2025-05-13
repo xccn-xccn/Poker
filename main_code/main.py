@@ -930,7 +930,7 @@ class PlayerGUI:
         ]
 
     def set_show(self, table):
-        self.showing = not self.player.fold and (table.players_remaining > 1 and table.running == False or table.r >= table.skip_round)
+        self.showing = not self.player.fold and (table.players_remaining > 1 and table.running == False or table.r >= table.skip_round or isinstance(self.player, Human))
 
         #This only works for main player because if self.showing == False the cards are never updated but this is probably bad
         if self.showing:
