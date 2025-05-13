@@ -7,6 +7,7 @@ import sys, os
 
 # from main_misc import *
 # python -m http.server 8000
+# BUG Zoom button causes card image to reset
 # TODO scale once (black screen when scaling)
 # line 578?, 744, 174
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
