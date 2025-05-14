@@ -3,7 +3,8 @@ from functools import cmp_to_key
 from backbone_misc import *
 from time import perf_counter
 from random import choices
-
+# NOTE functions like get_four will not only select the best quads but all possible quads meaning they cannot be used as kickers (important for 4 card poker)
+# TODO check if bug fixed
 
 def get_winner(hands, community):
 
@@ -181,7 +182,11 @@ def get_2pair(cards):
 
 
 def get_three(cards):
-    return get_same(cards, 3)
+    p = get_same(cards, 3)
+    # TODO Check if needed
+    if p == False or len(p) < 3:
+        return False
+    return p[:3]
 
 
 def get_house(cards):
