@@ -20,6 +20,7 @@ from datetime import datetime
 # TODO double blinds button
 # BUG sometimes click cant close window button (maybe lag or because of event loop)
 # BUG cant go all in
+# BUG with finding winning hand [['AH', 'AC'], ['6D', '6S']] ['5S', '5D', '9S', '5C', '6C'] results in AAs winning  
 
 pygame.init()
 t = datetime.now()
