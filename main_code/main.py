@@ -8,7 +8,11 @@ from datetime import datetime
 
 # from main_misc import *
 # python -m http.server 8000
-# BUG Zoom button causes card image to reset
+
+# BUG cant go all in especially when big blind?
+# BUG this happens because chips current round invested are not considered when betting 
+
+# Check if winner.py bug fixed
 # TODO scale once (black screen when scaling)
 # line 578?, 744, 174
 # TODO show cards used with winning hands and winner (maybe show winning hand name), darken players who have folded
@@ -19,7 +23,6 @@ from datetime import datetime
 # TODO make LHS buttons and RHS buttons
 # TODO double blinds button
 # BUG sometimes click cant close window button (maybe lag or because of event loop)
-# BUG cant go all in
 # BUG with finding winning hand [['AH', 'AC'], ['6D', '6S']] ['5S', '5D', '9S', '5C', '6C'] results in AAs winning  
 
 pygame.init()
