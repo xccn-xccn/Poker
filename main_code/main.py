@@ -1,7 +1,7 @@
 import pygame, random, os, asyncio
 import pygame.image
 import sys
-from backbone import start, Bot, Human
+from main_code.poker import start, Bot, Human
 from chips import get_chips
 from backbone_misc import *
 from datetime import datetime
