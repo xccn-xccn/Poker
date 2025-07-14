@@ -1,7 +1,7 @@
 import pygame, random, os, asyncio
 import pygame.image
 import sys
-from main_code.poker import start, Bot, Human
+from poker import start, Bot, Human
 from chips import get_chips
 from backbone_misc import *
 from datetime import datetime
@@ -1380,7 +1380,7 @@ class PokerGame(PlayWindow):
                 else:
                     self.w_for_deal = True
                     self.deal_tick = current_tick + self.frame_rate * self.deal_c * (
-                        1 if not self.table.human_player.inactive else 0.2
+                        5 if not self.table.human_player.inactive else 0.2
                     )
 
         if self.human_acted == True:

@@ -24,7 +24,7 @@ from backbone_misc import *
 # Use mdf or pot odds
 
 
-class Player:
+class PokerPlayer:
     pos_i_names = {
         0: "Button",
         1: "Small blind",
@@ -43,7 +43,7 @@ class Player:
         self.id = id
 
     def __eq__(self, other):
-        if not isinstance(other, Player):
+        if not isinstance(other, PokerPlayer):
             return False
         return self.id == other.id
 
@@ -77,7 +77,7 @@ class Player:
 
         a_player_count = len(self.table.active_players)
         self.position_i = ((i - self.table.sb_i) % a_player_count + 1) % a_player_count
-        self.position_name = Player.pos_i_names[self.position_i]
+        self.position_name = PokerPlayer.pos_i_names[self.position_i]
         self.hole_cards = self.table.deck[self.position_i * 2 : self.position_i * 2 + 2]
 
         if a_player_count == 2:  # heads up
@@ -210,7 +210,7 @@ class Player:
         return min(self.table.last_bet, self.chips + self.round_invested)
 
 
-class Bot(Player):
+class Bot(PokerPlayer):
     def can_only_call(self):
         return (
             self.table.last_bet >= self.round_invested + self.chips
@@ -336,6 +336,7 @@ class BotV1(Bot):
             self.round_total,
             self.max_chips,
             self.min_call,
+            self.max_call,
             # pot_odds,
             self.to_call,
             table.cPI == table.last_agg,
@@ -477,7 +478,7 @@ class BotV1(Bot):
         return po if frac == False else po**-1 if po != 0 else float("inf")
 
 
-class Human(Player):
+class Human(PokerPlayer):
     pass
 
 

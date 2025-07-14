@@ -1,0 +1,2 @@
+class BlackJack:
+    pass
