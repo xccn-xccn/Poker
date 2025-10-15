@@ -8,11 +8,11 @@ class Kunh:
 
     def __init__(self):
         self.nodeMap = {}
+        self.deck = np.array([0, 1, 2])
         self.expected_game_value = 0
         self.n_cards = 3
         self.nash_equilibrium = dict()
         self.current_player = 0
-        self.deck = np.array([0, 1, 2])
         self.n_actions = 2
 
     def train(self, n_iterations=50000):

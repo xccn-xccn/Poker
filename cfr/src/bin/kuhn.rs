@@ -138,15 +138,17 @@ impl Node {
             regrets: [0.0, 0.0],
             strategy: [0.5; 2],
             strategy_sum: [0.0; 2],
-            // strategy_p: vec![1.0 / 3.0; 2],
             reach_pr: 0.0,
+            // strategy_p: vec![1.0 / 3.0; 2],
             // reach_pr_sum: 0.0,
         }
     }
     fn update(&mut self) {
         for i in 0..self.strategy_sum.len() {
-            self.strategy_sum[i] += self.reach_pr * self.strategy[i];
-        } //get the sum of strategies for the average strategy
+            self.strategy_sum[i] += self.reach_pr * self.strategy[i]; 
+            //multiply by reach prob so when less likely to reach lower impact on strategy
+        } //get the sum of strategies for the average strategy 
+
 
         // self.reach_pr_sum += self.reach_pr;
         self.reach_pr = 0.0;
@@ -164,11 +166,12 @@ impl Node {
         }
     }
     fn get_final_strategy(&self) -> [f64; 2] {
+        let s_sum: f64 = self.strategy_sum.iter().sum();
+        self.strategy_sum.map(|s| s / s_sum)
         // println!("strategy sum {:?} {:?}", self.strategy_sum, self.strategy);
         // self.strategy_sum.map(|s| s / self.reach_pr_sum)
         // let strategy: [f64; 2] = self.strategy_sum;
-        let s_sum: f64 = self.strategy_sum.iter().sum();
-        self.strategy_sum.map(|s| s / s_sum)
+        
     }
 }
 
