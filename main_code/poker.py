@@ -4,6 +4,7 @@ from copy import deepcopy
 from winner import get_winner, all_hands_ranked, group_rank_pre
 from backbone_misc import *
 
+
 # TODO test valid bets on raises
 # TODO show hands if only one player left
 # TODO make calling range capped and raising range tighter with percentages
@@ -34,13 +35,17 @@ class PokerPlayer:
         5: "Cutoff",
     }
 
-    def __init__(self, position_i, profile_picture, table, id, chips=1000):
+    def __init__(self, position_i, profile_picture, table, id=0, chips=1000):
         self.chips = chips
         self.position_i = self.table_position = position_i
         self.profile_picture = profile_picture
         self.inactive = False
         self.table = table
+
         self.id = id
+
+        while self.id == 0 or self.id in table.ids:
+            self.id = random.randint(1000, 9999)
 
     def __eq__(self, other):
         if not isinstance(other, PokerPlayer):
@@ -134,9 +139,9 @@ class PokerPlayer:
         if self.chips == 0:
             self.all_in = True
 
-    def is_valid(self, table, action):
-        print(action)
-        action, extra = action
+    def is_valid(self, table, action_info):
+        print(action_info)
+        action, extra = action_info
 
         if isinstance(self, Human):
             if table.community:
@@ -162,14 +167,14 @@ class PokerPlayer:
 
         return True
 
-    def move(self, table, action):
+    def move(self, table, action_info):
 
-        valid = self.is_valid(table, action)
+        valid = self.is_valid(table, action_info)
 
         if not valid and isinstance(self, Bot):
             print(
                 table.last_bet,
-                action,
+                action_info,
                 self.round_invested,
                 self.chips,
                 self.can_only_call(),
@@ -179,9 +184,10 @@ class PokerPlayer:
         elif not valid:
             return False
 
-        self.action, self.extra = action
+        self.action, self.extra = action_info
         self.move_action(table.last_bet)
 
+        #TODO
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
         print(
             f"\n {self.position_name} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
@@ -216,7 +222,6 @@ class Bot(PokerPlayer):
             self.table.last_bet >= self.round_invested + self.chips
             or self.table.only_call == True
         )
-
 
 class RandomBot(Bot):
     def get_bet(self, table):
@@ -270,8 +275,8 @@ class RandomBot(Bot):
 
 
 class BotV1(Bot):
-    def __init__(self, position_i, profile_picture, table, id, chips=1000):
-        super().__init__(position_i, profile_picture, table, id, chips)
+    def __init__(self, position_i, profile_picture, table, id=0, chips=1000):
+        super().__init__(position_i, profile_picture, table, id=id, chips=chips)
         self.MDFC = 1
         self.RMDFC = 1.3
 
@@ -474,6 +479,7 @@ class BotV1(Bot):
         )
 
     def calc_po(self, frac=False):
+        """Calculate pot odds"""
         po = (self.to_call) / (self.get_pot() + self.to_call)
         return po if frac == False else po**-1 if po != 0 else float("inf")
 
@@ -495,10 +501,12 @@ class Table:
         self.community = []
         self.correct_total_chips = 0
         self.r = 0
+        self.ids = []
 
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
         self.active_players.append(newPlayer)
+        self.ids.append(newPlayer.id)
 
         if isinstance(newPlayer, Human):
             self.human_player = newPlayer
@@ -523,6 +531,13 @@ class Table:
         if c == None:
             c = self.cPI
         return (c + 1) % self.no_players
+
+
+    def validate_move(self, player_id, action_info):
+        if player_id != self.current_player.id:
+            return False
+        
+        return self.current_player.is_valid(self, action_info)
 
     def single_move(self, action=None):
         print("player remaining", self.players_remaining)
@@ -797,23 +812,24 @@ def start():
     for r, p in enumerate(profile_pictures):
         if r <= 0:
             chips = 2000
-            table1.add_player(RandomBot(r, p, table1, str(r), chips=chips))
+            table1.add_player(RandomBot(r, p, table1, chips=chips))
 
         else:
             chips = 2000
-            table1.add_player(BotV1(r, p, table1, str(r), chips=chips))
+            table1.add_player(BotV1(r, p, table1, chips=chips))
 
     table1.add_player(
         Human(
             5,
             "nature",
             table1,
-            str(5),
             chips=3000,
         )
     )
     return table1
 
+def new_table():
+    pass
 
 def main():
     table1 = start()

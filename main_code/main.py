@@ -6,9 +6,13 @@ from chips import get_chips
 from backbone_misc import *
 from datetime import datetime
 
+
+
 # from main_misc import *
 # python -m http.server 8000
 
+# All players should have a player id - maybe just random number
+# find where check of human player is 
 # BUG cant go all in especially when big blind?
 # BUG this happens because chips current round invested are not considered when betting 
 
@@ -47,6 +51,8 @@ TEMPSCALE = Scale(
         key=lambda x: abs(1 - x),
     )
 )
+
+print((pygame.display.Info().current_w, pygame.display.Info().current_h))
 FULLSCREEN = (
     INTENDEDSIZE[0] * TEMPSCALE * 0.90,
     INTENDEDSIZE[1] * TEMPSCALE * 0.90,
@@ -1267,7 +1273,7 @@ class PokerGame(PlayWindow):
         self.set_community_cards()
 
     def single_frame(self):
-        global screen
+        # global screen
 
         screen.fill((0, 119, 8))
         screen.blit(tableImage, (TableX, TableY))
@@ -1349,6 +1355,7 @@ class PokerGame(PlayWindow):
 
         if self.table.running:
 
+            #TODO
             if not self.human_acted:
                 self.checkButton.set_text()
                 cont, self.end = self.table.start_move()
