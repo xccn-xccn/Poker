@@ -1,0 +1,15 @@
+poker/
+├── main.py                 # App entry point, event loop, window switching
+├── poker.py                # Core poker rules and logic (pure, no I/O)
+├── controller.py           # Connects GUI <-> poker logic (offline or online)
+├── gui/
+│   ├── assets.py           # Handles fonts, colors, images, and scaling
+│   ├── window_base.py      # Base class for GUI windows
+│   ├── menu_window.py      # Main menu (Play / Quit)
+│   ├── game_window.py      # Displays table, buttons, and calls controller
+│   ├── button.py           # Clickable buttons
+│   └── (optional extras)
+└── network/
+    ├── server.py           # Host player (broadcasts game state)
+    ├── client.py           # Other players connect to host
+    └── protocol.py         # Defines message types and JSON formats
