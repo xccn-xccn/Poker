@@ -1,0 +1,72 @@
+You are helping develop a poker game built with Python and Pygame. 
+The project is currently working for offline play but is being refactored for cleaner architecture and eventual online multiplayer support.
+
+========================
+CURRENT STATE
+========================
+- The app uses Pygame for GUI.
+- main.py currently mixes GUI, game logic, and scaling logic.
+- poker.py contains the core poker logic (Table, Player, Bot, etc.).
+- The GUI currently relies on many global variables (fonts, sizes, etc.).
+- There is no online functionality yet.
+
+========================
+GOAL ARCHITECTURE
+========================
+The project is being reorganised into modular layers:
+
+poker/
+├── main.py                 # App entry point, event loop, window switching
+├── poker.py                # Core poker rules and logic (pure, no I/O)
+├── controller.py           # Connects GUI <-> poker logic (offline or online)
+├── gui/
+│   ├── assets.py           # Handles fonts, colors, images, and scaling
+│   ├── window_base.py      # Base class for GUI windows
+│   ├── menu_window.py      # Main menu (Play / Quit)
+│   ├── game_window.py      # Displays table, buttons, and calls controller
+│   ├── button.py           # Clickable buttons
+│   └── (optional extras)
+└── network/
+    ├── server.py           # Host player (broadcasts game state)
+    ├── client.py           # Other players connect to host
+    └── protocol.py         # Defines message types and JSON formats
+
+========================
+ARCHITECTURE BEHAVIOUR
+========================
+- main.py initializes pygame, creates an Assets instance, and opens a Window (Menu or Game).
+- Each window inherits from WindowBase (with draw(), handle_event(), resize()).
+- GUI windows use Assets for fonts, scaling, and images — no global variables.
+- The controller owns a Table (from poker.py).
+- GUI actions like “fold”, “raise”, “call” call controller.perform_action().
+- The controller updates the Table and returns a simplified state for GUI rendering.
+- In online mode, controller delegates to Server/Client objects to sync state over the network.
+- Resizing is handled by Assets.rescale(), which updates fonts, image sizes, and button scales.
+
+========================
+NEXT IMPLEMENTATION TASKS
+========================
+When writing new code or expanding the system, follow these conventions:
+
+1. Keep GUI logic (drawing, input) separate from game logic (rules, turns, chips).
+2. Pass `assets` and `controller` objects into windows; never rely on global variables.
+3. Add new windows or screens by subclassing WindowBase.
+4. For networking:
+   - Host uses Server to broadcast JSON game states to connected Clients.
+   - Clients send player actions back as JSON messages.
+   - The controller translates between game events and network messages.
+5. When resizing, use Assets.rescale() to recompute scale factors and redraw GUI elements.
+6. Maintain a clean interface: 
+   - GUI → Controller: sends actions.
+   - Controller → Game Logic: applies actions and retrieves state.
+   - Controller → GUI: returns simplified state dicts for rendering.
+
+========================
+INSTRUCTIONS FOR YOU (THE LLM)
+========================
+Based on this structure:
+- Implement or improve classes following these design principles.
+- Keep the code modular, documented, and PEP8-compliant.
+- Assume future expansion to online multiplayer (LAN sockets).
+- Focus on clarity, separation of concerns, and consistent data flow.
+
