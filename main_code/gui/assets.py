@@ -1,6 +1,15 @@
 import pygame
 import os
 
+
+class Scale(float):
+    """Returns a rounded integer when multiplied with a float"""
+    def __mul__(self, value):
+        return round(super().__mul__(value))
+        
+    __rmul__ = __mul__
+
+
 class Assets:
     def __init__(self, screen, base_resolution=(1700, 900)):
         self.screen = screen
@@ -13,6 +22,7 @@ class Assets:
             "black": (0, 0, 0),
             "bg_table": (0, 119, 8),
             "button": (34, 140, 34),
+            "outline": (0, 0, 0)
         }
 
         self.fonts = {}
@@ -32,19 +42,22 @@ class Assets:
         self._load_images()
 
     def _compute_sizes(self):
-        self.sizes["button_w"] = int(150 * self.WSCALE)
-        self.sizes["button_h"] = int(50 * self.HSCALE)
-        self.sizes["chip_w"] = int(40 * self.WSCALE)
-        self.sizes["chip_h"] = int(20 * self.HSCALE)
+        self.sizes["button_w"] = 150 * self.WSCALE
+        self.sizes["button_h"] = 50 * self.HSCALE
+        self.sizes["chip_w"] = 40 * self.WSCALE
+        self.sizes["chip_h"] = 20 * self.HSCALE
 
-        table_w = int(868 * self.WSCALE)
-        table_h = int(423 * self.HSCALE)
+        self.sizes["util_button_size"] = (100 * self.MSCALE, 100 * self.MSCALE)
+
+        table_w = 868 * self.WSCALE
+        table_h = 423 * self.HSCALE
         self.sizes["table_size"] = (table_w, table_h)
 
-        self.sizes["card_w"] = 59 / 1000 * table_w
-        self.sizes["card_h"] = 173 / 1000 * table_h
-        self.sizes["card_backpad"] = 7 / 1000 * table_h
-        self.sizes["profile"] = (int(125 * self.MSCALE), int(125 * self.MSCALE))
+        
+        self.sizes["card_w"] = 51 * self.WSCALE
+        self.sizes["card_h"] = 73 * self.HSCALE
+        self.sizes["card_backpad"] = 3 * self.HSCALE
+        self.sizes["profile"] = (125 * self.MSCALE, 125 * self.MSCALE)
 
         tx = (self.current_resolution[0] - table_w) // 2
         ty = (self.current_resolution[1] - table_h) // 2
@@ -86,33 +99,22 @@ class Assets:
         cards_dir = os.path.join(self.root, "cards")
         chips_dir = os.path.join(self.root, "chips")
 
-        table_path = os.path.join(misc_dir, "poker-table.png")
-        if os.path.exists(table_path):
-            table = pygame.image.load(table_path).convert_alpha()
-            tw, th = self.sizes["table_size"]
-            self.images["table"] = pygame.transform.smoothscale(table, (tw, th))
-        else:
-            tw, th = self.sizes["table_size"]
-            surf = pygame.Surface((tw, th), pygame.SRCALPHA)
-            surf.fill((20, 100, 30))
-            pygame.draw.rect(surf, (10, 60, 10), surf.get_rect(), border_radius=40)
-            self.images["table"] = surf
-
-        card_back_path = os.path.join(cards_dir, "card_back.png")
-        if os.path.exists(card_back_path):
-            cb = pygame.image.load(card_back_path).convert_alpha()
-            cw, ch = int(self.sizes["card_w"]), int(self.sizes["card_h"])
-            self.images["card_back"] = pygame.transform.smoothscale(cb, (cw, ch))
-        else:
-            cw, ch = int(self.sizes["card_w"]), int(self.sizes["card_h"])
-            surf = pygame.Surface((cw, ch))
-            surf.fill(self.colors["white"])
-            self.images["card_back"] = surf
-
+        self._preload_misc_images(misc_dir)
         self._preload_card_images(cards_dir)
         self._preload_chip_images(chips_dir)
+        
+    def _preload_misc_images(self, misc_dir):
+        table = pygame.image.load(os.path.join(misc_dir, "poker-table.png")).convert_alpha()
+        self.images["table"] = pygame.transform.smoothscale(table, self.sizes["table_size"])
+ 
+        back_button = pygame.image.load(os.path.join(misc_dir, "Back_button.png")).convert_alpha()
+        self.images["back_button"] = pygame.transform.smoothscale(back_button, self.sizes["util_button_size"])
 
+        #TODO add the rest
     def _preload_card_images(self, cards_dir):
+        cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
+        self.images["card_back"] = pygame.transform.smoothscale(cb, (self.sizes["card_w"], self.sizes["card_h"]))
+
         val_map = {
             "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9",
             "T": "10", "J": "jack", "Q": "queen", "K": "king", "A": "ace"
@@ -131,12 +133,10 @@ class Assets:
     def _preload_chip_images(self, chips_dir):
         self.images["chips"] = {}
         cw, ch = self.sizes["chip_w"], self.sizes["chip_h"]
-        if os.path.isdir(chips_dir):
-            for fname in os.listdir(chips_dir):
-                if fname.endswith(".png"):
-                    name = os.path.splitext(fname)[0]
-                    img = pygame.image.load(os.path.join(chips_dir, fname)).convert_alpha()
-                    self.images["chips"][name] = pygame.transform.smoothscale(img, (int(cw), int(ch)))
+        for fname in os.listdir(chips_dir):
+            name = os.path.splitext(fname)[0]
+            img = pygame.image.load(os.path.join(chips_dir, fname)).convert_alpha()
+            self.images["chips"][name] = pygame.transform.smoothscale(img, (int(cw), int(ch)))
 
     def get_card_image(self, card_code):
         return self.images.get("cards", {}).get(card_code, self.images["card_back"])
@@ -149,10 +149,8 @@ class Assets:
 
     def get_profile_image(self, name):
         path = os.path.join(self.root, "profile_pictures", f"{name}.png")
-        if os.path.exists(path):
-            img = pygame.image.load(path).convert_alpha()
-            return pygame.transform.smoothscale(img, self.sizes["profile"])
-        return None
+        img = pygame.image.load(path).convert_alpha()
+        return pygame.transform.smoothscale(img, self.sizes["profile"])
 
     def get_chip_image(self, key):
         return self.images["chips"].get(key)

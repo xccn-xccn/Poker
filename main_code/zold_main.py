@@ -2,7 +2,7 @@ import pygame, random, os, asyncio
 import pygame.image
 import sys
 from poker import start, Bot, Human
-from chips import get_chips
+from main_code.gui.chips import get_chips
 from backbone_misc import *
 from datetime import datetime
 

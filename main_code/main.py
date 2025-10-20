@@ -43,7 +43,7 @@ class PokerApp:
         self.current_window.resize(new_size)
 
     def check_window_change(self):
-        new_window = self.current_window.new_window()
+        new_window = self.current_window.new_window
 
         if new_window:
             if new_window == "Offline Poker":
@@ -76,4 +76,5 @@ class PokerApp:
 
 
 if __name__ == "__main__":
-    PokerApp().run()
+    app = PokerApp()
+    app.run()

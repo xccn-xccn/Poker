@@ -69,9 +69,6 @@ class Scale(float):
     def __mul__(self, value):
         return round(super().__mul__(value))
         
-        return Scale(round(super().__mul__(value)))
-
-
     __rmul__ = __mul__
 
     

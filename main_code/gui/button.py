@@ -47,3 +47,37 @@ class Button:
         self.rect.width = w
         self.rect.height = h
         self._update_rendered_text()
+
+class ImageButton(Button):
+    def __init__(self, image, pos, assets, size=None, on_click=None, visible=True, enabled=True):
+        super().__init__("", pos, assets, size, on_click, visible, enabled)
+        self.image = image
+        self._scale_image()
+
+    def _scale_image(self):
+        if self.image:
+            self.scaled_image = pygame.transform.smoothscale(self.image, (self.rect.width, self.rect.height))
+
+    def draw(self, surface):
+        if not self.visible:
+            return
+
+        if not self.enabled:
+            color = self.disabled_color
+        else:
+            color = self.hover_color if self.hovered else self.base_color
+
+        pygame.draw.rect(surface, color, self.rect, border_radius=int(8 * self.assets.MSCALE))
+        
+        if self.image:
+            surface.blit(self.scaled_image, self.rect)
+        
+        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, width=2, border_radius=int(8 * self.assets.MSCALE))
+
+    def resize(self):
+        super().resize()
+        self._scale_image()
+
+    def set_image(self, image):
+        self.image = image
+        self._scale_image()
