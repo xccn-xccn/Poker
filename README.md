@@ -1,12 +1,13 @@
 My implementation of poker in python made with pygame
 
-Currently Bots use MDR (Minimum Defense Frequency)
+Bots use MDR (Minimum Defense Frequency), CFR coming soon.
 
-Run main.py in the main_code folder to play or use the web app (let it load and click ready to start)
+~~Run main.py in the main_code folder to play or~~ Use the web app to play (let it load and click ready to start)
 
 https://xccn-xccn.github.io/Poker/
 
 Requirements:
     pip install pygame
+
 
 
