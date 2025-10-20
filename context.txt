@@ -62,7 +62,7 @@ When writing new code or expanding the system, follow these conventions:
    - Controller → GUI: returns simplified state dicts for rendering.
 
 ========================
-INSTRUCTIONS FOR YOU (THE LLM)
+INSTRUCTIONS FOR YOU
 ========================
 Based on this structure:
 - Implement or improve classes following these design principles.
