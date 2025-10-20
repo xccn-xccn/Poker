@@ -23,8 +23,6 @@ class PokerApp:
         self.current_window = MenuWindow(
             screen=self.screen,
             assets=self.assets,
-            on_play=self.start_game,
-            on_quit=self.quit_game
         )
 
     def start_game(self, online=False, host=False, host_ip=None):
@@ -33,19 +31,25 @@ class PokerApp:
             screen=self.screen,
             assets=self.assets,
             controller=self.controller,
-            on_back=self.set_menu_window
         )
 
     def quit_game(self):
         pygame.event.post(pygame.event.Event(pygame.QUIT))
 
-
     def resize(self, event):
         new_size = (event.w, event.h)
         self.screen = pygame.display.set_mode(new_size, pygame.RESIZABLE)
         self.assets.rescale(new_size)
-        if self.current_window:
-            self.current_window.resize(new_size)
+        self.current_window.resize(new_size)
+
+    def check_window_change(self):
+        new_window = self.current_window.new_window()
+
+        if new_window:
+            if new_window == "Offline Poker":
+                self.start_game()
+            elif new_window == "Menu":
+                self.set_menu_window()
 
     def run(self):
         running = True
@@ -63,6 +67,7 @@ class PokerApp:
                 self.controller.update()
 
             self.current_window.draw()
+            self.check_window_change()
 
             pygame.display.flip()
 

@@ -11,8 +11,11 @@ from poker import Table, Human, Bot, start
 
 class GameController:
     def __init__(self):
-        self.table = start() if callable(start) else Table()
+        self.create_table()
         self.human_player_id = next(p.id for p in self.table.players if isinstance(p, Human))
+
+    def create_table(self):
+        self.table = start() if callable(start) else Table()
 
     def start_hand(self):
         self.table.start_hand()
@@ -50,3 +53,6 @@ class GameController:
             "round": self.table.r,
             "last_bet": self.table.last_bet,
         }
+
+class OnlineController:
+    pass
