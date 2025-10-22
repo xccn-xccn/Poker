@@ -1,7 +1,7 @@
 import pygame
 
 from gui.window_base import WindowBase
-from gui.button import Button
+from main_code.gui.buttons import Button
 
 class MenuWindow(WindowBase):
     def __init__(self, screen, assets):
@@ -15,5 +15,5 @@ class MenuWindow(WindowBase):
         self.new_window = name
 
     def draw(self):
-        self.screen.fill(self.assets.colors["bg_table"])
+        self.screen.blit(self.assets.images["black_background1"], (0, 0))
         super().draw()

@@ -104,13 +104,27 @@ class Assets:
         self._preload_chip_images(chips_dir)
         
     def _preload_misc_images(self, misc_dir):
-        table = pygame.image.load(os.path.join(misc_dir, "poker-table.png")).convert_alpha()
+        table = pygame.image.load(os.path.join(misc_dir, "poker_table.png")).convert_alpha()
         self.images["table"] = pygame.transform.smoothscale(table, self.sizes["table_size"])
  
-        back_button = pygame.image.load(os.path.join(misc_dir, "Back_button.png")).convert_alpha()
-        self.images["back_button"] = pygame.transform.smoothscale(back_button, self.sizes["util_button_size"])
+        # back_button = pygame.image.load(os.path.join(misc_dir, "Back_button.png")).convert_alpha()
+        # self.images["back_button"] = pygame.transform.smoothscale(back_button, self.sizes["util_button_size"])
+ 
+        # zoom_out = pygame.image.load(os.path.join(misc_dir, "zoom_out.png")).convert_alpha()
+        # self.images["zoom_out"] = pygame.transform.smoothscale(zoom_out, self.sizes["util_button_size"])
+    
+        # zoom_in = 
+        # self.images["zoom_in"] = pygame.transform.smoothscale(zoom_in, self.sizes["util_button_size"])
+
+        for name in ("back_button", "zoom_out", "zoom_in"):
+            self.images[name] = pygame.transform.smoothscale(pygame.image.load(
+                os.path.join(misc_dir, f"{name}.png")).convert_alpha(), self.sizes["util_button_size"])
+        
+        black_background1 = pygame.image.load(os.path.join(misc_dir, "black_background1.jpg")).convert_alpha()
+        self.images["black_background1"] = pygame.transform.smoothscale(black_background1, self.current_resolution)
 
         #TODO add the rest
+
     def _preload_card_images(self, cards_dir):
         cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
         self.images["card_back"] = pygame.transform.smoothscale(cb, (self.sizes["card_w"], self.sizes["card_h"]))

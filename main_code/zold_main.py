@@ -1097,7 +1097,7 @@ class Menu(Window):
         super().__init__(frame_rate, cw)
 
         background = pygame.image.load(
-            rf"{dirname}/images/misc/black_poker_background.jpg"
+            rf"{dirname}/images/misc/black_background1.jpg"
         ).convert_alpha()
 
         self.background = pygame.transform.smoothscale(

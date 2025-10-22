@@ -7,8 +7,9 @@ class Button:
         self.font = assets.fonts["main"]
         self.on_click = on_click
 
-        w = size[0] if size else assets.sizes["button_w"]
-        h = size[1] if size else assets.sizes["button_h"]
+        #TODO make an attribute and resize
+        self.original_w = size[0] if size else assets.sizes["button_w"]
+        self.original_h = size[1] if size else assets.sizes["button_h"]
         x, y = pos
         self.rect = pygame.Rect(x, y, w, h)
 
@@ -47,6 +48,8 @@ class Button:
         self.rect.width = w
         self.rect.height = h
         self._update_rendered_text()
+
+        #TODO update pos
 
 class ImageButton(Button):
     def __init__(self, image, pos, assets, size=None, on_click=None, visible=True, enabled=True):
