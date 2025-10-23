@@ -1,564 +1,341 @@
+# gui/game_window.py
 import pygame
-import random
-import os
-import sys
-
-# Add the parent directory to path to import chips.py
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-
-from gui.chips import get_chips
+import math
 from gui.window_base import WindowBase
-from gui.buttons import Button
+from gui.buttons import Button, ImageButton
+
+CARD_ZOOM_STEPS = (1.5, 1.0, 0.66)
+
+
+class BetSlider:
+    def __init__(self, assets, pos, size, min_value=0, max_value=1000, step=10):
+        self.assets = assets
+        self.original_pos = pos
+        self.original_size = size
+        self.pos = self.assets.rescale_single(*self.original_pos)
+        self.size = self.assets.rescale_single(*self.original_size)
+        self.rect = pygame.Rect(*self.pos, *self.size)
+        self.min = min_value
+        self.max = max_value
+        self.step = step
+        self.value = self.min
+        self.dragging = False
+        self.handle_rect = pygame.Rect(self.rect.left, self.rect.top, int(self.rect.height), int(self.rect.height))
+        self._recalc_handle()
+
+    def _recalc_handle(self):
+        ratio = 0 if self.max == self.min else (self.value - self.min) / (self.max - self.min)
+        hx = self.rect.left + int(ratio * (self.rect.width - self.handle_rect.width))
+        self.handle_rect.x = hx
+        self.handle_rect.y = self.rect.top
+
+    def set_range(self, min_value, max_value, step=None):
+        self.min = min_value
+        self.max = max_value
+        if step:
+            self.step = step
+        self.value = max(self.min, min(self.value, self.max))
+        self._recalc_handle()
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.handle_rect.collidepoint(event.pos) or self.rect.collidepoint(event.pos):
+                self.dragging = True
+                self._update_from_mouse(event.pos[0])
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+        elif event.type == pygame.MOUSEMOTION:
+            if self.dragging:
+                self._update_from_mouse(event.pos[0])
+
+    def _update_from_mouse(self, mx):
+        rel = mx - self.rect.left
+        rel = max(0, min(rel, self.rect.width - self.handle_rect.width))
+        ratio = rel / max(1, (self.rect.width - self.handle_rect.width))
+        raw = self.min + ratio * (self.max - self.min)
+        stepped = int(round(raw / self.step) * self.step)
+        self.value = max(self.min, min(self.max, stepped))
+        self._recalc_handle()
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, border_radius=int(6 * self.assets.min_size_scale))
+        inner = self.rect.inflate(-4, -8)
+        pygame.draw.rect(surface, (50, 50, 50), inner, border_radius=int(6 * self.assets.min_size_scale))
+        # filled portion
+        fill_w = int((self.value - self.min) / max(1, (self.max - self.min)) * inner.width)
+        if fill_w > 0:
+            fill_rect = pygame.Rect(inner.left, inner.top, fill_w, inner.height)
+            pygame.draw.rect(surface, self.assets.colors["button"], fill_rect, border_radius=int(6 * self.assets.min_size_scale))
+        # handle
+        pygame.draw.ellipse(surface, (220, 220, 220), self.handle_rect)
+        # value text
+        txt = self.assets.fonts["small"].render(str(self.value), True, self.assets.colors["white"])
+        surface.blit(txt, (self.rect.right + 8, self.rect.centery - txt.get_height() // 2))
+
+    def resize(self):
+        self.pos = self.assets.rescale_single(*self.original_pos)
+        self.size = self.assets.rescale_single(*self.original_size)
+        self.rect = pygame.Rect(*self.pos, *self.size)
+        h = int(self.rect.height)
+        self.handle_rect = pygame.Rect(self.rect.left, self.rect.top, h, h)
+        self._recalc_handle()
+
+
+class PlayerArea:
+    def __init__(self, idx, player_obj, table, assets):
+        self.idx = idx
+        self.player = player_obj
+        self.table = table
+        self.assets = assets
+        self.update_layout()
+        self._make_profile_image()
+
+    def update_layout(self):
+        coords = self.assets.player_coords
+        idx = self.idx % len(coords)
+        x, y = coords[idx]
+        self.cx = int(x)
+        self.cy = int(y)
+        pw, ph = self.assets.sizes["profile"]
+        self.profile_rect = pygame.Rect(self.cx - pw // 2, self.cy - ph // 2, pw, ph)
+
+    def _make_profile_image(self):
+        name = getattr(self.player, "position_name", "") or getattr(self.player, "name", "")
+        # img = self.assets.get_profile_image(name)
+        img = None
+        if img:
+            self.profile_image = img
+        else:
+            surf = pygame.Surface(self.profile_rect.size, pygame.SRCALPHA)
+            pygame.draw.ellipse(surf, (200, 200, 200), surf.get_rect())
+            self.profile_image = surf
+
+    def update(self):
+        pass
+
+    def draw(self, surface, card_zoom=1.0, show_hole=False):
+        px, py = self.profile_rect.topleft
+        surface.blit(self.profile_image, (px, py))
+        # name + chips
+        name = getattr(self.player, "position_name", "") or getattr(self.player, "name", "")
+        chips = getattr(self.player, "chips", 0)
+        name_surf = self.assets.fonts["small"].render(str(name), True, self.assets.colors["white"])
+        chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
+        surface.blit(name_surf, (px, py + self.profile_rect.height + 2))
+        surface.blit(chips_surf, (px, py + self.profile_rect.height + 2 + name_surf.get_height()))
+        # action indicator
+        action = getattr(self.player, "action", None)
+        if action:
+            if action == 1:
+                t = "Fold"
+            elif action == 2:
+                t = "Call"
+            else:
+                t = "Bet"
+            a_surf = self.assets.fonts["small"].render(t, True, (255, 0, 0))
+            surface.blit(a_surf, (px, py - a_surf.get_height() - 4))
+        # hole cards if allowed
+        hole = getattr(self.player, "hole_cards", []) or []
+        draw_cards = hole and (getattr(self.player, "is_local_player", False) or show_hole)
+        if draw_cards:
+            cw = int(self.assets.sizes["card_w"] * card_zoom)
+            ch = int(self.assets.sizes["card_h"] * card_zoom)
+            spacing = int(cw * 0.2)
+            startx = px + self.profile_rect.width + 8
+            y = py + self.profile_rect.height - ch
+            for i, code in enumerate(hole[:2]):
+                card_img = self.assets.get_card_image(code)
+                card_img = pygame.transform.smoothscale(card_img, (cw, ch))
+                surface.blit(card_img, (startx + i * (cw + spacing), y))
+
 
 class GameWindow(WindowBase):
     def __init__(self, screen, assets, controller):
         super().__init__(screen, assets)
         self.controller = controller
-        self.state = None
-        self.players = []
-        self.community_cards = []
-        self.pot_value = 0
-        self.deal_pressed = False
-        self.human_acted = False
-        self.action_buttons = []
-        self.bet_amount = 0
-        self.current_bb = 20  # Default big blind value
-        
-        # Chip display variables
-        self.player_bet_chips = {}  # Track chips for each player's current bet
-        self.pot_chips = []  # Chips in the main pot
-        
-        # Initialize player positions and UI state
-        self._init_player_positions()
-        self._create_action_buttons()
-        self._create_bet_controls()
-        
-    def _init_player_positions(self):
-        """Initialize player positions around the table"""
-        table_w, table_h = self.assets.sizes["table_size"]
-        tx, ty = self.assets.sizes["table_pos"]
-        
-        # Calculate player positions around the table
-        X1 = tx + 700 / 1000 * table_w
-        Y1 = ty + table_h
-        X2 = self.screen.get_width() - X1
-        Y2 = self.screen.get_height() - Y1
-        X3 = tx
-        Y3 = self.screen.get_height() / 2
-        X4 = self.screen.get_width() - X3
-        
-        self.player_coords = [
-            (X1, Y1), (X2, Y1), (X3, Y3), 
-            (X2, Y2), (X1, Y2), (X4, Y3)
-        ]
-        
-    def _create_action_buttons(self):
-        """Create fold, check/call, and bet/raise buttons"""
-        screen_w, screen_h = self.screen.get_size()
-        button_w = self.assets.sizes["button_w"]
-        button_h = self.assets.sizes["button_h"]
-        
-        # Position buttons at bottom right
-        fold_x = screen_w - (button_w + 80 * self.assets.WSCALE) * 2 - 4/5 * button_w * self.assets.WSCALE + 80 * self.assets.WSCALE
-        fold_y = screen_h - (button_h + 20 * self.assets.HSCALE) * 2 - 2/5 * button_w * self.assets.HSCALE
-        
-        check_x = fold_x
-        check_y = screen_h - button_h - 2/5 * button_w * self.assets.HSCALE
-        
-        bet_x = screen_w - button_w - 4/5 * button_w * self.assets.WSCALE
-        bet_y = screen_h - button_h - 2/5 * button_w * self.assets.HSCALE
-        
-        # Create action buttons
-        self.fold_button = Button(
-            "Fold", (fold_x, fold_y), self.assets, 
-            on_click=lambda: self._perform_action("fold")
-        )
-        
-        self.check_button = Button(
-            "Check", (check_x, check_y), self.assets,
-            on_click=lambda: self._perform_action("call")
-        )
-        
-        self.bet_button = Button(
-            "Bet", (bet_x, bet_y), self.assets,
-            on_click=lambda: self._perform_action("raise", self.bet_amount)
-        )
-        
-        self.action_buttons = [self.fold_button, self.check_button, self.bet_button]
-        
-        # Deal button at top center
-        deal_x = screen_w / 2 - button_w / 2
-        deal_y = screen_h / 6 - button_h / 2
-        self.deal_button = Button(
-            "Deal", (deal_x, deal_y), self.assets,
-            on_click=self._start_hand
-        )
-        
-        self.widgets.extend([self.deal_button] + self.action_buttons)
-    
-    def _create_bet_controls(self):
-        """Create bet amount controls"""
-        screen_w, screen_h = self.screen.get_size()
-        button_w = self.assets.sizes["button_w"]
-        button_h = self.assets.sizes["button_h"]
-        
-        # Bet amount display position
-        self.bet_display_x = screen_w - button_w - 4/5 * button_w * self.assets.WSCALE
-        self.bet_display_y = screen_h - button_h * 2 - 2/5 * button_w * self.assets.HSCALE
-        
-        # Simple bet adjustment buttons
-        inc_x = self.bet_display_x + button_w + 10
-        inc_y = self.bet_display_y
-        self.increase_bet = Button(
-            "+", (inc_x, inc_y), self.assets, 
-            size=(button_h, button_h),
-            on_click=self._increase_bet
-        )
-        
-        dec_x = self.bet_display_x - button_h - 10
-        dec_y = self.bet_display_y
-        self.decrease_bet = Button(
-            "-", (dec_x, dec_y), self.assets,
-            size=(button_h, button_h),
-            on_click=self._decrease_bet
-        )
-        
-        # Pre-set bet amount buttons
-        self.bet_preset_buttons = []
-        presets = [
-            ("1/2 Pot", 0.5),
-            ("2/3 Pot", 0.66),
-            ("Pot", 1.0),
-            ("All In", -1)
-        ]
-        
-        for i, (label, multiplier) in enumerate(presets):
-            preset_x = self.bet_display_x - button_w
-            preset_y = self.bet_display_y - (i + 1) * (button_h + 5)
-            button = Button(
-                label, (preset_x, preset_y), self.assets,
-                size=(button_w, button_h),
-                on_click=lambda m=multiplier: self._set_preset_bet(m)
-            )
-            self.bet_preset_buttons.append(button)
-        
-        self.widgets.extend([self.increase_bet, self.decrease_bet] + self.bet_preset_buttons)
-    
-    def _increase_bet(self):
-        """Increase bet amount"""
-        if self.state and self.state.get("running", False):
-            human_player = next((p for p in self.state["players"] if p["id"] == self.controller.human_player_id), None)
-            if human_player:
-                max_bet = human_player.get("chips", 0)
-                min_raise = self.state.get("min_raise", self.current_bb)
-                self.bet_amount = min(max_bet, self.bet_amount + min_raise)
-    
-    def _decrease_bet(self):
-        """Decrease bet amount"""
-        if self.state and self.state.get("running", False):
-            min_raise = self.state.get("min_raise", self.current_bb)
-            min_bet = self.state.get("last_bet", 0) + min_raise
-            self.bet_amount = max(min_bet, self.bet_amount - min_raise)
-    
-    def _set_preset_bet(self, multiplier):
-        """Set bet amount based on preset multiplier"""
-        if not self.state or not self.state.get("running", False):
-            return
-            
-        human_player = next((p for p in self.state["players"] if p["id"] == self.controller.human_player_id), None)
-        if not human_player:
-            return
-            
-        if multiplier == -1:  # All in
-            self.bet_amount = human_player.get("chips", 0)
-        else:
-            pot = self.state.get("pot", 0)
-            min_raise = self.state.get("min_raise", self.current_bb)
-            base_bet = self.state.get("last_bet", 0) + min_raise
-            preset_bet = max(base_bet, int(pot * multiplier))
-            self.bet_amount = min(human_player.get("chips", 0), preset_bet)
-    
-    def _get_chip_images_for_amount(self, amount):
-        """Get appropriate chip images for a given amount using chips.py"""
-        if amount <= 0:
-            return []
-        
-        # Get chip names from chips.py
-        chip_names = get_chips(self.current_bb, amount)
-        
-        # Convert names to actual images from assets
-        chip_images = []
-        for chip_name in chip_names:
-            if chip_name in self.assets.images["chips"]:
-                chip_images.append(self.assets.images["chips"][chip_name])
-            else:
-                # Fallback: use first available chip image
-                if self.assets.images["chips"]:
-                    chip_images.append(list(self.assets.images["chips"].values())[0])
-        
-        return chip_images
-    
-    def _start_hand(self):
-        """Start a new hand"""
+        btn_w, btn_h = 150, 50
+        # bottom y is provided as base-res coords (1700x900 base)
+        bottom_y = 820
+        # Buttons (positions are base resolution coords)
+        self.fold_btn = Button("Fold", (100, bottom_y), (btn_w, btn_h), assets, on_click=lambda: self._player_action("fold", 0))
+        self.check_btn = Button("Check", (300, bottom_y), (btn_w, btn_h), assets, on_click=lambda: self._player_action("call", 0))
+        self.call_btn = Button("Call", (500, bottom_y), (btn_w, btn_h), assets, on_click=lambda: self._player_action("call", 0))
+        self.raise_btn = Button("Raise", (700, bottom_y), (btn_w, btn_h), assets, on_click=self._open_raise_slider)
+        self.deal_btn = Button("Deal", (900, 120), (btn_w, btn_h), assets, on_click=self._on_deal)
+        self.back_btn = ImageButton("back_button", (20, 20), (70, 70), assets, on_click=self._on_back)
+        self.zoom_btn = ImageButton("zoom_in", (1600, 20), (70, 70), assets, on_click=self._on_zoom)
+        self.widgets = [self.fold_btn, self.check_btn, self.call_btn, self.raise_btn, self.deal_btn, self.back_btn, self.zoom_btn]
+        # slider for bets (hidden by default)
+        self.bet_slider = BetSlider(assets, (400, 760), (700, 40), min_value=0, max_value=1000, step=10)
+        self.show_slider = False
+        # state mirrors (kept for drawing)
+        self.community = []
+        self.pot = 0
+        self.player_areas = []
+        self.card_zoom_index = 1
+        self.card_zoom = CARD_ZOOM_STEPS[self.card_zoom_index]
+        # build players from controller.table
+        self._rebuild_players()
+        # some UI state
+        self.last_action_text = ""
+        self.dealer_index = getattr(self.controller.table, "dealer_index", 0) if getattr(self.controller, "table", None) else 0
+
+    def _rebuild_players(self):
+        table = self.controller.table
+        self.player_areas = []
+        for i, p in enumerate(table.players):
+            pa = PlayerArea(i, p, table, self.assets)
+            self.player_areas.append(pa)
+
+    def _on_back(self):
+        self.new_window = "Menu"
+
+    def _on_deal(self):
         self.controller.start_hand()
-        self.deal_pressed = True
-        self.bet_amount = 0
-        self.player_bet_chips = {}
-        self.pot_chips = []
-        self._update_state()
-        
-    def _perform_action(self, action, amount=0):
-        """Perform a poker action (fold, call, raise)"""
-        if not self.state or not self.state.get("running", False):
-            return
-            
-        human_player = next((p for p in self.state["players"] if p["id"] == self.controller.human_player_id), None)
-        if not human_player or human_player.get("folded", False):
-            return
-        
-        # Store bet chips for display
-        if action in ["call", "raise"] and amount > 0:
-            player_id = self.controller.human_player_id
-            self.player_bet_chips[player_id] = {
-                'amount': amount,
-                'chips': self._get_chip_images_for_amount(amount)
-            }
-        
+        self._rebuild_players()
+        self._sync_from_controller()
+
+    def _open_raise_slider(self):
+        # set slider range according to player's chips and table limits
+        table = self.controller.table
+        human = table.human_player
+        min_bet = getattr(table, "last_bet", 0) or (table.blinds[-1] if getattr(table, "blinds", None) else 1)
+        max_bet = human.chips
+        step = max(1, min(10, max_bet // 100))
+        self.bet_slider.set_range(min_bet, max_bet, step)
+        self.bet_slider.value = min_bet
+        self.show_slider = True
+
+    def _on_zoom(self):
+        self.card_zoom_index = (self.card_zoom_index + 1) % len(CARD_ZOOM_STEPS)
+        self.card_zoom = CARD_ZOOM_STEPS[self.card_zoom_index]
+        # swap zoom icon logically
+        key = "zoom_out" if self.card_zoom_index == 2 else "zoom_in"
+        self.zoom_btn.image = self.assets.images["buttons"][key]
+        self.zoom_btn._scale_image()
+
+    def _player_action(self, action, amount=0):
+        action_map = {"check": "call"}
+        action = action_map.get(action, action)
+        # controller performs validation/logic; it should not crash for invalid moves
         self.controller.perform_action(action, amount)
-        self.human_acted = True
-        self._update_state()
-    
-    def _update_state(self):
-        """Update game state from controller"""
-        self.state = self.controller.get_state()
-        
-        # Update current big blind from table state if available
-        if hasattr(self.controller.table, 'blinds'):
-            self.current_bb = self.controller.table.blinds[-1] if self.controller.table.blinds else 20
-        
-        # Update players
-        self.players = []
-        for i, player_data in enumerate(self.state["players"]):
-            # Add chip information to player data
-            player_invested = player_data.get("total_invested", 0)
-            player_data["bet_chips"] = self._get_chip_images_for_amount(player_invested)
-            
-            player_gui = PlayerGUI(player_data, i, self.assets, self.player_coords)
-            self.players.append(player_gui)
-        
-        # Update community cards
-        self.community_cards = []
-        for i, card in enumerate(self.state.get("community", [])):
-            self.community_cards.append(CommunityCard(card, i, self.assets))
-        
-        # Update pot value and chips
-        self.pot_value = self.state.get("pot", 0)
-        self.pot_chips = self._get_chip_images_for_amount(self.pot_value)
-        
-        # Update button states based on game state
-        self._update_button_states()
-    
-    def _update_button_states(self):
-        """Update button states based on current game state"""
-        if not self.state or not self.state.get("running", False):
-            # Show only deal button when no hand is active
-            for button in self.action_buttons + self.bet_preset_buttons + [self.increase_bet, self.decrease_bet]:
-                button.visible = False
-            self.deal_button.visible = True
-            return
-        
-        # Show action buttons during active hand
-        self.deal_button.visible = False
-        for button in self.action_buttons + self.bet_preset_buttons + [self.increase_bet, self.decrease_bet]:
-            button.visible = True
-        
-        # Update check/call button text based on game state
-        human_player = next((p for p in self.state["players"] if p["id"] == self.controller.human_player_id), None)
-        if human_player:
-            last_bet = self.state.get("last_bet", 0)
-            player_invested = human_player.get("round_invested", 0)
-            to_call = max(0, last_bet - player_invested)
-            
-            if to_call == 0:
-                self.check_button.text = "Check"
-            else:
-                self.check_button.text = f"Call {to_call}"
-            self.check_button._update_rendered_text()
-            
-            # Update bet button text
-            if to_call > 0:
-                self.bet_button.text = "Raise"
-            else:
-                self.bet_button.text = "Bet"
-            self.bet_button._update_rendered_text()
-    
+        self._sync_from_controller()
+
+    def _sync_from_controller(self):
+        state = self.controller.get_state()
+        self.community = state.get("community", [])
+        self.pot = state.get("pot", 0)
+        # update player areas from table
+        table = self.controller.table
+        if len(self.player_areas) != len(table.players):
+            self._rebuild_players()
+        for i, pa in enumerate(self.player_areas):
+            pa.player = table.players[i]
+            pa._make_profile_image()
+
     def handle_event(self, event):
-        """Handle pygame events"""
         super().handle_event(event)
-        
-        # Handle additional events like bet amount adjustment
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_d and not self.state.get("running", False):
-                self._start_hand()
-            elif event.key == pygame.K_f and self.state.get("running", False):
-                self._perform_action("fold")
-            elif event.key == pygame.K_c and self.state.get("running", False):
-                self._perform_action("call")
-            elif event.key == pygame.K_r and self.state.get("running", False):
-                self._perform_action("raise", self.bet_amount)
-            elif event.key == pygame.K_UP and self.state.get("running", False):
-                self._increase_bet()
-            elif event.key == pygame.K_DOWN and self.state.get("running", False):
-                self._decrease_bet()
-    
-    def update(self, dt):
-        """Update game state (called each frame)"""
-        # Update from controller (for bot moves, etc.)
-        if self.state and self.state.get("running", False) and not self.human_acted:
-            self.controller.update()
-            self._update_state()
-        
-        self.human_acted = False
-    
-    def draw(self):
-        """Draw the entire game window"""
-        # Draw background
-        self.screen.fill(self.assets.colors["bg_table"])
-        
-        # Draw table
-        table_img = self.assets.get_table_image()
-        table_x, table_y = self.assets.sizes["table_pos"]
-        self.screen.blit(table_img, (table_x, table_y))
-        
-        # Draw community cards
-        for card in self.community_cards:
-            card.draw(self.screen)
-        
-        # Draw pot and chips
-        self._draw_pot()
-        
-        # Draw players
-        for player in self.players:
-            player.draw(self.screen)
-        
-        # Draw bet amount display
-        if self.state and self.state.get("running", False):
-            self._draw_bet_display()
-        
-        # Draw widgets (buttons)
-        super().draw()
-    
-    def _draw_pot(self):
-        """Draw the pot and chips in the center of the table"""
-        if self.pot_value <= 0:
+        if event.type == pygame.VIDEORESIZE:
+            # ensure all widgets recalc size+position and player areas update
+            for w in self.widgets:
+                w.resize()
+            self.bet_slider.resize()
+            for pa in self.player_areas:
+                pa.update_layout()
+                pa._make_profile_image()
             return
-            
-        table_x, table_y = self.assets.sizes["table_pos"]
-        table_w, table_h = self.assets.sizes["table_size"]
-        
-        pot_x = table_x + table_w / 2
-        pot_y = table_y + table_h / 2 - self.assets.sizes["card_h"] / 4
-        
-        # Draw chips using assets chip images
-        if self.pot_chips:
-            chip_w, chip_h = self.assets.sizes["chip_w"], self.assets.sizes["chip_h"]
-            chip_x = pot_x - chip_w / 2
-            chip_y = pot_y - chip_h / 2
-            
-            # Draw chips in a realistic stack
-            max_chips_to_draw = min(20, len(self.pot_chips))  # Limit for visibility
-            for i in range(max_chips_to_draw):
-                chip_img = self.pot_chips[i % len(self.pot_chips)]
-                offset_y = i * 2  # Small vertical offset for stack effect
-                offset_x = (i % 3 - 1) * 2  # Small horizontal spread
-                self.screen.blit(chip_img, (chip_x + offset_x, chip_y - offset_y))
-        
-        # Draw pot value text
-        pot_text = self.assets.fonts["main"].render(f"Pot: {self.pot_value}", True, (255, 255, 255))
-        text_rect = pot_text.get_rect(center=(pot_x, pot_y + 40))
-        self.screen.blit(pot_text, text_rect)
-    
-    def _draw_bet_display(self):
-        """Display current bet amount"""
-        bet_text = self.assets.fonts["main"].render(f"Bet: {self.bet_amount}", True, (255, 255, 255))
-        text_rect = bet_text.get_rect(center=(self.bet_display_x + self.assets.sizes["button_w"] / 2, self.bet_display_y))
-        self.screen.blit(bet_text, text_rect)
-    
+
+        if self.show_slider:
+            self.bet_slider.handle_event(event)
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                # commit slider on mouse up if it was active
+                if not self.bet_slider.dragging:
+                    # if handle clicked and released outside, ignore
+                    pass
+
+        # Buttons are processed by WindowBase via widgets; but we reroute additional clicks:
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            # if slider visible and click on confirm area (right of slider), place bet
+            mx, my = event.pos
+            if self.show_slider:
+                # define confirm rect to the right of slider
+                sx, sy = self.bet_slider.rect.topleft
+                sw, sh = self.bet_slider.rect.size
+                confirm_rect = pygame.Rect(sx + sw + 12, sy, 80, sh)
+                if confirm_rect.collidepoint((mx, my)):
+                    val = self.bet_slider.value
+                    self.controller.perform_action("raise", val)
+                    self.show_slider = False
+                    self._sync_from_controller()
+
+    def update(self, dt=None):
+        self.controller.update()
+        self._sync_from_controller()
+        for pa in self.player_areas:
+            pa.update()
+
     def resize(self, new_size):
-        """Handle window resize"""
-        super().resize(new_size)
-        self._init_player_positions()
-        self._create_action_buttons()
-        self._create_bet_controls()
-        
-        # Update player positions
-        for i, player in enumerate(self.players):
-            if i < len(self.player_coords):
-                player.x, player.y = self.player_coords[i]
-                player.resize()
+        self.assets.rescale(new_size)
+        for w in self.widgets:
+            w.resize()
+        self.bet_slider.resize()
+        for pa in self.player_areas:
+            pa.update_layout()
+            pa._make_profile_image()
 
-
-class PlayerGUI:
-    """Represents a player's GUI elements"""
-    def __init__(self, player_data, position_index, assets, player_coords):
-        self.player_data = player_data
-        self.position_index = position_index
-        self.assets = assets
-        self.x, self.y = player_coords[position_index] if position_index < len(player_coords) else (0, 0)
-        
-        # Chip display for current bet
-        self.bet_chips = player_data.get("bet_chips", [])
-        
-        # Calculate positions for profile, cards, chips
-        self._calculate_positions()
-        self._load_profile_image()
-        self._create_cards()
-        
-    def _calculate_positions(self):
-        """Calculate positions for player UI elements"""
-        profile_w, profile_h = self.assets.sizes["profile"]
-        card_w, card_h = self.assets.sizes["card_w"], self.assets.sizes["card_h"]
-        chip_w, chip_h = self.assets.sizes["chip_w"], self.assets.sizes["chip_h"]
-        
-        # Profile picture position
-        self.profile_x = self.x - profile_w / 2
-        self.profile_y = self.y - profile_h / 2
-        
-        # Card positions (next to profile)
-        self.card_x = self.profile_x + profile_w / 2 - card_w - 5
-        self.card_y = self.profile_y + profile_h - card_h
-        
-        # Chip stack position for current bet
-        self.chip_x = self.profile_x - chip_w
-        self.chip_y = self.profile_y + profile_h / 2 - chip_h / 2
-        
-        # Player info position
-        self.info_x = self.profile_x
-        self.info_y = self.profile_y + profile_h + 5
-        
-    def _load_profile_image(self):
-        """Load and scale profile image"""
-        profile_name = self.player_data.get("name", "default")
-        self.profile_img = self.assets.get_profile_image(profile_name)
-        
-        if not self.profile_img:
-            # Create a default profile image
-            profile_size = self.assets.sizes["profile"]
-            self.profile_img = pygame.Surface(profile_size, pygame.SRCALPHA)
-            color = (100, 100, 200) if not self.player_data.get("folded", False) else (100, 100, 100)
-            pygame.draw.ellipse(self.profile_img, color, (0, 0, *profile_size))
-            
-            # Add initial letter
-            font = self.assets.fonts["main"]
-            text_color = (255, 255, 255) if not self.player_data.get("folded", False) else (150, 150, 150)
-            text = font.render(self.player_data.get("name", "?")[0], True, text_color)
-            text_rect = text.get_rect(center=(profile_size[0]//2, profile_size[1]//2))
-            self.profile_img.blit(text, text_rect)
-    
-    def _create_cards(self):
-        """Create card objects for this player"""
-        self.cards = []
-        hole_cards = self.player_data.get("hole_cards", [])
-        is_folded = self.player_data.get("folded", False)
-        
-        for i, card_code in enumerate(hole_cards):
-            card = HoleCard(card_code, i, is_folded, 
-                           self.card_x, self.card_y, self.assets)
-            self.cards.append(card)
-    
-    def draw(self, screen):
-        """Draw player on screen"""
-        # Draw profile picture
-        screen.blit(self.profile_img, (self.profile_x, self.profile_y))
-        
-        # Draw player name and chips
-        name = self.player_data.get("name", "Player")
-        chips = self.player_data.get("chips", 0)
-        folded = self.player_data.get("folded", False)
-        
-        text_color = (255, 215, 0) if not folded else (150, 150, 150)  # Gold for active, gray for folded
-        name_text = self.assets.fonts["small"].render(
-            f"{name}: {chips}", True, text_color
-        )
-        name_rect = name_text.get_rect(midtop=(self.x, self.info_y))
-        screen.blit(name_text, name_rect)
-        
-        # Draw cards if not folded or if showing at showdown
-        if not folded:
-            for card in self.cards:
-                card.draw(screen)
-        
-        # Draw current bet chips
-        self._draw_bet_chips(screen)
-        
-        # Draw action text if available
-        action = self.player_data.get("action", "")
-        if action:
-            action_color = (0, 0, 0) if not folded else (100, 100, 100)
-            action_text = self.assets.fonts["small"].render(action, True, action_color)
-            action_rect = action_text.get_rect(midtop=(self.x, self.info_y + 25))
-            screen.blit(action_text, action_rect)
-        
-    def _draw_bet_chips(self, screen):
-        """Draw chip stack for player's current bet"""
-        if not self.bet_chips:
+    def _draw_dealer_button(self, surface):
+        table_pos = self.assets.sizes["table_pos"]
+        tw, th = self.assets.sizes["table_size"]
+        # place dealer indicator near the appropriate player
+        d_idx = getattr(self.controller.table, "dealer_index", 0)
+        coords = self.assets.player_coords
+        if not coords:
             return
-            
-        chip_w, chip_h = self.assets.sizes["chip_w"], self.assets.sizes["chip_h"]
-        
-        # Draw chips in a stack next to the player
-        max_chips_to_draw = min(10, len(self.bet_chips))
-        for i in range(max_chips_to_draw):
-            chip_img = self.bet_chips[i]
-            offset_y = i * 2  # Small vertical offset for stack effect
-            offset_x = (i % 2) * 3  # Small horizontal spread
-            screen.blit(chip_img, (self.chip_x + offset_x, self.chip_y - offset_y))
-    
-    def resize(self):
-        """Handle resize"""
-        self._calculate_positions()
-        self._load_profile_image()
-        self._create_cards()
+        cx, cy = coords[d_idx % len(coords)]
+        r = int(18 * self.assets.min_size_scale)
+        pygame.draw.circle(surface, (255, 215, 0), (int(cx + r), int(cy - r)), r)
 
+    def _draw_pot(self):
+        txt = self.assets.fonts["large"].render(f"POT: {self.pot}", True, self.assets.colors["white"])
+        x = (self.screen.get_width() - txt.get_width()) // 2
+        y = int(self.assets.sizes["table_pos"][1] + 12)
+        self.screen.blit(txt, (x, y))
 
-class Card:
-    """Base class for cards"""
-    def __init__(self, card_code, position, assets, showing=True):
-        self.card_code = card_code
-        self.position = position
-        self.assets = assets
-        self.showing = showing
-        self._load_image()
-    
-    def _load_image(self):
-        """Load card image"""
-        if self.showing and self.card_code:
-            self.image = self.assets.get_card_image(self.card_code)
-        else:
-            self.image = self.assets.get_card_back()
-    
-    def draw(self, screen):
-        """Draw card on screen"""
-        screen.blit(self.image, (self.x, self.y))
+    def _draw_community(self):
+        if not self.community:
+            return
+        cw_base = int(self.assets.sizes["card_w"])
+        ch_base = int(self.assets.sizes["card_h"])
+        cw = int(cw_base * self.card_zoom)
+        ch = int(ch_base * self.card_zoom)
+        spacing = int(cw * 0.15)
+        total_w = len(self.community) * (cw + spacing) - spacing
+        start_x = (self.screen.get_width() - total_w) // 2
+        y = int(self.assets.sizes["table_pos"][1] + self.assets.sizes["table_size"][1] // 2 - ch // 2)
+        for i, code in enumerate(self.community):
+            img = self.assets.get_card_image(code)
+            img = pygame.transform.smoothscale(img, (cw, ch))
+            self.screen.blit(img, (start_x + i * (cw + spacing), y))
 
-
-class HoleCard(Card):
-    """Player's hole cards"""
-    def __init__(self, card_code, position, folded, x, y, assets):
-        super().__init__(card_code, position, assets, showing=not folded)
-        self.x = x + position * (self.assets.sizes["card_w"] - (0 if self.showing else 0.5))
-        self.y = y
-
-
-class CommunityCard(Card):
-    """Community cards in the middle of the table"""
-    def __init__(self, card_code, position, assets):
-        super().__init__(card_code, position, assets, showing=True)
-        screen_w, screen_h = assets.current_resolution
-        card_w, card_h = assets.sizes["card_w"], assets.sizes["card_h"]
-        card_backpad = assets.sizes["card_backpad"]
-        
-        self.x = screen_w / 2 - 2.5 * card_w - 2 * card_backpad + position * (card_w + card_backpad)
-        self.y = screen_h / 2 - card_h / 2
+    def draw(self):
+        self.screen.fill(self.assets.colors["bg_table"])
+        table_img = self.assets.get_table_image()
+        table_pos = self.assets.sizes["table_pos"]
+        if table_img:
+            self.screen.blit(table_img, (int(table_pos[0]), int(table_pos[1])))
+        self._draw_community()
+        self._draw_pot()
+        # draw players
+        for pa in self.player_areas:
+            pa.draw(self.screen, card_zoom=self.card_zoom, show_hole=False)
+        self._draw_dealer_button(self.screen)
+        # draw slider if visible
+        if self.show_slider:
+            self.bet_slider.draw(self.screen)
+            # draw confirm text/button
+            confirm_rect = pygame.Rect(self.bet_slider.rect.right + 12, self.bet_slider.rect.top, 80, self.bet_slider.rect.height)
+            pygame.draw.rect(self.screen, (30, 120, 60), confirm_rect, border_radius=int(6 * self.assets.min_size_scale))
+            txt = self.assets.fonts["main"].render("Bet", True, self.assets.colors["white"])
+            self.screen.blit(txt, (confirm_rect.centerx - txt.get_width() // 2, confirm_rect.centery - txt.get_height() // 2))
+        # draw widgets
+        super().draw()
