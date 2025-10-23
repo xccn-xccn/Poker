@@ -34,9 +34,9 @@ class Assets:
         self.current_resolution = new_size
         w, h = new_size
         bw, bh = self.base_resolution
-        self.WSCALE = w / bw
-        self.HSCALE = h / bh
-        self.MSCALE = min(self.WSCALE, self.HSCALE)
+        self.width_scale = w / bw
+        self.height_scale = h / bh
+        self.min_size_scale = Scale(min(self.width_scale, self.height_scale))
         self._set_sizes()
         self._load_fonts()
         self._load_images()
@@ -44,24 +44,24 @@ class Assets:
     def rescale_single(self, x, y):
         """Rescales the input relative to base resolution against current resolution"""
 
-        return x * self.WSCALE, y * self.HSCALE
+        return x * self.width_scale, y * self.height_scale
     def _set_sizes(self):
-        self.sizes["button_w"] = 150 * self.WSCALE
-        self.sizes["button_h"] = 50 * self.HSCALE
-        self.sizes["chip_w"] = 40 * self.WSCALE
-        self.sizes["chip_h"] = 20 * self.HSCALE
+        self.sizes["button_w"] = 150 * self.width_scale
+        self.sizes["button_h"] = 50 * self.height_scale
+        self.sizes["chip_w"] = 40 * self.width_scale
+        self.sizes["chip_h"] = 20 * self.height_scale
 
-        self.sizes["util_button_size"] = (100 * self.MSCALE, 100 * self.MSCALE)
+        self.sizes["util_button_size"] = (100 * self.min_size_scale, 100 * self.min_size_scale)
 
-        table_w = 868 * self.WSCALE
-        table_h = 423 * self.HSCALE
+        table_w = 868 * self.width_scale
+        table_h = 423 * self.height_scale
         self.sizes["table_size"] = (table_w, table_h)
 
         
-        self.sizes["card_w"] = 51 * self.WSCALE
-        self.sizes["card_h"] = 73 * self.HSCALE
-        self.sizes["card_backpad"] = 3 * self.HSCALE
-        self.sizes["profile"] = (125 * self.MSCALE, 125 * self.MSCALE)
+        self.sizes["card_w"] = 51 * self.width_scale
+        self.sizes["card_h"] = 73 * self.height_scale
+        self.sizes["card_backpad"] = 3 * self.height_scale
+        self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 
         tx = (self.current_resolution[0] - table_w) // 2
         ty = (self.current_resolution[1] - table_h) // 2
@@ -86,43 +86,44 @@ class Assets:
 
     def _load_fonts(self):
         font_path = os.path.join(self.root, "misc", "JqkasWild-w1YD6.ttf")
-        base_size = max(12, int(40 * self.WSCALE))
+        base_size = max(12, int(40 * self.width_scale))
         if os.path.exists(font_path):
-            self.fonts["small"] = pygame.font.Font(font_path, max(10, int(30 * self.WSCALE)))
+            self.fonts["small"] = pygame.font.Font(font_path, max(10, int(30 * self.width_scale)))
             self.fonts["main"] = pygame.font.Font(font_path, base_size)
-            self.fonts["large"] = pygame.font.Font(font_path, max(20, int(80 * self.WSCALE)))
-            self.fonts["title"] = pygame.font.Font(font_path, max(24, int(120 * self.WSCALE)))
+            self.fonts["large"] = pygame.font.Font(font_path, max(20, int(80 * self.width_scale)))
+            self.fonts["title"] = pygame.font.Font(font_path, max(24, int(120 * self.width_scale)))
         else:
-            self.fonts["small"] = pygame.font.SysFont("arial", max(10, int(30 * self.WSCALE)))
+            self.fonts["small"] = pygame.font.SysFont("arial", max(10, int(30 * self.width_scale)))
             self.fonts["main"] = pygame.font.SysFont("arial", base_size)
-            self.fonts["large"] = pygame.font.SysFont("arial", max(20, int(80 * self.WSCALE)))
-            self.fonts["title"] = pygame.font.SysFont("arial", max(24, int(120 * self.WSCALE)))
+            self.fonts["large"] = pygame.font.SysFont("arial", max(20, int(80 * self.width_scale)))
+            self.fonts["title"] = pygame.font.SysFont("arial", max(24, int(120 * self.width_scale)))
 
     def _load_images(self):
         misc_dir = os.path.join(self.root, "misc")
         cards_dir = os.path.join(self.root, "cards")
         chips_dir = os.path.join(self.root, "chips")
+        buttons_dir = os.path.join(self.root, "buttons")
 
         self._preload_misc_images(misc_dir)
         self._preload_card_images(cards_dir)
         self._preload_chip_images(chips_dir)
         
+        #Button images don't get resized
+        if "buttons" not in self.images:
+            self._preload_button_images(buttons_dir)
+            
+    def _preload_button_images(self, buttons_dir):
+        self.images["buttons"] = {}
+
+        for fname in os.listdir(buttons_dir):
+            if fname.endswith(".png") or fname.endswith(".jpg"):
+                name = os.path.splitext(fname)[0]
+                path = os.path.join(buttons_dir, fname)
+                self.images["buttons"][name] = pygame.image.load(path).convert_alpha()
+
     def _preload_misc_images(self, misc_dir):
         table = pygame.image.load(os.path.join(misc_dir, "poker_table.png")).convert_alpha()
         self.images["table"] = pygame.transform.smoothscale(table, self.sizes["table_size"])
- 
-        # back_button = pygame.image.load(os.path.join(misc_dir, "Back_button.png")).convert_alpha()
-        # self.images["back_button"] = pygame.transform.smoothscale(back_button, self.sizes["util_button_size"])
- 
-        # zoom_out = pygame.image.load(os.path.join(misc_dir, "zoom_out.png")).convert_alpha()
-        # self.images["zoom_out"] = pygame.transform.smoothscale(zoom_out, self.sizes["util_button_size"])
-    
-        # zoom_in = 
-        # self.images["zoom_in"] = pygame.transform.smoothscale(zoom_in, self.sizes["util_button_size"])
-
-        for name in ("back_button", "zoom_out", "zoom_in"):
-            self.images[name] = pygame.transform.smoothscale(pygame.image.load(
-                os.path.join(misc_dir, f"{name}.png")).convert_alpha(), self.sizes["util_button_size"])
         
         black_background1 = pygame.image.load(os.path.join(misc_dir, "black_background1.jpg")).convert_alpha()
         self.images["black_background1"] = pygame.transform.smoothscale(black_background1, self.current_resolution)
@@ -174,4 +175,4 @@ class Assets:
         return self.images["chips"].get(key)
 
     def scale_value(self, v):
-        return int(v * ((self.WSCALE + self.HSCALE) / 2))
+        return int(v * ((self.width_scale + self.height_scale) / 2))

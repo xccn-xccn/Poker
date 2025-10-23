@@ -45,49 +45,33 @@ class Button:
 
     def draw(self, surface):
         color = self.hover_color if self.hovered else self.base_color
-        pygame.draw.rect(surface, color, self.rect, border_radius=int(8 * self.assets.MSCALE))
-        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, width=2, border_radius=int(8 * self.assets.MSCALE))
+        pygame.draw.rect(surface, color, self.rect, border_radius=8 * self.assets.min_size_scale)
+        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, width=2, border_radius=8 * self.assets.min_size_scale)
         surface.blit(self.text_surface, self.text_rect)
 
     def resize(self):
-        # w = self.assets.sizes["button_w"]
-        # h = self.assets.sizes["button_h"]
-        
         self._update_size_position()
         self._update_rendered_text()
 
-        #TODO update pos
 
 class ImageButton(Button):
-    def __init__(self, image, pos, assets, size=None, on_click=None, visible=True, enabled=True):
-        super().__init__("", pos, assets, size, on_click, visible, enabled)
-        self.image = image
+    def __init__(self, image_key, pos, size, assets, on_click=None):
+        super().__init__("", pos, size, assets, on_click)
+        self.image_key = image_key
+        self.image = self.assets.images["buttons"][image_key]
         self._scale_image()
 
     def _scale_image(self):
-        if self.image:
-            self.scaled_image = pygame.transform.smoothscale(self.image, (self.rect.width, self.rect.height))
+        w = max(1, self.rect.width)
+        h = max(1, self.rect.height)
+        self.scaled_image = pygame.transform.smoothscale(self.image, (w, h))
 
     def draw(self, surface):
-        if not self.visible:
-            return
-
-        if not self.enabled:
-            color = self.disabled_color
-        else:
-            color = self.hover_color if self.hovered else self.base_color
-
-        pygame.draw.rect(surface, color, self.rect, border_radius=int(8 * self.assets.MSCALE))
-        
-        if self.image:
-            surface.blit(self.scaled_image, self.rect)
-        
-        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, width=2, border_radius=int(8 * self.assets.MSCALE))
+        color = self.hover_color if self.hovered else self.base_color
+        pygame.draw.rect(surface, color, self.rect, border_radius=8 * self.assets.min_size_scale)
+        surface.blit(self.scaled_image, self.rect.topleft)
+        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, width=2, border_radius=8 * self.assets.min_size_scale)
 
     def resize(self):
         super().resize()
-        self._scale_image()
-
-    def set_image(self, image):
-        self.image = image
         self._scale_image()
