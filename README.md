@@ -6,8 +6,8 @@ Bots use MDR (Minimum Defense Frequency), CFR coming soon.
 
 https://xccn-xccn.github.io/Poker/
 
-Requirements:
-    pip install pygame
+
+
 
 
 
