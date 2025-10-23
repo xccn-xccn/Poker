@@ -7,7 +7,7 @@ GUI should only call these methods
     controller.get_state()           → return dict of data for GUI rendering
 """
 
-from poker import Table, Human, Bot, start
+from core.poker import Table, Human, Bot, start
 
 class GameController:
     def __init__(self):

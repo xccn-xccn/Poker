@@ -3,7 +3,7 @@ import pygame.image
 import sys
 from poker import start, Bot, Human
 from main_code.gui.chips import get_chips
-from backbone_misc import *
+from main_code.logic.backbone_misc import *
 from datetime import datetime
 
 

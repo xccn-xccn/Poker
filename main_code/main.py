@@ -3,7 +3,7 @@ import pygame
 from gui.assets import Assets
 from gui.menu_window import MenuWindow
 from gui.game_window import GameWindow
-from controller import GameController, OnlineController
+from core.controller import GameController, OnlineController
 
 BASE_RESOLUTION = (1700, 900)
 FPS = 60
