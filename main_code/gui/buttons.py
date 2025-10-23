@@ -1,17 +1,17 @@
 import pygame
 
 class Button:
-    def __init__(self, text, pos, assets, size=None, on_click=None):
+    def __init__(self, text, pos, size, assets, on_click=None):
         self.text = text
         self.assets = assets
-        self.font = assets.fonts["main"]
         self.on_click = on_click
 
-        #TODO make an attribute and resize
-        self.original_w = size[0] if size else assets.sizes["button_w"]
-        self.original_h = size[1] if size else assets.sizes["button_h"]
-        x, y = pos
-        self.rect = pygame.Rect(x, y, w, h)
+        self.original_pos = pos
+        self.original_size = size
+
+        self.rect = pygame.Rect(pos, size)
+
+        self._update_size_position()
 
         self.base_color = assets.colors["button"]
         self.hover_color = assets.colors["button_hover"] if "button_hover" in assets.colors else (60, 160, 100)
@@ -21,8 +21,15 @@ class Button:
         self.pressed = False
         self._update_rendered_text()
 
+    def _update_size_position(self):
+        self.pos = self.assets.rescale_single(*self.original_pos)
+        self.size = self.assets.rescale_single(*self.original_size)
+        self.rect.width, self.rect.height = self.size
+
+        self.rect = pygame.Rect(*self.pos, *self.size)
+        
     def _update_rendered_text(self):
-        self.text_surface = self.font.render(self.text, True, self.text_color)
+        self.text_surface = self.assets.fonts["main"].render(self.text, True, self.text_color)
         self.text_rect = self.text_surface.get_rect(center=self.rect.center)
 
     def handle_event(self, event):
@@ -43,10 +50,10 @@ class Button:
         surface.blit(self.text_surface, self.text_rect)
 
     def resize(self):
-        w = self.assets.sizes["button_w"]
-        h = self.assets.sizes["button_h"]
-        self.rect.width = w
-        self.rect.height = h
+        # w = self.assets.sizes["button_w"]
+        # h = self.assets.sizes["button_h"]
+        
+        self._update_size_position()
         self._update_rendered_text()
 
         #TODO update pos

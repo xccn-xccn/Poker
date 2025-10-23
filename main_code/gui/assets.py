@@ -37,11 +37,15 @@ class Assets:
         self.WSCALE = w / bw
         self.HSCALE = h / bh
         self.MSCALE = min(self.WSCALE, self.HSCALE)
-        self._compute_sizes()
+        self._set_sizes()
         self._load_fonts()
         self._load_images()
 
-    def _compute_sizes(self):
+    def rescale_single(self, x, y):
+        """Rescales the input relative to base resolution against current resolution"""
+
+        return x * self.WSCALE, y * self.HSCALE
+    def _set_sizes(self):
         self.sizes["button_w"] = 150 * self.WSCALE
         self.sizes["button_h"] = 50 * self.HSCALE
         self.sizes["chip_w"] = 40 * self.WSCALE

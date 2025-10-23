@@ -10,7 +10,7 @@ sys.path.append(parent_dir)
 
 from gui.chips import get_chips
 from gui.window_base import WindowBase
-from main_code.gui.buttons import Button
+from gui.buttons import Button
 
 class GameWindow(WindowBase):
     def __init__(self, screen, assets, controller):
