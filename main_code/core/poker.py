@@ -514,6 +514,8 @@ class Table:
         self.correct_total_chips += newPlayer.chips
 
     def start_move(self):
+        """Returns a tuple of (bool: Can the current player make a valid move, bool: did the current round end)
+        Directly calls table.end_move() if the current player's turn is skipped"""
         if (
             self.current_player.all_in == True
             or self.current_player.fold == True
@@ -525,7 +527,7 @@ class Table:
 
             return False, end
 
-        return True, None  # bad?
+        return True, False  # returns False because not possible for the round to end if the player's move has not been completed
 
     def next_player(self, c=None):
         if c == None:
@@ -540,13 +542,14 @@ class Table:
         return self.current_player.is_valid(self, action_info)
 
     def single_move(self, action=None):
+        """Returns None if the move was invalid else True if the round ends else False"""
         print("player remaining", self.players_remaining)
 
         valid = self.current_player.move(self, action)
 
-        if not valid:
+        if not valid: #TODO decide if to return something better
             print("not valid", action)
-            return False
+            return 
 
         if self.current_player.fold == True:
             self.players_remaining -= 1
@@ -563,6 +566,7 @@ class Table:
         return self.end_move()
 
     def end_move(self):
+        """Returns True if a betting round has finished else False"""
         if self.players_remaining == 1:
             self.end_hand()
             return False
