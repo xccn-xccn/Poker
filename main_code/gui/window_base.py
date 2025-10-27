@@ -1,6 +1,8 @@
 import pygame
+from abc import ABC
 
-class WindowBase:
+
+class WindowBase(ABC):
     def __init__(self, screen, assets):
         self.screen = screen
         self.assets = assets

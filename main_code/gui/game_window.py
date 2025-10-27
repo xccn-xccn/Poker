@@ -1,4 +1,3 @@
-# gui/game_window.py
 import pygame
 import math
 from gui.window_base import WindowBase

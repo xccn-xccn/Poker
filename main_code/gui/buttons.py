@@ -54,6 +54,80 @@ class Button:
         self._update_rendered_text()
 
 
+class BetSlider(Button):
+    def __init__(self, pos, size, assets, min_value, max_value, step, start_value=None, on_change=None):
+        super().__init__("", pos, size, assets, on_click=None)
+        self.min_value = min_value
+        self.max_value = max_value
+        self.step = step
+        self.value = start_value if start_value is not None else min_value
+        self.on_change = on_change
+        self.dragging = False
+        self._update_handle_rect()
+
+    def _update_handle_rect(self):
+        h = self.rect.height
+        handle_x = self._value_to_x()
+        self.handle_rect = pygame.Rect(handle_x - h // 2, self.rect.top, h, h)
+
+    def _value_to_x(self):
+        if self.max_value == self.min_value:
+            return self.rect.left
+        ratio = (self.value - self.min_value) / (self.max_value - self.min_value)
+        return int(self.rect.left + ratio * self.rect.width)
+
+    def _x_to_value(self, x):
+        ratio = (x - self.rect.left) / max(1, self.rect.width)
+        raw = self.min_value + ratio * (self.max_value - self.min_value)
+        stepped = int(round(raw / self.step) * self.step)
+        return max(self.min_value, min(self.max_value, stepped))
+
+    def set_range(self, min_value, max_value, step=None):
+        self.min_value = min_value
+        self.max_value = max_value
+        if step:
+            self.step = step
+        self.value = max(min_value, min(self.value, max_value))
+        self._update_handle_rect()
+
+    def handle_event(self, event):
+        super().handle_event(event)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.handle_rect.collidepoint(event.pos) or self.rect.collidepoint(event.pos):
+                self.dragging = True
+                self.value = self._x_to_value(event.pos[0])
+                self._update_handle_rect()
+                if self.on_change:
+                    self.on_change(self.value)
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+        elif event.type == pygame.MOUSEMOTION and self.dragging:
+            self.value = self._x_to_value(event.pos[0])
+            self._update_handle_rect()
+            if self.on_change:
+                self.on_change(self.value)
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, border_radius=int(6 * self.assets.min_size_scale))
+        inner = self.rect.inflate(-4, -8)
+        pygame.draw.rect(surface, (50, 50, 50), inner, border_radius=int(6 * self.assets.min_size_scale))
+
+        fill_ratio = (self.value - self.min_value) / max(1, (self.max_value - self.min_value))
+        fill_w = int(inner.width * fill_ratio)
+        if fill_w > 0:
+            fill_rect = pygame.Rect(inner.left, inner.top, fill_w, inner.height)
+            pygame.draw.rect(surface, self.assets.colors["button"], fill_rect, border_radius=int(6 * self.assets.min_size_scale))
+
+        pygame.draw.ellipse(surface, (220, 220, 220), self.handle_rect)
+
+        txt = self.assets.fonts["small"].render(str(self.value), True, self.assets.colors["white"])
+        surface.blit(txt, (self.rect.right + 8, self.rect.centery - txt.get_height() // 2))
+
+    def resize(self):
+        super().resize()
+        self._update_handle_rect()
+
+
 class ImageButton(Button):
     def __init__(self, image_key, pos, size, assets, on_click=None):
         super().__init__("", pos, size, assets, on_click)

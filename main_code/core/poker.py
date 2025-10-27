@@ -1,6 +1,7 @@
 import random
 from collections import defaultdict
 from copy import deepcopy
+from abc import ABC
 from core.winner import get_winner, all_hands_ranked, group_rank_pre
 from core.backbone_misc import *
 
@@ -25,7 +26,7 @@ from core.backbone_misc import *
 # Use mdf or pot odds
 
 
-class PokerPlayer:
+class PokerPlayer(ABC):
     pos_i_names = {
         0: "Button",
         1: "Small blind",
