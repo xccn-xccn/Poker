@@ -43,6 +43,7 @@ class PokerPlayer(ABC):
         self.inactive = False
         self.table = table
         self.action = None
+        self.round_invested = 0
         self.id = id
 
         while self.id == 0 or self.id in table.ids:
@@ -101,6 +102,7 @@ class PokerPlayer(ABC):
 
     def end_round(self, start=False):
         if not start:
+            #for the blinds
             self.round_invested = 0
         self.action = self.action_text = None
         self.extra = 0

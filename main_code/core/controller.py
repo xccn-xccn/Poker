@@ -26,6 +26,7 @@ class GameController:
         #TODO needs to ensure start_move is called before
         self.table.single_move(({"fold": 1, "call": 2, "raise": 3}[action], amount))
 
+
     def update(self):
         if not self.table.running:
             return
@@ -44,10 +45,11 @@ class GameController:
             "players": [
                 {
                     "id": p.id,
-                    "name": p.position_name,
                     "chips": p.chips,
                     "folded": p.fold,
                     "hole_cards": p.hole_cards,
+                    "action": p.action,
+                    "round_invested": p.round_invested,
                 }
                 for p in self.table.players
             ],
@@ -55,7 +57,6 @@ class GameController:
             "pot": self.table.get_pot(),
             "running": self.table.running,
             "round": self.table.r,
-            "last_bet": self.table.last_bet,
         }
 
 class OnlineController:
