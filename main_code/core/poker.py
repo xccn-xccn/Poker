@@ -45,6 +45,7 @@ class PokerPlayer(ABC):
         self.action = None
         self.round_invested = 0
         self.id = id
+        self.hole_cards = None
 
         while self.id == 0 or self.id in table.ids:
             self.id = random.randint(1000, 9999)
