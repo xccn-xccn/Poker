@@ -915,7 +915,7 @@ class PlayerGUI:
                 if self.player.chips == 0
                 else "Bet" if self.table.bet_count < 2 else "Raise"
             )
-            return f"{word} {self.table.last_bet}"
+            return f"{word} {self.player.extra}"
 
     def update(self, bb=None, extra=0):
         if bb == None:

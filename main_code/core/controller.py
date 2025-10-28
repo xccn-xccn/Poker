@@ -22,6 +22,8 @@ class GameController:
         self.table.start_hand()
 
     def perform_action(self, action: str, amount: int = 0):
+        #what if it's not human player move
+        #TODO needs to ensure start_move is called before
         self.table.single_move(({"fold": 1, "call": 2, "raise": 3}[action], amount))
 
     def update(self):

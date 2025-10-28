@@ -42,7 +42,7 @@ class PokerPlayer(ABC):
         self.profile_picture = profile_picture
         self.inactive = False
         self.table = table
-
+        self.action = None
         self.id = id
 
         while self.id == 0 or self.id in table.ids:
@@ -108,6 +108,7 @@ class PokerPlayer(ABC):
 
     def move_action(self, roundTotal):
         if self.action == 1:
+            #self.action_text is only for debugging
             self.action_text = "folds"
             self.fold = True
             self.agg = False

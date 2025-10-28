@@ -1,84 +1,9 @@
 import pygame
 import math
 from gui.window_base import WindowBase
-from gui.buttons import Button, ImageButton
+from gui.buttons import Button, ImageButton, BetSlider
 
 CARD_ZOOM_STEPS = (1.5, 1.0, 0.66)
-
-
-class BetSlider:
-    def __init__(self, assets, pos, size, min_value=0, max_value=1000, step=10):
-        self.assets = assets
-        self.original_pos = pos
-        self.original_size = size
-        self.pos = self.assets.rescale_single(*self.original_pos)
-        self.size = self.assets.rescale_single(*self.original_size)
-        self.rect = pygame.Rect(*self.pos, *self.size)
-        self.min = min_value
-        self.max = max_value
-        self.step = step
-        self.value = self.min
-        self.dragging = False
-        self.handle_rect = pygame.Rect(self.rect.left, self.rect.top, int(self.rect.height), int(self.rect.height))
-        self._recalc_handle()
-
-    def _recalc_handle(self):
-        ratio = 0 if self.max == self.min else (self.value - self.min) / (self.max - self.min)
-        hx = self.rect.left + int(ratio * (self.rect.width - self.handle_rect.width))
-        self.handle_rect.x = hx
-        self.handle_rect.y = self.rect.top
-
-    def set_range(self, min_value, max_value, step=None):
-        self.min = min_value
-        self.max = max_value
-        if step:
-            self.step = step
-        self.value = max(self.min, min(self.value, self.max))
-        self._recalc_handle()
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.handle_rect.collidepoint(event.pos) or self.rect.collidepoint(event.pos):
-                self.dragging = True
-                self._update_from_mouse(event.pos[0])
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            self.dragging = False
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                self._update_from_mouse(event.pos[0])
-
-    def _update_from_mouse(self, mx):
-        rel = mx - self.rect.left
-        rel = max(0, min(rel, self.rect.width - self.handle_rect.width))
-        ratio = rel / max(1, (self.rect.width - self.handle_rect.width))
-        raw = self.min + ratio * (self.max - self.min)
-        stepped = int(round(raw / self.step) * self.step)
-        self.value = max(self.min, min(self.max, stepped))
-        self._recalc_handle()
-
-    def draw(self, surface):
-        pygame.draw.rect(surface, self.assets.colors["outline"], self.rect, border_radius=int(6 * self.assets.min_size_scale))
-        inner = self.rect.inflate(-4, -8)
-        pygame.draw.rect(surface, (50, 50, 50), inner, border_radius=int(6 * self.assets.min_size_scale))
-        # filled portion
-        fill_w = int((self.value - self.min) / max(1, (self.max - self.min)) * inner.width)
-        if fill_w > 0:
-            fill_rect = pygame.Rect(inner.left, inner.top, fill_w, inner.height)
-            pygame.draw.rect(surface, self.assets.colors["button"], fill_rect, border_radius=int(6 * self.assets.min_size_scale))
-        # handle
-        pygame.draw.ellipse(surface, (220, 220, 220), self.handle_rect)
-        # value text
-        txt = self.assets.fonts["small"].render(str(self.value), True, self.assets.colors["white"])
-        surface.blit(txt, (self.rect.right + 8, self.rect.centery - txt.get_height() // 2))
-
-    def resize(self):
-        self.pos = self.assets.rescale_single(*self.original_pos)
-        self.size = self.assets.rescale_single(*self.original_size)
-        self.rect = pygame.Rect(*self.pos, *self.size)
-        h = int(self.rect.height)
-        self.handle_rect = pygame.Rect(self.rect.left, self.rect.top, h, h)
-        self._recalc_handle()
-
 
 class PlayerArea:
     def __init__(self, idx, player_obj, table, assets):
