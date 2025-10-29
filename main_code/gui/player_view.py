@@ -1,11 +1,11 @@
 import pygame
 
 
-class PlayerView:
+class PlayerView1:
     pass
 
 
-class PlayerGUI1:
+class PlayerView:
     def __init__(self, seat_index: int, state: dict, assets):
         self.assets = assets
         self.seat = seat_index
@@ -25,7 +25,8 @@ class PlayerGUI1:
 
     def _load_profile_image(self):
         name = self.state.get("profile_picture") or self.state.get("name", "")
-        img = self.assets.get_profile_image(name)
+        # img = self.assets.get_profile_image(name)
+        img = None
         if img is None:
             surf = pygame.Surface(self.profile_rect.size, pygame.SRCALPHA)
             pygame.draw.ellipse(surf, (180, 180, 180), surf.get_rect())

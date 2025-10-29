@@ -10,6 +10,7 @@ class GameWindow(WindowBase):
 
         self.controller = controller
 
+        self.player_views = []
         self._sync_state()
         self.possible_bet = 0
         self.player_views = []
@@ -17,9 +18,9 @@ class GameWindow(WindowBase):
         self.widgets = {
             "Fold": Button("Fold", (100, 820), (150, 50), assets, on_click=lambda :self.controller.perform_action(0, 0)),
             "Check": Button("Check", (300, 820), (150, 50), assets, on_click=lambda :self.controller.perform_action(1, 0)),
-            "Bet": Button("Bet", (700, 820), (150, 50), assets, on_click=self._toggle_raise_ui),
+            "Bet": Button("Bet", (700, 820), (150, 50), assets, on_click=self._on_bet),
             "Deal": Button("Deal", (900, 120), (150, 50), assets, on_click=self._on_deal),
-            "Back": ImageButton("back_button", (20, 20), (70, 70), assets, on_click=self._on_back),
+            "Back": ImageButton("back_button", (20, 20), (70, 70), assets, on_click=lambda: self._set_window("Menu")),
             "Zoom": ImageButton("zoom_in", (1600, 20), (70, 70), assets, on_click=self._on_zoom),
         }
 
@@ -35,14 +36,27 @@ class GameWindow(WindowBase):
             on_change=self._on_slider_change
         )
 
-        self.widgets = list(self.buttons.values())  # needed by window_base for event dispatch
-
-        self.player_views = []
-        self._build_player_views()
 
         # zoom for rendering cards
         self.card_zoom_level = 1.0
 
+    def _on_bet(self):
+        self.controller.perform_action(3, self.possible_bet)
+
+    def _on_deal(self):
+        #TODO ensure table is running find where this should be checked
+        self.controller.start_hand()
+
+    def _on_zoom(self):
+        pass
+        #TODO
+        # self.card_zoom_level = {1.0: 1.5, 1.5: 0.75, 0.75: 1.0}[self.card_zoom_level]  
+
+    def _on_slider_change(self, value):
+        # self.possible_bet_value = value   # <— store temp UI state here
+        #TODO
+        pass
+            
     def update(self):
         self.controller.update()
         self._sync_state()
@@ -54,15 +68,25 @@ class GameWindow(WindowBase):
         self.bet_slider.set_max_value(self.user_state.chips)
 
     def draw(self):
-        super().draw()
         self.screen.fill(self.assets.colours["background"])
+        for p in self.player_views:
+            p.draw(self.screen)
+        super().draw()
+
+    def _build_player_views(self):
+        """Creates PlayerView objects for each seat."""
+        self.state = self.controller.get_state()
+        self.player_views = [
+            PlayerView(p["seat"], p, self.assets)
+            for p in self.state["players"]
+        ]
 
     def _sync_state(self):
         """Refresh GUI objects with controller game state."""
         self.state = self.controller.get_state()
 
         self.user_state = self.state["players"][self.state["user_i"]]
-        if self.state.new_player or len(self.player_views) != len(
+        if self.state["new_player"] or len(self.player_views) != len(
             self.state["players"]
         ):
             self._build_player_views()
