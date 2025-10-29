@@ -1,6 +1,6 @@
 import pygame
 
-
+#TODO finish
 class PlayerView1:
     pass
 
@@ -52,7 +52,7 @@ class PlayerView:
         chips = self.state.get("chips", 0)
         folded = bool(self.state.get("folded", False))
         action = self.state.get("action")  # could be None or descriptive string
-        hole = list(self.state.get("hole_cards", []))
+        hole = self.state.get("hole_cards", [])
 
         name_surf = self.assets.fonts["small"].render(
             name, True, self.assets.colors["white"]
