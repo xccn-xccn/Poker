@@ -65,11 +65,13 @@ class GameController:
                     "hole_cards": self.get_cards(p),
                     "action": p.action,
                     "round_invested": p.round_invested,
+                    "seat": i,
+                    "position_name": p.position_name,
                 }
-                for p in self.table.players
+                for i, p in enumerate(self.table.players)
             ],
             "community": self.table.community,
-            "pot": self.table.get_pot(),
+            "pot": self.table.get_pot() if self.table.running else 0,
             "running": self.table.running,
             "round": self.table.r,
         }

@@ -63,10 +63,8 @@ class PokerApp:
                 else:
                     self.current_window.handle_event(event)
 
-            if self.controller:
-                self.controller.update()
-
             self.current_window.draw()
+            self.current_window.update()
             self.check_window_change()
 
             pygame.display.flip()

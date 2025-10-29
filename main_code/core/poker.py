@@ -40,12 +40,14 @@ class PokerPlayer(ABC):
         self.chips = chips
         self.position_i = self.table_position = position_i
         self.profile_picture = profile_picture
-        self.inactive = False
         self.table = table
-        self.action = None
-        self.round_invested = 0
         self.id = id
+        self.round_invested = 0
+        self.inactive = False
+        self.action = None
         self.hole_cards = None
+        self.position_name = None
+        self.fold = True
 
         while self.id == 0 or self.id in table.ids:
             self.id = random.randint(1000, 9999)
@@ -507,6 +509,7 @@ class Table:
         self.correct_total_chips = 0
         self.r = 0
         self.ids = []
+
 
     def add_player(self, newPlayer):
         self.players.append(newPlayer)

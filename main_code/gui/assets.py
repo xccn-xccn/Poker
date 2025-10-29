@@ -4,9 +4,10 @@ import os
 
 class Scale(float):
     """Returns a rounded integer when multiplied with a float"""
+
     def __mul__(self, value):
         return round(super().__mul__(value))
-        
+
     __rmul__ = __mul__
 
 
@@ -17,12 +18,12 @@ class Assets:
         self.current_resolution = screen.get_size()
         self.root = os.path.join(os.path.dirname(__file__), "assets")
 
-        self.colors = {
+        self.colours = {
             "white": (255, 255, 255),
             "black": (0, 0, 0),
-            "bg_table": (0, 119, 8),
+            "background": pygame.Color("#009900"),
             "button": (34, 140, 34),
-            "outline": (0, 0, 0)
+            "outline": (0, 0, 0),
         }
 
         self.fonts = {}
@@ -43,21 +44,23 @@ class Assets:
 
     def rescale_single(self, x, y):
         """Rescales the input relative to base resolution against current resolution"""
-
         return x * self.width_scale, y * self.height_scale
+
     def _set_sizes(self):
         self.sizes["button_w"] = 150 * self.width_scale
         self.sizes["button_h"] = 50 * self.height_scale
         self.sizes["chip_w"] = 40 * self.width_scale
         self.sizes["chip_h"] = 20 * self.height_scale
 
-        self.sizes["util_button_size"] = (100 * self.min_size_scale, 100 * self.min_size_scale)
+        self.sizes["util_button_size"] = (
+            100 * self.min_size_scale,
+            100 * self.min_size_scale,
+        )
 
         table_w = 868 * self.width_scale
         table_h = 423 * self.height_scale
         self.sizes["table_size"] = (table_w, table_h)
 
-        
         self.sizes["card_w"] = 51 * self.width_scale
         self.sizes["card_h"] = 73 * self.height_scale
         self.sizes["card_backpad"] = 3 * self.height_scale
@@ -88,15 +91,27 @@ class Assets:
         font_path = os.path.join(self.root, "misc", "JqkasWild-w1YD6.ttf")
         base_size = max(12, int(40 * self.width_scale))
         if os.path.exists(font_path):
-            self.fonts["small"] = pygame.font.Font(font_path, max(10, int(30 * self.width_scale)))
+            self.fonts["small"] = pygame.font.Font(
+                font_path, max(10, int(30 * self.width_scale))
+            )
             self.fonts["main"] = pygame.font.Font(font_path, base_size)
-            self.fonts["large"] = pygame.font.Font(font_path, max(20, int(80 * self.width_scale)))
-            self.fonts["title"] = pygame.font.Font(font_path, max(24, int(120 * self.width_scale)))
+            self.fonts["large"] = pygame.font.Font(
+                font_path, max(20, int(80 * self.width_scale))
+            )
+            self.fonts["title"] = pygame.font.Font(
+                font_path, max(24, int(120 * self.width_scale))
+            )
         else:
-            self.fonts["small"] = pygame.font.SysFont("arial", max(10, int(30 * self.width_scale)))
+            self.fonts["small"] = pygame.font.SysFont(
+                "arial", max(10, int(30 * self.width_scale))
+            )
             self.fonts["main"] = pygame.font.SysFont("arial", base_size)
-            self.fonts["large"] = pygame.font.SysFont("arial", max(20, int(80 * self.width_scale)))
-            self.fonts["title"] = pygame.font.SysFont("arial", max(24, int(120 * self.width_scale)))
+            self.fonts["large"] = pygame.font.SysFont(
+                "arial", max(20, int(80 * self.width_scale))
+            )
+            self.fonts["title"] = pygame.font.SysFont(
+                "arial", max(24, int(120 * self.width_scale))
+            )
 
     def _load_images(self):
         misc_dir = os.path.join(self.root, "misc")
@@ -107,11 +122,11 @@ class Assets:
         self._preload_misc_images(misc_dir)
         self._preload_card_images(cards_dir)
         self._preload_chip_images(chips_dir)
-        
-        #Button images don't get resized
+
+        # Button images don't get resized
         if "buttons" not in self.images:
             self._preload_button_images(buttons_dir)
-            
+
     def _preload_button_images(self, buttons_dir):
         self.images["buttons"] = {}
 
@@ -122,21 +137,42 @@ class Assets:
                 self.images["buttons"][name] = pygame.image.load(path).convert_alpha()
 
     def _preload_misc_images(self, misc_dir):
-        table = pygame.image.load(os.path.join(misc_dir, "poker_table.png")).convert_alpha()
-        self.images["table"] = pygame.transform.smoothscale(table, self.sizes["table_size"])
-        
-        black_background1 = pygame.image.load(os.path.join(misc_dir, "black_background1.jpg")).convert_alpha()
-        self.images["black_background1"] = pygame.transform.smoothscale(black_background1, self.current_resolution)
+        table = pygame.image.load(
+            os.path.join(misc_dir, "poker_table.png")
+        ).convert_alpha()
+        self.images["table"] = pygame.transform.smoothscale(
+            table, self.sizes["table_size"]
+        )
 
-        #TODO add the rest
+        black_background1 = pygame.image.load(
+            os.path.join(misc_dir, "black_background1.jpg")
+        ).convert_alpha()
+        self.images["black_background1"] = pygame.transform.smoothscale(
+            black_background1, self.current_resolution
+        )
+
+        # TODO add the rest
 
     def _preload_card_images(self, cards_dir):
         cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
-        self.images["card_back"] = pygame.transform.smoothscale(cb, (self.sizes["card_w"], self.sizes["card_h"]))
+        self.images["card_back"] = pygame.transform.smoothscale(
+            cb, (self.sizes["card_w"], self.sizes["card_h"])
+        )
 
         val_map = {
-            "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9",
-            "T": "10", "J": "jack", "Q": "queen", "K": "king", "A": "ace"
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "T": "10",
+            "J": "jack",
+            "Q": "queen",
+            "K": "king",
+            "A": "ace",
         }
         suit_map = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
         self.images["cards"] = {}
@@ -147,7 +183,9 @@ class Assets:
                 path = os.path.join(cards_dir, name)
                 if os.path.exists(path):
                     img = pygame.image.load(path).convert_alpha()
-                    self.images["cards"][val + sk] = pygame.transform.smoothscale(img, (cw, ch))
+                    self.images["cards"][val + sk] = pygame.transform.smoothscale(
+                        img, (cw, ch)
+                    )
 
     def _preload_chip_images(self, chips_dir):
         self.images["chips"] = {}
@@ -155,7 +193,9 @@ class Assets:
         for fname in os.listdir(chips_dir):
             name = os.path.splitext(fname)[0]
             img = pygame.image.load(os.path.join(chips_dir, fname)).convert_alpha()
-            self.images["chips"][name] = pygame.transform.smoothscale(img, (int(cw), int(ch)))
+            self.images["chips"][name] = pygame.transform.smoothscale(
+                img, (int(cw), int(ch))
+            )
 
     def get_card_image(self, card_code):
         return self.images.get("cards", {}).get(card_code, self.images["card_back"])

@@ -11,9 +11,6 @@ class MenuWindow(WindowBase):
             Button("Quit", (800, 600), (200, 150), assets, on_click=lambda: pygame.event.post(pygame.event.Event(pygame.QUIT))),
         ]
 
-    def _set_window(self, name):
-        self.new_window = name
-
     def draw(self):
         self.screen.blit(self.assets.images["black_background1"], (0, 0))
         super().draw()

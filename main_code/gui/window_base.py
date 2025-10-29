@@ -15,9 +15,12 @@ class WindowBase(ABC):
         for w in self.widgets:
             w.handle_event(event)
 
-    def update(self, dt):
-        pass
+    def _set_window(self, name):
+        self.new_window = name
 
+    def update(self):
+        pass
+    
     def draw(self):
         for w in self.widgets:
             w.draw(self.screen)
