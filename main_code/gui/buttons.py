@@ -1,7 +1,7 @@
 import pygame
 
 class Button:
-    def __init__(self, text, pos, size, assets, on_click=None):
+    def __init__(self, text, pos, size, assets, on_click=None, base_colour=None, hover_colour=None, text_colour=None):
         self.text = text
         self.assets = assets
         self.on_click = on_click
@@ -13,9 +13,9 @@ class Button:
 
         self._update_size_position()
 
-        self.base_colour = assets.colours["button"]
-        self.hover_colour = assets.colours["button_hover"] if "button_hover" in assets.colours else (60, 160, 100)
-        self.text_colour = assets.colours["white"]
+        self.base_colour = base_colour if base_colour else assets.colours["button"]
+        self.hover_colour = hover_colour if hover_colour else assets.colours["button_hover"]
+        self.text_colour = text_colour if text_colour else assets.colours["white"]
 
         self.hovered = False
         self.pressed = False
@@ -28,6 +28,10 @@ class Button:
 
         self.rect = pygame.Rect(*self.pos, *self.size)
         
+    def set_text(self, text):
+        self.text = text
+        self._update_rendered_text()
+
     def _update_rendered_text(self):
         self.text_surface = self.assets.fonts["main"].render(self.text, True, self.text_colour)
         self.text_rect = self.text_surface.get_rect(center=self.rect.center)
@@ -64,6 +68,11 @@ class BetSlider(Button):
         self.on_change = on_change
         self.dragging = False
         self._update_handle_rect()
+
+    def set_max_value(self, max_value):
+        self.max_value = max_value
+        self._update_handle_rect()
+        #TODO hmm
 
     def _update_handle_rect(self):
         h = self.rect.height

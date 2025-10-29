@@ -1,7 +1,9 @@
 import pygame
 
-class PlayerGUI:
+
+class PlayerView:
     pass
+
 
 class PlayerGUI1:
     def __init__(self, seat_index: int, state: dict, assets):
@@ -17,7 +19,9 @@ class PlayerGUI1:
         cx, cy = coords[idx]
         self.center = (int(cx), int(cy))
         w, h = self.assets.sizes["profile"]
-        self.profile_rect = pygame.Rect(self.center[0] - w//2, self.center[1] - h//2, w, h)
+        self.profile_rect = pygame.Rect(
+            self.center[0] - w // 2, self.center[1] - h // 2, w, h
+        )
 
     def _load_profile_image(self):
         name = self.state.get("profile_picture") or self.state.get("name", "")
@@ -49,13 +53,19 @@ class PlayerGUI1:
         action = self.state.get("action")  # could be None or descriptive string
         hole = list(self.state.get("hole_cards", []))
 
-        name_surf = self.assets.fonts["small"].render(name, True, self.assets.colors["white"])
+        name_surf = self.assets.fonts["small"].render(
+            name, True, self.assets.colors["white"]
+        )
         chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
         surface.blit(name_surf, (px, py + self.profile_rect.height + 2))
-        surface.blit(chips_surf, (px, py + self.profile_rect.height + 4 + name_surf.get_height()))
+        surface.blit(
+            chips_surf, (px, py + self.profile_rect.height + 4 + name_surf.get_height())
+        )
 
         if action:
-            act_surf = self.assets.fonts["small"].render(str(action), True, (255, 50, 50))
+            act_surf = self.assets.fonts["small"].render(
+                str(action), True, (255, 50, 50)
+            )
             surface.blit(act_surf, (px, py - act_surf.get_height() - 4))
 
         # dealer marker / turn highlight can be drawn by GameWindow (it has dealer_index)

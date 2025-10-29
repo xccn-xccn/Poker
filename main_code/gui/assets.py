@@ -23,6 +23,7 @@ class Assets:
             "black": (0, 0, 0),
             "background": pygame.Color("#009900"),
             "button": (34, 140, 34),
+            "button_hover": (60, 160, 100),
             "outline": (0, 0, 0),
         }
 

@@ -14,9 +14,9 @@ class GameController:
     def __init__(self):
         self.create_table()
         # TODO why is next used should probably be a list
-        self.human_player_id = next(
-            p.id for p in self.table.players if isinstance(p, Human)
-        )
+        # self.human_player_id = next(
+        #     p.id for p in self.table.players if isinstance(p, Human)
+        # )
 
     def create_table(self):
         self.table = start() if callable(start) else Table()
@@ -24,7 +24,7 @@ class GameController:
     def start_hand(self):
         self.table.start_hand()
 
-    def perform_action(self, action: str, amount: int = 0):
+    def perform_action(self, action: int, amount: int = 0):  # action probably int
         # what if it's not human player move
         # TODO needs to ensure start_move is called before
         self.table.single_move(({"fold": 1, "call": 2, "raise": 3}[action], amount))
@@ -56,8 +56,19 @@ class GameController:
             return player.hole_cards
         return []
 
+    def get_actions(self, player):
+        return [
+            (
+                "Check"
+                if not self.table.running
+                or player.round_invested == self.table.last_bet
+                else "Call"
+            ),
+            "Bet" if not self.table.running or not self.table.last_bet else "Raise",
+        ]
+
     def get_state(self):
-        return {
+        state = {
             "players": [
                 {
                     "chips": p.chips,
@@ -65,8 +76,9 @@ class GameController:
                     "hole_cards": self.get_cards(p),
                     "action": p.action,
                     "round_invested": p.round_invested,
-                    "seat": i,
+                    "seat": i,  # TODO poss change
                     "position_name": p.position_name,
+                    "actions": self.get_actions(p),
                 }
                 for i, p in enumerate(self.table.players)
             ],
@@ -74,7 +86,13 @@ class GameController:
             "pot": self.table.get_pot() if self.table.running else 0,
             "running": self.table.running,
             "round": self.table.r,
+            "user_i": next(
+                i for i, p in enumerate(self.table.players) if isinstance(p, Human)
+            ),
+            "new_player": False,
         }
+
+        return state
 
 
 class OnlineController:
