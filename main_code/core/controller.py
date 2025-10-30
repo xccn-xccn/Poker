@@ -78,7 +78,7 @@ class GameController:
                     "round_invested": p.round_invested,
                     "seat": i,  # TODO poss change
                     "position_name": p.position_name,
-                    "actions": self.get_actions(p),
+                    "poss_actions": self.get_actions(p),
                 }
                 for i, p in enumerate(self.table.players)
             ],

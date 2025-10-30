@@ -3,7 +3,7 @@ from gui.window_base import WindowBase
 from gui.buttons import Button, ImageButton, BetSlider
 from gui.player_view import PlayerView
 
-#TODO keep adding stuff
+#TODO Decide how card zoom will work 
 class GameWindow(WindowBase):
     def __init__(self, screen, assets, controller):
         super().__init__(screen, assets)
@@ -62,7 +62,7 @@ class GameWindow(WindowBase):
         self._sync_state()
 
     def _update_buttons(self):
-        for btn_name, action in zip(("Check", "Bet"), self.user_state.actions):
+        for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
 
         self.bet_slider.set_max_value(self.user_state.chips)

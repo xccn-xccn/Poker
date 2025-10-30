@@ -44,6 +44,8 @@ class PlayerView:
         self._layout_from_assets()
         self._load_profile_image()
 
+    def _draw_hole(self, hole_cards):
+        pass
     def draw(self, surface, card_zoom: float = 1.0, show_hole_for_others: bool = False):
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))
@@ -52,7 +54,7 @@ class PlayerView:
         chips = self.state.get("chips", 0)
         folded = bool(self.state.get("folded", False))
         action = self.state.get("action")  # could be None or descriptive string
-        hole = self.state.get("hole_cards", [])
+        hole = self.state["hole_cards"]
 
         name_surf = self.assets.fonts["small"].render(
             name, True, self.assets.colors["white"]
@@ -71,19 +73,16 @@ class PlayerView:
 
         # dealer marker / turn highlight can be drawn by GameWindow (it has dealer_index)
         # draw hole cards if allowed: either local player or show_hole_for_others True
-        local = bool(self.state.get("is_local", False))
-        show_hole = local or show_hole_for_others
-        if hole and show_hole and not folded:
-            cw = int(self.assets.sizes["card_w"] * card_zoom)
-            ch = int(self.assets.sizes["card_h"] * card_zoom)
-            spacing = int(cw * 0.2)
-            startx = px + self.profile_rect.width + 8
-            y = py + self.profile_rect.height - ch
-            for i, code in enumerate(hole[:2]):
-                img = self.assets.get_card_image(code)
-                img = pygame.transform.smoothscale(img, (cw, ch))
-                surface.blit(img, (startx + i * (cw + spacing), y))
-
+            # cw = int(self.assets.sizes["card_w"] * card_zoom)
+            # ch = int(self.assets.sizes["card_h"] * card_zoom)
+            # spacing = int(cw * 0.2)
+            # startx = px + self.profile_rect.width + 8
+            # y = py + self.profile_rect.height - ch
+            # for i, code in enumerate(hole[:2]):
+            #     img = self.assets.get_card_image(code)
+            #     img = pygame.transform.smoothscale(img, (cw, ch))
+            #     surface.blit(img, (startx + i * (cw + spacing), y))
+        self._draw_hole(self.hole)
         # folded overlay
         if folded:
             overlay = self.assets.fonts["small"].render("FOLDED", True, (255, 0, 0))
