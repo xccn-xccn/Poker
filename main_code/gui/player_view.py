@@ -50,19 +50,19 @@ class PlayerView:
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))
 
-        name = str(self.state.get("name", ""))
-        chips = self.state.get("chips", 0)
+        # name = str(self.state.get("name", ""))
+        chips = self.state["chips"]
         folded = bool(self.state.get("folded", False))
         action = self.state.get("action")  # could be None or descriptive string
         hole = self.state["hole_cards"]
 
-        name_surf = self.assets.fonts["small"].render(
-            name, True, self.assets.colors["white"]
-        )
+        # name_surf = self.assets.fonts["small"].render(
+        #     name, True, self.assets.colors["white"]
+        # )
         chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
-        surface.blit(name_surf, (px, py + self.profile_rect.height + 2))
+        # surface.blit(name_surf, (px, py + self.profile_rect.height + 2))
         surface.blit(
-            chips_surf, (px, py + self.profile_rect.height + 4 + name_surf.get_height())
+            chips_surf, (px, py + self.profile_rect.height + 4)
         )
 
         if action:
