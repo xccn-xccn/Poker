@@ -38,7 +38,7 @@ class GameWindow(WindowBase):
 
 
         # zoom for rendering cards
-        self.card_zoom_level = 1.0
+        self.card_zoom = 1.0
 
     def _on_bet(self):
         self.controller.perform_action(3, self.possible_bet)
@@ -48,9 +48,7 @@ class GameWindow(WindowBase):
         self.controller.start_hand()
 
     def _on_zoom(self):
-        pass
-        #TODO
-        # self.card_zoom_level = {1.0: 1.5, 1.5: 0.75, 0.75: 1.0}[self.card_zoom_level]  
+        self.card_zoom = {1.0: 1.5, 1.5: 2.5, 2.5: 1.0}[self.card_zoom]  
 
     def _on_slider_change(self, value):
         # self.possible_bet_value = value   # <— store temp UI state here
@@ -70,7 +68,7 @@ class GameWindow(WindowBase):
     def draw(self):
         self.screen.fill(self.assets.colours["background"])
         for p in self.player_views:
-            p.draw(self.screen)
+            p.draw(self.screen, self.card_zoom)
         super().draw()
 
     def _build_player_views(self):

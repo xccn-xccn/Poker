@@ -53,20 +53,19 @@ class PlayerView:
         self._layout_from_assets()
         self._load_profile_image()
 
-    def _draw_hole(self, hole_cards, surface):
-        x = self.centre[0] - self.assets.sizes["card_w"] - self.assets.sizes["card_buffer"] // 2
-        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"]
+    def _draw_hole(self, hole_cards, surface, card_zoom):
+        x = self.centre[0] - self.assets.sizes["card_w"] * card_zoom - self.assets.sizes["card_buffer"] // 2
+        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"] * card_zoom
         for card in hole_cards:
-            surface.blit(self.assets.images["cards"][card], (x, y))
-            x += self.assets.sizes["card_w"] + self.assets.sizes["card_buffer"]
+            surface.blit(self.assets.get_card(card, card_zoom), (x, y))
+            x += self.assets.sizes["card_w"]  * card_zoom + self.assets.sizes["card_buffer"]
 
-    def draw(self, surface, card_zoom: float = 1.0, show_hole_for_others: bool = False):
+    def draw(self, surface, card_zoom=1.0):
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))
 
-        # name = str(self.state.get("name", ""))
         chips = self.state["chips"]
-        action = self.state.get("action")  # could be None or descriptive string
+        action = self.state.get("action")  # None or string
         hole = self.state["hole_cards"]
         chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
         # surface.blit(name_surf, (px, py + self.profile_rect.height + 2))
@@ -80,4 +79,4 @@ class PlayerView:
             )
             surface.blit(act_surf, (px, py - act_surf.get_height() - 4))
 
-        self._draw_hole(hole, surface)
+        self._draw_hole(hole, surface, card_zoom)

@@ -30,6 +30,10 @@ class Assets:
         self.fonts = {}
         self.images = {}
         self.sizes = {}
+
+        #Cards are loaded this amount * larger so they can be scaled down for greater detail
+        self.card_overscale = 6
+
         self.rescale(self.current_resolution)
 
     def rescale(self, new_size):
@@ -64,7 +68,8 @@ class Assets:
 
         self.sizes["card_w"] = 51 * self.width_scale
         self.sizes["card_h"] = 73 * self.height_scale
-        self.sizes["card_buffer"] = 3 * self.height_scale
+        self.sizes["card_buffer"] = 1 * self.height_scale
+        
         self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 
         tx = (self.current_resolution[0] - table_w) // 2
@@ -172,7 +177,7 @@ class Assets:
         }
         suit_map = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
         self.images["cards"] = {}
-        cw, ch = int(self.sizes["card_w"]), int(self.sizes["card_h"])
+        cw, ch = self.sizes["card_w"] * self.card_overscale, self.sizes["card_h"] * self.card_overscale
         for val, vname in val_map.items():
             for sk, sname in suit_map.items():
                 name = f"{vname}_of_{sname}.png"
@@ -185,8 +190,13 @@ class Assets:
 
         cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
         self.images["cards"]["card_back"] = pygame.transform.smoothscale(
-            cb, (self.sizes["card_w"], self.sizes["card_h"])
+            cb, (cw, ch)
         )
+
+
+    def get_card(self, card_name, card_zoom=1):
+        return pygame.transform.smoothscale_by(self.images["cards"][card_name], card_zoom/self.card_overscale)
+    
 
     def _preload_chip_images(self, chips_dir):
         self.images["chips"] = {}
@@ -195,7 +205,7 @@ class Assets:
             name = os.path.splitext(fname)[0]
             img = pygame.image.load(os.path.join(chips_dir, fname)).convert_alpha()
             self.images["chips"][name] = pygame.transform.smoothscale(
-                img, (int(cw), int(ch))
+                img, (cw, ch)
             )
 
     def get_card_image(self, card_code):
