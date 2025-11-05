@@ -64,7 +64,7 @@ class Assets:
 
         self.sizes["card_w"] = 51 * self.width_scale
         self.sizes["card_h"] = 73 * self.height_scale
-        self.sizes["card_backpad"] = 3 * self.height_scale
+        self.sizes["card_buffer"] = 3 * self.height_scale
         self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 
         tx = (self.current_resolution[0] - table_w) // 2
@@ -155,11 +155,6 @@ class Assets:
         # TODO add the rest
 
     def _preload_card_images(self, cards_dir):
-        cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
-        self.images["card_back"] = pygame.transform.smoothscale(
-            cb, (self.sizes["card_w"], self.sizes["card_h"])
-        )
-
         val_map = {
             "2": "2",
             "3": "3",
@@ -188,6 +183,11 @@ class Assets:
                         img, (cw, ch)
                     )
 
+        cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
+        self.images["cards"]["card_back"] = pygame.transform.smoothscale(
+            cb, (self.sizes["card_w"], self.sizes["card_h"])
+        )
+
     def _preload_chip_images(self, chips_dir):
         self.images["chips"] = {}
         cw, ch = self.sizes["chip_w"], self.sizes["chip_h"]
@@ -209,7 +209,11 @@ class Assets:
 
     def get_profile_image(self, name):
         path = os.path.join(self.root, "profile_pictures", f"{name}.png")
-        img = pygame.image.load(path).convert_alpha()
+        try:
+            img = pygame.image.load(path).convert_alpha()
+        except:
+            print('invalid profile pic path')
+            return
         return pygame.transform.smoothscale(img, self.sizes["profile"])
 
     def get_chip_image(self, key):

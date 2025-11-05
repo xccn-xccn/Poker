@@ -9,7 +9,7 @@ class PlayerView:
     def __init__(self, seat_index: int, state: dict, assets):
         self.assets = assets
         self.seat = seat_index
-        self.state = state.copy()  # local copy
+        self.state = state.copy()  
         self._layout_from_assets()
         self._load_profile_image()
 
@@ -17,16 +17,30 @@ class PlayerView:
         coords = self.assets.player_coords
         idx = self.seat % len(coords)
         cx, cy = coords[idx]
-        self.center = (int(cx), int(cy))
+        self.centre = (int(cx), int(cy))
         w, h = self.assets.sizes["profile"]
         self.profile_rect = pygame.Rect(
-            self.center[0] - w // 2, self.center[1] - h // 2, w, h
+            self.centre[0] - w // 2, self.centre[1] - h // 2, w, h
         )
 
     def _load_profile_image(self):
-        name = self.state.get("profile_picture") or self.state.get("name", "")
-        # img = self.assets.get_profile_image(name)
-        img = None
+        img = self.assets.get_profile_image(self.state['profile_picture'])
+        # img = None
+        size = self.profile_rect.size
+        surf = pygame.Surface(size, pygame.SRCALPHA)
+        pygame.draw.rect(
+            surf, (255, 255, 255), (0, 0, *size), border_radius=size[0] // 2
+        )
+
+        pygame.draw.rect(
+            surf,
+            self.assets.colours['black'],
+            (0, 0, *size),
+            border_radius=size[0] // 2,
+            width=3 * self.assets.min_size_scale,
+        )
+
+        img.blit(surf, (0, 0), None, pygame.BLEND_RGBA_MIN)
         if img is None:
             surf = pygame.Surface(self.profile_rect.size, pygame.SRCALPHA)
             pygame.draw.ellipse(surf, (180, 180, 180), surf.get_rect())
@@ -34,7 +48,6 @@ class PlayerView:
         self.profile_image = img
 
     def update_state(self, new_state: dict):
-        # replace or merge depending on your preference
         self.state = new_state.copy()
         # reload profile image if name/profile changed
         if self.state.get("profile_picture") or self.state.get("name"):
@@ -44,21 +57,21 @@ class PlayerView:
         self._layout_from_assets()
         self._load_profile_image()
 
-    def _draw_hole(self, hole_cards):
-        pass
+    def _draw_hole(self, hole_cards, surface):
+        x = self.centre[0] - self.assets.sizes["card_w"] - self.assets.sizes["card_buffer"] // 2
+        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"]
+        for card in hole_cards:
+            surface.blit(self.assets.images["cards"][card], (x, y))
+            x += self.assets.sizes["card_w"] + self.assets.sizes["card_buffer"]
+
     def draw(self, surface, card_zoom: float = 1.0, show_hole_for_others: bool = False):
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))
 
         # name = str(self.state.get("name", ""))
         chips = self.state["chips"]
-        folded = bool(self.state.get("folded", False))
         action = self.state.get("action")  # could be None or descriptive string
         hole = self.state["hole_cards"]
-
-        # name_surf = self.assets.fonts["small"].render(
-        #     name, True, self.assets.colors["white"]
-        # )
         chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
         # surface.blit(name_surf, (px, py + self.profile_rect.height + 2))
         surface.blit(
@@ -71,19 +84,4 @@ class PlayerView:
             )
             surface.blit(act_surf, (px, py - act_surf.get_height() - 4))
 
-        # dealer marker / turn highlight can be drawn by GameWindow (it has dealer_index)
-        # draw hole cards if allowed: either local player or show_hole_for_others True
-            # cw = int(self.assets.sizes["card_w"] * card_zoom)
-            # ch = int(self.assets.sizes["card_h"] * card_zoom)
-            # spacing = int(cw * 0.2)
-            # startx = px + self.profile_rect.width + 8
-            # y = py + self.profile_rect.height - ch
-            # for i, code in enumerate(hole[:2]):
-            #     img = self.assets.get_card_image(code)
-            #     img = pygame.transform.smoothscale(img, (cw, ch))
-            #     surface.blit(img, (startx + i * (cw + spacing), y))
-        self._draw_hole(self.hole)
-        # folded overlay
-        if folded:
-            overlay = self.assets.fonts["small"].render("FOLDED", True, (255, 0, 0))
-            surface.blit(overlay, (px, py - overlay.get_height() - 4))
+        self._draw_hole(hole, surface)

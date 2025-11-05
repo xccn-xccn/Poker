@@ -44,9 +44,9 @@ class GameController:
             # TODO allow gui to display stuff maybe create a pygame event
             self.table.end_round()
 
-    def get_cards(self, player):
+    def _get_cards(self, player):
         if player.fold:
-            return None
+            return []
         if (
             isinstance(player, Human)
             or self.table.r >= self.table.skip_round
@@ -54,7 +54,7 @@ class GameController:
             and self.table.running == False
         ):
             return player.hole_cards
-        return []
+        return ["card_back"] * 2
 
     def get_actions(self, player):
         return [
@@ -67,18 +67,22 @@ class GameController:
             "Bet" if not self.table.running or not self.table.last_bet else "Raise",
         ]
 
+    def _get_profile_picture(self, i):
+        return ['nature', 'bot', 'calvin', 'daniel_n', 'elliot', 'teddy'][i]
+
     def get_state(self):
         state = {
             "players": [
                 {
                     "chips": p.chips,
                     "folded": p.fold,
-                    "hole_cards": self.get_cards(p),
+                    "hole_cards": self._get_cards(p),
                     "action": p.action,
                     "round_invested": p.round_invested,
                     "seat": i,  # TODO poss change
                     "position_name": p.position_name,
                     "poss_actions": self.get_actions(p),
+                    "profile_picture": self._get_profile_picture(i),
                 }
                 for i, p in enumerate(self.table.players)
             ],
