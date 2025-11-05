@@ -64,18 +64,23 @@ class Button:
                 self.on_click()
             self.pressed = False
 
-    def draw(self, surface):
+    def draw_back(self, surface):
         colour = self.hover_colour if self.hovered else self.base_colour
         pygame.draw.rect(
             surface, colour, self.rect, border_radius=8 * self.assets.min_size_scale
         )
-        pygame.draw.rect(
-            surface,
-            self.assets.colours["outline"],
-            self.rect,
-            width=self.border_width * self.assets.min_size_scale,
-            border_radius=8 * self.assets.min_size_scale,
-        )
+
+    def draw(self, surface):
+        self.draw_back(surface)
+        if self.border_width:
+            pygame.draw.rect(
+                surface,
+                self.assets.colours["outline"],
+                self.rect,
+                width=self.border_width * self.assets.min_size_scale,
+                border_radius=8 * self.assets.min_size_scale,
+            )
+
         surface.blit(self.text_surface, self.text_rect)
 
     def resize(self):
@@ -202,6 +207,9 @@ class ImageButton(Button):
         self.image = self.assets.images["buttons"][image_key]
         self._scale_image()
 
+    def draw_back(self, surface):
+        surface.blit(self.scaled_image, self.rect.topleft)
+
     def _scale_image(self):
         self.scaled_image = pygame.transform.smoothscale(
             self.image, (max(1, self.rect.width), max(1, self.rect.height))
@@ -209,7 +217,6 @@ class ImageButton(Button):
 
     def draw(self, surface):
         super().draw(surface)
-        surface.blit(self.scaled_image, self.rect.topleft)
 
     def resize(self):
         super().resize()
