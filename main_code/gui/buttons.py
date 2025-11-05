@@ -88,6 +88,29 @@ class Button:
         self._update_rendered_text()
 
 
+class ImageButton(Button):
+    def __init__(self, image_key, pos, size, assets, on_click=None, border_width=0):
+        super().__init__("", pos, size, assets, on_click, border_width=border_width)
+        self.image_key = image_key
+        self.image = self.assets.images["buttons"][image_key]
+        self._scale_image()
+
+    def draw_back(self, surface):
+        surface.blit(self.scaled_image, self.rect.topleft)
+
+    def _scale_image(self):
+        self.scaled_image = pygame.transform.smoothscale(
+            self.image, (max(1, self.rect.width), max(1, self.rect.height))
+        )
+
+    def draw(self, surface):
+        super().draw(surface)
+
+    def resize(self):
+        super().resize()
+        self._scale_image()
+
+
 class BetSlider(Button):
     def __init__(
         self,
@@ -198,26 +221,3 @@ class BetSlider(Button):
     def resize(self):
         super().resize()
         self._update_handle_rect()
-
-
-class ImageButton(Button):
-    def __init__(self, image_key, pos, size, assets, on_click=None, border_width=0):
-        super().__init__("", pos, size, assets, on_click, border_width=border_width)
-        self.image_key = image_key
-        self.image = self.assets.images["buttons"][image_key]
-        self._scale_image()
-
-    def draw_back(self, surface):
-        surface.blit(self.scaled_image, self.rect.topleft)
-
-    def _scale_image(self):
-        self.scaled_image = pygame.transform.smoothscale(
-            self.image, (max(1, self.rect.width), max(1, self.rect.height))
-        )
-
-    def draw(self, surface):
-        super().draw(surface)
-
-    def resize(self):
-        super().resize()
-        self._scale_image()

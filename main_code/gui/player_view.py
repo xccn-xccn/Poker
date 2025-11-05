@@ -1,9 +1,5 @@
 import pygame
 
-#TODO finish
-class PlayerView1:
-    pass
-
 
 class PlayerView:
     def __init__(self, seat_index: int, state: dict, assets):
