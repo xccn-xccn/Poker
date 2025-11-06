@@ -27,7 +27,10 @@ class GameController:
     def perform_action(self, action: int, amount: int = 0):  # action probably int
         # what if it's not human player move
         # TODO needs to ensure start_move is called before
-        self.table.single_move(({"fold": 1, "call": 2, "raise": 3}[action], amount))
+        self.table.single_move(action, amount)
+
+    def _action_str(self, num):
+        return []
 
     def update(self):
         if not self.table.running:
@@ -56,7 +59,7 @@ class GameController:
             return player.hole_cards
         return ["card_back"] * 2
 
-    def get_actions(self, player):
+    def _get_poss_actions(self, player):
         return [
             (
                 "Check"
@@ -70,6 +73,23 @@ class GameController:
     def _get_profile_picture(self, i):
         return ['nature', 'bot', 'calvin', 'daniel_n', 'elliot', 'teddy'][i]
 
+    def _get_action(self, player):
+        action = player.action
+
+        if action == None:
+            return ""
+        if action == 1:
+            return "Fold"
+        if action == 2:
+            return "Call" if player.extra else "Check"
+        else:
+            word = (
+                "All In"
+                if player.chips == 0
+                else "Bet" if self.table.bet_count < 2 else "Raise"
+            )
+            return f"{word} {player.extra}"
+
     def get_state(self):
         state = {
             "players": [
@@ -77,11 +97,11 @@ class GameController:
                     "chips": p.chips,
                     "folded": p.fold,
                     "hole_cards": self._get_cards(p),
-                    "action": p.action,
+                    "action": self._get_action(p),
                     "round_invested": p.round_invested,
                     "seat": i,  # TODO poss change
                     "position_name": p.position_name,
-                    "poss_actions": self.get_actions(p),
+                    "poss_actions": self._get_poss_actions(p),
                     "profile_picture": self._get_profile_picture(i),
                 }
                 for i, p in enumerate(self.table.players)

@@ -47,9 +47,6 @@ class PlayerView:
 
     def update_state(self, new_state: dict):
         self.state = new_state.copy()
-        # reload profile image if name/profile changed
-        # if self.state.get("profile_picture") or self.state.get("name"):
-        #     self._load_profile_image()
 
     def resize(self):
         self._layout_from_assets()
@@ -69,21 +66,26 @@ class PlayerView:
                 + self.assets.sizes["card_buffer"]
             )
 
+    def _draw_centered(self, surface, text_surf, height):
+        px, py = self.profile_rect.midtop
+        surface.blit(text_surf, (px - text_surf.get_width() // 2, py + height))
+
     def draw(self, surface, card_zoom=1.0):
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))
 
         chips = self.state["chips"]
-        action = self.state.get("action")  # None or string
+        action = self.state["action"]
         hole = self.state["hole_cards"]
         chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
 
         surface.blit(chips_surf, (px, py + self.profile_rect.height + 4))
 
+        self._draw_hole(hole, surface, card_zoom)
         if action:
             act_surf = self.assets.fonts["small"].render(
                 str(action), True, (255, 50, 50)
             )
-            surface.blit(act_surf, (px, py - act_surf.get_height() - 4))
-
-        self._draw_hole(hole, surface, card_zoom)
+            self._draw_centered(
+                surface, act_surf, -5 * self.assets.height_scale - act_surf.get_height()
+            )

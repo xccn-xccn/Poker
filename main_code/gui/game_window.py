@@ -4,7 +4,6 @@ from gui.buttons import Button, ImageButton, BetSlider
 from gui.player_view import PlayerView
 
 
-# TODO Decide how card zoom will work
 class GameWindow(WindowBase):
     def __init__(self, screen, assets, controller):
         super().__init__(screen, assets)
@@ -59,7 +58,6 @@ class GameWindow(WindowBase):
             on_change=self._on_slider_change,
         )
 
-        # zoom for rendering cards
         self.card_zoom = 1.0
 
     def _on_bet(self):
