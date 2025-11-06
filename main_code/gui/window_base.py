@@ -14,6 +14,12 @@ class WindowBase(ABC):
             self.new_window = "Menu"
         for w in self.widgets.values():
             w.handle_event(event)
+        
+        self.print_mouse(event)
+
+    def print_mouse(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            print(pygame.mouse.get_pos())
 
     def _set_window(self, name):
         self.new_window = name

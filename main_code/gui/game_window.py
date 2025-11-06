@@ -2,6 +2,7 @@ import pygame
 from gui.window_base import WindowBase
 from gui.buttons import Button, ImageButton, BetSlider
 from gui.player_view import PlayerView
+from gui.utility import centre_position
 
 
 class GameWindow(WindowBase):
@@ -30,9 +31,12 @@ class GameWindow(WindowBase):
                 assets,
                 on_click=lambda: self.controller.perform_action(1, 0),
             ),
-            "Bet": Button("Bet", (700, 820), (150, 50), assets, on_click=self._on_bet),
+            "Bet": Button("Bet", *centre_position(1575, 820, 150, 50), assets, on_click=self._on_bet),
             "Deal": Button(
-                "Deal", (900, 120), (150, 50), assets, on_click=self._on_deal
+                "Deal",
+                *centre_position(self.assets.base_resolution[0] // 2, 145, 150, 50),
+                assets,
+                on_click=self._on_deal
             ),
             "Back": ImageButton(
                 "back_button",

@@ -36,6 +36,7 @@ class Assets:
 
         self.rescale(self.current_resolution)
 
+    
     def rescale(self, new_size):
         self.current_resolution = new_size
         w, h = new_size
