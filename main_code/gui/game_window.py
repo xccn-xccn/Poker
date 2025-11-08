@@ -25,14 +25,14 @@ class GameWindow(WindowBase):
                 (100, 820),
                 (150, 50),
                 assets,
-                on_click=lambda: self.controller.perform_action(0, 0),
+                on_click=lambda: self._perform_action(1, 0),
             ),
             "Check": Button(
                 "Check",
                 (300, 820),
                 (150, 50),
                 assets,
-                on_click=lambda: self.controller.perform_action(1, 0),
+                on_click=lambda: self._perform_action(2, 0),
             ),
             "Bet": Button(
                 "Bet",
@@ -72,12 +72,12 @@ class GameWindow(WindowBase):
 
         self.card_zoom = 1.0
 
-    def _on_action(self, action, amount=0):
+    def _perform_action(self, action, amount=0):
         if self.action_freeze:
             return
         end_valid = self.controller.perform_action(action, amount)
-        
-        #TODO deal with invalid moves (None)
+
+        # TODO deal with invalid moves end_valid = None
         if end_valid:
             self._pre_end_round()
 
@@ -111,13 +111,18 @@ class GameWindow(WindowBase):
             self._pre_end_round()
 
         self._sync_state()
+        # self._update_buttons()
 
     def handle_event(self, event):
         super().handle_event(event)
 
         if event.type == ROUND_END_EVENT:
-            self.controller.end_round()
-            self._sync_state()
+            self._end_round()
+
+    def _end_round(self):
+        self.controller.end_round()
+        self._sync_state()
+        self.action_freeze = False
 
     def _update_buttons(self):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
