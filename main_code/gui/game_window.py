@@ -4,6 +4,8 @@ from gui.buttons import Button, ImageButton, BetSlider
 from gui.player_view import PlayerView
 from gui.utility import centre_position
 
+ROUND_END_EVENT = pygame.USEREVENT + 1
+
 
 class GameWindow(WindowBase):
     def __init__(self, screen, assets, controller):
@@ -15,6 +17,7 @@ class GameWindow(WindowBase):
         self._sync_state()
         self.possible_bet = 0
         self.player_views = []
+        self.action_freeze = False
 
         self.widgets = {
             "Fold": Button(
@@ -31,7 +34,12 @@ class GameWindow(WindowBase):
                 assets,
                 on_click=lambda: self.controller.perform_action(1, 0),
             ),
-            "Bet": Button("Bet", *centre_position(1575, 820, 150, 50), assets, on_click=self._on_bet),
+            "Bet": Button(
+                "Bet",
+                *centre_position(1575, 820, 150, 50),
+                assets,
+                on_click=self._on_bet
+            ),
             "Deal": Button(
                 "Deal",
                 *centre_position(self.assets.base_resolution[0] // 2, 145, 150, 50),
@@ -64,11 +72,24 @@ class GameWindow(WindowBase):
 
         self.card_zoom = 1.0
 
+    def _on_action(self, action, amount=0):
+        if self.action_freeze:
+            return
+        end_valid = self.controller.perform_action(action, amount)
+        
+        #TODO deal with invalid moves (None)
+        if end_valid:
+            self._pre_end_round()
+
+    def _pre_end_round(self):
+        pygame.time.set_timer(ROUND_END_EVENT, 500, loops=1)
+        self.action_freeze = True
+
     def _on_bet(self):
         self.controller.perform_action(3, self.possible_bet)
 
     def _on_deal(self):
-        # TODO ensure table is running find where this should be checked
+        # check if table.running
         self.controller.start_hand()
 
     def _on_zoom(self):
@@ -80,8 +101,23 @@ class GameWindow(WindowBase):
         pass
 
     def update(self):
-        self.controller.update()
+        if self.action_freeze:
+            # shouldn't need to call self._sync_state but check
+            return
+
+        end_round = self.controller.update()
+
+        if end_round:
+            self._pre_end_round()
+
         self._sync_state()
+
+    def handle_event(self, event):
+        super().handle_event(event)
+
+        if event.type == ROUND_END_EVENT:
+            self.controller.end_round()
+            self._sync_state()
 
     def _update_buttons(self):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
