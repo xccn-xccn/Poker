@@ -24,29 +24,39 @@ class GameController:
     def start_hand(self):
         self.table.start_hand()
 
-    def perform_action(self, action: int, amount: int = 0):  # action probably int
-        # what if it's not human player move
-        # TODO needs to ensure start_move is called before
-        self.table.single_move(action, amount)
+    def perform_action(self, action: int, amount: int = 0):
+        """True/False if round end None if move was invalid"""
+        if not isinstance(self.table.current_player, Human):
+            return 
+        if self.table.can_move():
+            end = self.table.single_move((action, amount))
+        else:
+            end = self.table.end_move()
+
+        return end
+
+    def end_round(self):
+        self.table.end_round()
 
     def _action_str(self, num):
         return []
 
     def update(self):
+        """Makes a bot move or skips the next players turn when appropriate"""
         if not self.table.running:
             return
-        cont, end = self.table.start_move()
-        if cont:
+        if self.table.can_move():
             player = self.table.current_player
             if isinstance(player, Bot):
                 move = player.get_action(self.table)
                 end = self.table.single_move(move)
-        if (
-            end
-        ):  # NOTE doesn't call end_round within end_move to allow gui to display stuff
-            # TODO allow gui to display stuff maybe create a pygame event
-            self.table.end_round()
+            else:
+                return
+        else:
+            end = self.table.end_move()
 
+        return end
+    
     def _get_cards(self, player):
         if player.fold:
             return []
@@ -71,7 +81,7 @@ class GameController:
         ]
 
     def _get_profile_picture(self, i):
-        return ['nature', 'bot', 'calvin', 'daniel_n', 'elliot', 'teddy'][i]
+        return ["nature", "bot", "calvin", "daniel_n", "elliot", "teddy"][i]
 
     def _get_action(self, player):
         action = player.action

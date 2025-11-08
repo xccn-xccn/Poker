@@ -105,7 +105,7 @@ class PokerPlayer(ABC):
 
     def end_round(self, start=False):
         if not start:
-            #for the blinds
+            # for the blinds
             self.round_invested = 0
         self.action = self.action_text = None
         self.extra = 0
@@ -113,7 +113,7 @@ class PokerPlayer(ABC):
 
     def move_action(self, roundTotal):
         if self.action == 1:
-            #self.action_text is only for debugging
+            # self.action_text is only for debugging
             self.action_text = "folds"
             self.fold = True
             self.agg = False
@@ -194,7 +194,7 @@ class PokerPlayer(ABC):
         self.action, self.extra = action_info
         self.move_action(table.last_bet)
 
-        #TODO
+        # TODO
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
         print(
             f"\n {self.position_name} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
@@ -229,6 +229,7 @@ class Bot(PokerPlayer):
             self.table.last_bet >= self.round_invested + self.chips
             or self.table.only_call == True
         )
+
 
 class RandomBot(Bot):
     def get_bet(self, table):
@@ -447,7 +448,10 @@ class BotV1(Bot):
         else:
             action = (3, self.get_bet(table))
 
-            min_rank *= self.calc_mdf(applied=False, bet=action[1] - table.last_bet) * self.RMDFC
+            min_rank *= (
+                self.calc_mdf(applied=False, bet=action[1] - table.last_bet)
+                * self.RMDFC
+            )
 
             print(self.calc_mdf(applied=False, bet=action[1] - table.last_bet))
 
@@ -510,7 +514,6 @@ class Table:
         self.r = 0
         self.ids = []
 
-
     def add_player(self, newPlayer):
         self.players.append(newPlayer)
         self.active_players.append(newPlayer)
@@ -521,43 +524,34 @@ class Table:
 
         self.correct_total_chips += newPlayer.chips
 
-    def start_move(self):
-        """Returns a tuple of (bool: Can the current player make a valid move, bool: did the current round end)
-        Directly calls table.end_move() if the current player's turn is skipped"""
-        if (
-            self.current_player.all_in == True
-            or self.current_player.fold == True
-            or self.r >= self.skip_round
-        ):
-
-            self.current_player.agg = False  # Bad?
-            end = self.end_move()  # skip move
-
-            return False, end
-
-        return True, False  # returns False because not possible for the round to end if the player's move has not been completed
+    def can_move(self):
+        """Returns if the current player can make a move"""
+        return (
+            self.current_player.all_in == False
+            and self.current_player.fold == False
+            and self.r < self.skip_round
+        )
 
     def next_player(self, c=None):
         if c == None:
             c = self.cPI
         return (c + 1) % self.no_players
 
-
     def validate_move(self, player_id, action_info):
         if player_id != self.current_player.id:
             return False
-        
+
         return self.current_player.is_valid(self, action_info)
 
-    def single_move(self, action=None):
+    def single_move(self, action_info):
         """Returns None if the move was invalid else True if the round ends else False"""
         print("player remaining", self.players_remaining)
 
-        valid = self.current_player.move(self, action)
+        valid = self.current_player.move(self, action_info)
 
-        if not valid: #TODO decide if to return something better
-            print("not valid", action)
-            return 
+        if not valid:  # TODO decide if to return something better
+            print("not valid", action_info)
+            return
 
         if self.current_player.fold == True:
             self.players_remaining -= 1
@@ -591,6 +585,11 @@ class Table:
         self.current_player.agg = False
         self.cPI = self.next_player()
         self.current_player = self.active_players[self.cPI]
+
+        if self.current_player.agg != False:
+            raise Exception(self.current_player.agg)
+
+        self.current_player.agg = False
 
         if self.last_agg == self.cPI:
             return True
@@ -840,8 +839,10 @@ def start():
     )
     return table1
 
+
 def new_table():
     pass
+
 
 def main():
     table1 = start()

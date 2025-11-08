@@ -55,6 +55,7 @@ class PokerApp:
         running = True
         while running:
             self.clock.tick(FPS)
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -63,8 +64,8 @@ class PokerApp:
                 else:
                     self.current_window.handle_event(event)
 
-            self.current_window.draw()
             self.current_window.update()
+            self.current_window.draw()
             self.check_window_change()
 
             pygame.display.flip()
