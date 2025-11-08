@@ -1,0 +1,9 @@
+Each move should start with table.can_move() to determine if the current player
+can make an action. If this results in False table.end_move() should be called
+
+Otherwise, table.single_move() should be called this will call table.end_move()
+from within the method and return the result of table.end_move()
+
+table.end_move() returns if the round should end
+If it returns true table.end_round() should be called
+
