@@ -39,10 +39,11 @@ class Assets:
     
     def rescale(self, new_size):
         self.current_resolution = new_size
-        w, h = new_size
+
+        self.width, self.height = new_size
         bw, bh = self.base_resolution
-        self.width_scale = w / bw
-        self.height_scale = h / bh
+        self.width_scale = Scale(self.width / bw)
+        self.height_scale = Scale(self.height / bh)
         self.min_size_scale = Scale(min(self.width_scale, self.height_scale))
         self._set_sizes()
         self._load_fonts()

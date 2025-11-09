@@ -57,14 +57,14 @@ class GameWindow(WindowBase):
                 "zoom_in", (1600, 20), (70, 70), assets, on_click=self._on_zoom
             ),
             "Bet_slider": BetSlider(
-            pos=(400, 760),
-            size=(700, 40),
-            assets=assets,
-            min_value=0,
-            max_value=1000,
-            step=10,
-            on_change=self._on_slider_change,
-        )
+                pos=(400, 760),
+                size=(700, 40),
+                assets=assets,
+                min_value=0,
+                max_value=1000,
+                step=10,
+                on_change=self._on_slider_change,
+            ),
         }
 
         self.card_zoom = 1.0
@@ -92,15 +92,15 @@ class GameWindow(WindowBase):
     def _on_deal(self):
         if self.state["running"]:
             return
-        
+
         self.controller.start_hand()
 
     def _on_zoom(self):
         self.card_zoom = {1.0: 1.5, 1.5: 2.5, 2.5: 1.0}[self.card_zoom]
 
     def _on_slider_change(self, value):
-        self.possible_bet = value  
-        
+        self.possible_bet = value
+
     def update(self):
         if self.action_freeze:
             # shouldn't need to call self._sync_state but check
@@ -137,10 +137,27 @@ class GameWindow(WindowBase):
         self.screen.blit(table_img, pos)
 
     def _draw_community(self):
-        pass
+        x = self.screen.get_width() / 2 - (5 / 2 * self.assets.sizes["card_w"] + 2 * self.assets.sizes["card_buffer"]) * self.card_zoom
+        y = self.screen.get_height() / 2 - 1 / 2 * self.assets.sizes["card_h"] * self.card_zoom
+
+        for card in self.state["community"]:
+            self.screen.blit(self.assets.get_card(card, self.card_zoom), (x, y))
+            x += (
+                self.assets.sizes["card_w"] * self.card_zoom
+                + self.assets.sizes["card_buffer"]
+            )
+
 
     def _draw_pot(self):
-        pass
+        pot_surf = self.assets.fonts["small"].render(
+            str(self.state["pot"]), True, self.assets.colours["black"]
+        )
+        self.screen.blit(
+            pot_surf,
+            centre_position(
+                self.assets.width // 2, 320, pot_surf.get_width(), pot_surf.get_height()
+            )[0],
+        )
 
     def draw(self):
         self.screen.fill(self.assets.colours["background"])
