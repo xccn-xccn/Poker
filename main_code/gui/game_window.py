@@ -38,7 +38,7 @@ class GameWindow(WindowBase):
                 "Bet",
                 *centre_position(1575, 820, 150, 50),
                 assets,
-                on_click=self._on_bet
+                on_click=lambda: self._perform_action(3, self.possible_bet)
             ),
             "Deal": Button(
                 "Deal",
@@ -56,11 +56,7 @@ class GameWindow(WindowBase):
             "Zoom": ImageButton(
                 "zoom_in", (1600, 20), (70, 70), assets, on_click=self._on_zoom
             ),
-        }
-
-        # betting slider (hidden until user clicks "Raise")
-        self.bet_slider_visible = False
-        self.bet_slider = BetSlider(
+            "Bet_slider": BetSlider(
             pos=(400, 760),
             size=(700, 40),
             assets=assets,
@@ -69,6 +65,7 @@ class GameWindow(WindowBase):
             step=10,
             on_change=self._on_slider_change,
         )
+        }
 
         self.card_zoom = 1.0
 
@@ -77,16 +74,23 @@ class GameWindow(WindowBase):
             return
         end_valid = self.controller.perform_action(action, amount)
 
-        # TODO deal with invalid moves end_valid = None
+        # TODO deal with invalid moves if end_valid = None
         if end_valid:
             self._pre_end_round()
+
+        if end_valid != None:
+            self._after_action()
+
+    def _after_action(self):
+        self.possible_bet = 0
+        self.widgets["Bet_slider"].set_value(0)
 
     def _pre_end_round(self):
         pygame.time.set_timer(ROUND_END_EVENT, 500, loops=1)
         self.action_freeze = True
 
-    def _on_bet(self):
-        self.controller.perform_action(3, self.possible_bet)
+    # def _on_bet(self):
+    #     self.controller.perform_action(3, self.possible_bet)
 
     def _on_deal(self):
         # check if table.running
@@ -96,10 +100,8 @@ class GameWindow(WindowBase):
         self.card_zoom = {1.0: 1.5, 1.5: 2.5, 2.5: 1.0}[self.card_zoom]
 
     def _on_slider_change(self, value):
-        # self.possible_bet_value = value   # <— store temp UI state here
-        # TODO
-        pass
-
+        self.possible_bet = value  
+        
     def update(self):
         if self.action_freeze:
             # shouldn't need to call self._sync_state but check
@@ -111,7 +113,7 @@ class GameWindow(WindowBase):
             self._pre_end_round()
 
         self._sync_state()
-        # self._update_buttons()
+        self._update_buttons()
 
     def handle_event(self, event):
         super().handle_event(event)
@@ -128,7 +130,7 @@ class GameWindow(WindowBase):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
 
-        self.bet_slider.set_max_value(self.user_state.chips)
+        self.widgets["Bet_slider"].set_max_value(self.user_state["chips"])
 
     def _draw_table(self):
         table_img = self.assets.get_table_image()

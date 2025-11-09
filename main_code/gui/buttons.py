@@ -137,6 +137,13 @@ class BetSlider(Button):
         self._update_handle_rect()
         # TODO hmm
 
+    def set_value(self, value):
+        self.value = value
+        self._update_handle_rect()
+
+    def get_value(self):
+        return self.value
+    
     def _update_handle_rect(self):
         h = self.rect.height
         handle_x = self._value_to_x()
