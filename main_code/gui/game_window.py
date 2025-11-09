@@ -89,11 +89,10 @@ class GameWindow(WindowBase):
         pygame.time.set_timer(ROUND_END_EVENT, 500, loops=1)
         self.action_freeze = True
 
-    # def _on_bet(self):
-    #     self.controller.perform_action(3, self.possible_bet)
-
     def _on_deal(self):
-        # check if table.running
+        if self.state["running"]:
+            return
+        
         self.controller.start_hand()
 
     def _on_zoom(self):
