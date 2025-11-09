@@ -13,10 +13,6 @@ from core.poker import Table, Human, Bot, start
 class GameController:
     def __init__(self):
         self.create_table()
-        # TODO why is next used should probably be a list
-        # self.human_player_id = next(
-        #     p.id for p in self.table.players if isinstance(p, Human)
-        # )
 
     def create_table(self):
         self.table = start() if callable(start) else Table()
@@ -37,9 +33,6 @@ class GameController:
 
     def end_round(self):
         self.table.end_round()
-
-    def _action_str(self, num):
-        return []
 
     def update(self):
         """Makes a bot move or skips the next players turn when appropriate"""
