@@ -14,10 +14,21 @@ class PokerApp:
         pygame.init()
         pygame.display.set_caption("Poker")
         self.clock = pygame.time.Clock()
-        self.screen = pygame.display.set_mode(BASE_RESOLUTION, pygame.RESIZABLE)
-        self.assets = Assets(self.screen)
+        self.set_initial_size()
+        self.assets = Assets(self.screen, BASE_RESOLUTION)
         self.controller = None
         self.set_menu_window()
+
+
+    def set_initial_size(self):
+        scale = min(pygame.display.Info().current_w / BASE_RESOLUTION[0], pygame.display.Info().current_h / BASE_RESOLUTION[1]) * 0.8
+
+        width = scale * pygame.display.Info().current_w 
+        height = scale * pygame.display.Info().current_h
+
+        self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+
+        # pygame.event.post(pygame.event.Event(pygame.VIDEORESIZE, {'size': (width, height), 'w': width, 'h': height}))
 
     def set_menu_window(self):
         self.current_window = MenuWindow(
