@@ -13,3 +13,20 @@ poker/
     ├── server.py           # Host player (broadcasts game state)
     ├── client.py           # Other players connect to host
     └── protocol.py         # Defines message types and JSON formats
+
+
+
+
+GUI -> Controller -> server -> poker
+
+Player clicks an action button. Controller checks to see if it is the current user's turn
+If so it sends the action to the server.
+
+The server sends the move to the poker (logic)
+Poker returns if the move is valid and makes changes to itself.
+Server sends if the move was valid to the specific user.
+
+Server reads information from poker and uses it to update state.
+It sends any part of the state that changed to each user.
+Controller uses the part of state that changed to update its full state.
+Every frame? the Controller sends its full state to assets.
