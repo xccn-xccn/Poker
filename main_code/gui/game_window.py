@@ -90,6 +90,7 @@ class GameWindow(WindowBase):
         self.action_freeze = True
 
     def _on_deal(self):
+        #Backwards
         if self.state["running"]:
             return
 
@@ -121,6 +122,7 @@ class GameWindow(WindowBase):
             self._end_round()
 
     def _end_round(self):
+        #Backwards
         self.controller.end_round()
         self._sync_state()
         self.action_freeze = False
