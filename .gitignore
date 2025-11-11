@@ -4,3 +4,11 @@ main_code/build/web-cache
 main_code/__pycache__
 docs/web-cache
 target
+
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+.venv

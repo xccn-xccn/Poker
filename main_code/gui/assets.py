@@ -70,7 +70,7 @@ class Assets:
 
         self.sizes["card_w"] = 51 * self.width_scale
         self.sizes["card_h"] = 73 * self.height_scale
-        self.sizes["card_buffer"] = 1 * self.height_scale
+        self.sizes["card_buffer"] = 2 * self.height_scale
         
         self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 

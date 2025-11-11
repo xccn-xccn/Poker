@@ -22,7 +22,7 @@ class GameController:
 
     def perform_action(self, action: int, amount: int = 0):
         """True/False if round end None if move was invalid"""
-        if not isinstance(self.table.current_player, Human):
+        if not self.table.running or not isinstance(self.table.current_player, Human):
             return 
         if self.table.can_move():
             end = self.table.single_move((action, amount))
