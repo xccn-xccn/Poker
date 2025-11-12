@@ -148,7 +148,7 @@ class PokerPlayer(ABC):
 
     def is_valid(self, table, action_info):
         print(action_info)
-        action, extra = action_info #CHANGE
+        action, extra = action_info[0], action_info[1] - self.round_invested #CHANGE
 
         if isinstance(self, Human):
             if table.community:
@@ -161,7 +161,7 @@ class PokerPlayer(ABC):
             print(f"\n {self.position_name} cards are {self.hole_cards}")
 
         if action == 3:
-            print(self.round_invested, self.extra, table.last_bet, table.min_raise, self.chips)
+            print(self.round_invested, action_info, table.last_bet, table.min_raise, self.chips)
 
             if (
                 (
@@ -194,7 +194,8 @@ class PokerPlayer(ABC):
         elif not valid:
             return False
 
-        self.action, self.extra = action_info #CHANGE
+        # self.action, self.extra = action_info #CHANGE
+        self.action, self.extra = action_info[0], action_info[1] - self.round_invested #CHANGE
         self.move_action(table.last_bet)
 
         # TODO
@@ -240,13 +241,13 @@ class RandomBot(Bot):
 
         try:
             extra = random.randint(
-                min(self.chips, table.last_bet - self.round_invested + table.min_raise),
+                min(self.chips + self.round_invested, table.last_bet + table.min_raise), #changed
                 min(
                     max(
                         table.last_bet * 2 + table.min_raise,
                         int(table.get_pot() * 2.5),
                     ),
-                    self.chips,
+                    self.chips + self.round_invested,
                 ),
             )
 
@@ -315,16 +316,16 @@ class BotV1(Bot):
         print("bets", table.last_bet)
 
         if table.r == 0:
-            return min(self.pre_flop_bet(table) - self.round_invested, self.chips)
+            return min(self.pre_flop_bet(table), self.chips + self.round_invested) #changed
         try:
             extra = random.randint(
-                min(self.chips, table.last_bet - self.round_invested + table.min_raise),
+                min(self.chips + self.round_invested, table.last_bet + table.min_raise), #changed
                 min(
                     max(
                         table.last_bet * 2 + table.min_raise,
                         int(table.get_pot() * 2.5),
                     ),
-                    self.chips,
+                    self.chips + self.round_invested,
                 ),
             )
 
