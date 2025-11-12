@@ -131,7 +131,7 @@ class GameWindow(WindowBase):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
 
-        self.widgets["Bet_slider"].set_max_value(self.user_state["chips"])
+        self.widgets["Bet_slider"].set_max_value(self.user_state["chips"] + self.user_state["round_invested"])
 
     def _draw_table(self):
         table_img = self.assets.get_table_image()

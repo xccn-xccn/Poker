@@ -1,18 +1,10 @@
-from flask import Flask, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
-import eventlet  # A good production server
-
+import eventlet
 eventlet.monkey_patch()
 
-# --- Import Your Existing Game Logic ---
-# This assumes your 'core' folder is in the same directory
-# or in your Python path.
-try:
-    from core.poker import Table, Human, Bot, start
-except ImportError:
-    print("Error: Could not import from core.poker.")
-    print("Please make sure server.py is in the correct directory.")
-    exit()
+from flask import Flask, request
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from core.poker import Table, Human, Bot, start
+
 
 # --- App Setup ---
 app = Flask(__name__)
@@ -20,8 +12,6 @@ app.config["SECRET_KEY"] = "your-very-secret-key!"
 socketio = SocketIO(app)
 
 # --- Server-Side Game Logic ---
-# NEW: We now have a "manager" for all active games and players
-# This replaces the single global `game_table`
 active_games = {}  # Stores the game `Table` object for each room
 player_to_room = {}  # Maps a player's sid to their room_name
 

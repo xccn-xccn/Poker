@@ -148,7 +148,7 @@ class PokerPlayer(ABC):
 
     def is_valid(self, table, action_info):
         print(action_info)
-        action, extra = action_info
+        action, extra = action_info #CHANGE
 
         if isinstance(self, Human):
             if table.community:
@@ -161,6 +161,8 @@ class PokerPlayer(ABC):
             print(f"\n {self.position_name} cards are {self.hole_cards}")
 
         if action == 3:
+            print(self.round_invested, self.extra, table.last_bet, table.min_raise, self.chips)
+
             if (
                 (
                     self.round_invested + extra < table.last_bet + table.min_raise
@@ -170,6 +172,7 @@ class PokerPlayer(ABC):
                 or table.only_call == True
                 or self.round_invested + extra < table.last_bet
             ):
+                print('invalid')
                 return False
 
         return True
@@ -191,7 +194,7 @@ class PokerPlayer(ABC):
         elif not valid:
             return False
 
-        self.action, self.extra = action_info
+        self.action, self.extra = action_info #CHANGE
         self.move_action(table.last_bet)
 
         # TODO
