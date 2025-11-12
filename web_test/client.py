@@ -1,17 +1,74 @@
 import socketio
+import threading
+import time
 
-# standard Python
-sio = socketio.Client(logger=True, engineio_logger=True)
+# --- Setup Client ---
+sio = socketio.Client()
+USERNAME = "PythonClient" 
 
-sio.connect('http://localhost:5000')
-sio.emit('my message', {'foo': 'bar'})
+# --- Event Handlers (Decorators) ---
 
 @sio.event
-def message(data):
-    print('I received a message!')
+def connect():
+    """Called when the connection is established."""
+    print("--- CONNECTED ---")
+    print("Sending initial message to server...")
+    # Send an event named 'client_message'
+    sio.emit('client_message', {
+        'user': USERNAME,
+        'text': "Hello world, I am a Python client!"
+    })
 
-@sio.on('my message')
-def on_message(data):
-    print('I received a message!')
+@sio.event
+def disconnect():
+    """Called when the client loses connection."""
+    print("--- DISCONNECTED ---")
+
+@sio.on('server_broadcast')
+def on_broadcast(data):
+    """
+    Called when the server emits an event named 'server_broadcast'.
+    This is how you receive messages from other users/the server.
+    """
+    print(f"[RECV] {data['user']}: {data['text']}")
+
+# --- Main Logic ---
+
+def run_client():
+    """Connects and runs the client in the main thread."""
+    try:
+        sio.connect('http://localhost:5000')
+    except socketio.exceptions.ConnectionError:
+        print("Error: Could not connect to the server. Is chat_server.py running?")
+        return
+
+    # Keep the main thread alive so the background SocketIO thread can run
+    print("\nClient connected. Type 'quit' to exit.")
     
-sio.disconnect()
+    while sio.connected:
+        try:
+            # Simple text input loop
+            user_input = input(f"{USERNAME} > ")
+            if user_input.lower() == 'quit':
+                break
+            
+            if user_input:
+                # Send the message to the server
+                sio.emit('client_message', {
+                    'user': USERNAME,
+                    'text': user_input
+                })
+
+        except EOFError:
+            # Handles Ctrl+D/Ctrl+Z
+            break
+        except KeyboardInterrupt:
+            # Handles Ctrl+C
+            break
+    
+    sio.disconnect()
+    print("Client gracefully shut down.")
+
+
+if __name__ == '__main__':
+    run_client()
