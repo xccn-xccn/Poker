@@ -14,8 +14,9 @@ import threading
 # --- Offline Controller ---
 # (This is your original class, unchanged)
 class GameController:
-    def __init__(self):
+    def __init__(self, testing=False):
         self.create_table()
+        self.testing = testing
 
     def create_table(self):
         self.table = start() if callable(start) else Table()
@@ -28,7 +29,7 @@ class GameController:
         if not self.table.running or not isinstance(self.table.current_player, Human):
             return 
         if self.table.can_move():
-            end = self.table.single_move((action, amount - self.table.current_player.round_invested))
+            end = self.table.single_move((action, amount))
         else:
             end = self.table.end_move()
 
@@ -47,7 +48,9 @@ class GameController:
                 move = player.get_action(self.table)
                 end = self.table.single_move(move)
             else:
-                return
+                if not self.testing:
+                    return
+                end = self.table.single_move((1, 0))
         else:
             end = self.table.end_move()
 

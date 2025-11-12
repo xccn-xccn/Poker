@@ -8,9 +8,10 @@ ROUND_END_EVENT = pygame.USEREVENT + 1
 
 
 class GameWindow(WindowBase):
-    def __init__(self, screen, assets, controller):
+    def __init__(self, screen, assets, controller, testing):
         super().__init__(screen, assets)
 
+        self.testing = testing
         self.controller = controller
 
         self.player_views = []
@@ -38,13 +39,13 @@ class GameWindow(WindowBase):
                 "Bet",
                 *centre_position(1575, 820, 150, 50),
                 assets,
-                on_click=lambda: self._perform_action(3, self.possible_bet)
+                on_click=lambda: self._perform_action(3, self.possible_bet),
             ),
             "Deal": Button(
                 "Deal",
                 *centre_position(self.assets.base_resolution[0] // 2, 145, 150, 50),
                 assets,
-                on_click=self._on_deal
+                on_click=self._on_deal,
             ),
             "Back": ImageButton(
                 "back_button",
@@ -86,11 +87,11 @@ class GameWindow(WindowBase):
         self.widgets["Bet_slider"].set_value(0)
 
     def _pre_end_round(self):
-        pygame.time.set_timer(ROUND_END_EVENT, 500, loops=1)
+        pygame.time.set_timer(ROUND_END_EVENT, 500 if not self.testing else 1, loops=1)
         self.action_freeze = True
 
     def _on_deal(self):
-        #Backwards
+        # Backwards
         if self.state["running"]:
             return
 
@@ -115,6 +116,9 @@ class GameWindow(WindowBase):
         self._sync_state()
         self._update_buttons()
 
+        if self.testing and self.state["running"] == False:
+            self.controller.start_hand()
+
     def handle_event(self, event):
         super().handle_event(event)
 
@@ -122,7 +126,7 @@ class GameWindow(WindowBase):
             self._end_round()
 
     def _end_round(self):
-        #Backwards
+        # Backwards
         self.controller.end_round()
         self._sync_state()
         self.action_freeze = False
@@ -131,7 +135,9 @@ class GameWindow(WindowBase):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
 
-        self.widgets["Bet_slider"].set_max_value(self.user_state["chips"] + self.user_state["round_invested"])
+        self.widgets["Bet_slider"].set_max_value(
+            self.user_state["chips"] + self.user_state["round_invested"]
+        )
 
     def _draw_table(self):
         table_img = self.assets.get_table_image()
@@ -139,8 +145,18 @@ class GameWindow(WindowBase):
         self.screen.blit(table_img, pos)
 
     def _draw_community(self):
-        x = self.screen.get_width() / 2 - (5 / 2 * self.assets.sizes["card_w"] + 2 * self.assets.sizes["card_buffer"]) * self.card_zoom
-        y = self.screen.get_height() / 2 - 1 / 2 * self.assets.sizes["card_h"] * self.card_zoom
+        x = (
+            self.screen.get_width() / 2
+            - (
+                5 / 2 * self.assets.sizes["card_w"]
+                + 2 * self.assets.sizes["card_buffer"]
+            )
+            * self.card_zoom
+        )
+        y = (
+            self.screen.get_height() / 2
+            - 1 / 2 * self.assets.sizes["card_h"] * self.card_zoom
+        )
 
         for card in self.state["community"]:
             self.screen.blit(self.assets.get_card(card, self.card_zoom), (x, y))
@@ -148,7 +164,6 @@ class GameWindow(WindowBase):
                 self.assets.sizes["card_w"] * self.card_zoom
                 + self.assets.sizes["card_buffer"]
             )
-
 
     def _draw_pot(self):
         pot_surf = self.assets.fonts["small"].render(

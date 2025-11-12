@@ -10,13 +10,14 @@ FPS = 60
 
 
 class PokerApp:
-    def __init__(self):
+    def __init__(self, testing=False):
         pygame.init()
         pygame.display.set_caption("Poker")
         self.clock = pygame.time.Clock()
         self.set_initial_size()
         self.assets = Assets(self.screen, BASE_RESOLUTION)
         self.controller = None
+        self.testing = testing
         self.set_menu_window()
 
 
@@ -37,11 +38,12 @@ class PokerApp:
         )
 
     def start_game(self, online=False, host=False, host_ip=None):
-        self.controller = OnlineController(is_host=host, host_ip=host_ip) if online else GameController()
+        self.controller = OnlineController(is_host=host, host_ip=host_ip) if online else GameController(testing=self.testing)
         self.current_window = GameWindow(
             screen=self.screen,
             assets=self.assets,
             controller=self.controller,
+            testing=self.testing
         )
 
     def quit_game(self):
@@ -86,5 +88,5 @@ class PokerApp:
 
 
 if __name__ == "__main__":
-    app = PokerApp()
+    app = PokerApp(testing=True)
     app.run()
