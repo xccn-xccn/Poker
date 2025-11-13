@@ -130,8 +130,6 @@ class GameController:
         return state
 
 
-# --- NEW Online Controller ---
-
 
 class OnlineController:
     """
@@ -196,9 +194,6 @@ class OnlineController:
                 "running": False,
                 "user_i": 0,
             }
-
-    # --- Methods called by GameWindow ---
-    # (These now just send messages)
 
     def start_hand(self):
         """Called when 'Deal' is clicked."""

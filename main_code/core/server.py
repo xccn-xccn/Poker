@@ -1,20 +1,9 @@
-import eventlet # MUST be imported and patched before other libraries
+import eventlet 
 eventlet.monkey_patch() 
 
 from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
-
-# --- Import Your Existing Game Logic ---
-# This assumes your 'core' folder is in the same directory
-# or in your Python path.
-try:
-    from core.poker import Table, Human, Bot, start
-except ImportError:
-    print("Error: Could not import from core.poker.")
-    print("Please make sure server.py is in the correct directory.")
-    exit()
-
-# --- Core Server Logic Class (New Object-Oriented Structure) ---
+from core.poker import Table, Human, Bot, start
 
 class GameServerManager:
     """Manages all active poker tables and player connections."""
@@ -115,7 +104,7 @@ class GameServerManager:
         game_table = start() if callable(start) else Table()
         # Initialize the custom flag used for tracking taken seats
         for p in game_table.players:
-             p.is_human_player = False 
+            p.is_human_player = False 
 
         room_name = str(id(game_table))
         self.active_games[room_name] = game_table
@@ -261,7 +250,6 @@ socketio = SocketIO(app)
 manager = GameServerManager()
 
 # --- Socket.IO Event Handlers (Routing requests to the Manager) ---
-# These functions are now very thin and just call the manager's methods
 
 @socketio.on('connect')
 def handle_connect():
