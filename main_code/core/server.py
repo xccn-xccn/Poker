@@ -101,45 +101,32 @@ class GameServerManager:
 
     def create_new_game(self):
         """Creates a new game table and adds it to the manager."""
-        game_table = start() if callable(start) else Table()
+        game_table = Table()
         # Initialize the custom flag used for tracking taken seats
-        for p in game_table.players:
-            p.is_human_player = False 
+        room_id = str(id(game_table))
+        self.active_games[room_id] = game_table
+        print(f"New game room created: {room_id}")
 
-        room_name = str(id(game_table))
-        self.active_games[room_name] = game_table
-        print(f"New game room created: {room_name}")
-        return game_table, room_name
+        return game_table, room_id
 
     def find_or_create_game(self):
         """Finds an available game room with an empty seat, or creates a new one."""
         for room_name, game_table in self.active_games.items():
-            # Find all Human seats (as defined in core.poker)
-            human_seats = [i for i, p in enumerate(game_table.players) if isinstance(p, Human)]
             
-            # Find which of those seats are NOT yet taken by an active player
-            available_seats = [
-                i for i in human_seats 
-                if not getattr(game_table.players[i], 'is_human_player', False)
-            ]
+            for i, p in enumerate(game_table):
+                if p == None:
+                    return game_table, room_name, i
 
-            if available_seats:
-                # Found a seat in an existing game
-                return game_table, room_name, available_seats[0]
+        # If no available games create one
+        game_table, room_name, 0 = self.create_new_game()
+        return game_table, room_name
 
-        # If no available games, create a new one
-        game_table, room_name = self.create_new_game()
-        human_seat_index = next(
-            i for i, p in enumerate(game_table.players) if isinstance(p, Human)
-        )
-        return game_table, room_name, human_seat_index
-
-    def handle_join_game(self, player_id):
+    def handle_join_game(self, player_id: int, data: dict):
         """Handles a client requesting to join a game."""
         game_table, room_name, seat_index = self.find_or_create_game()
         
         # Assign this player to the seat and update the table status
-        game_table.players[seat_index].is_human_player = True
+        game_table.players[seat_index] = Human()
         
         # Store the mapping
         self.player_to_room[player_id] = {
@@ -242,7 +229,7 @@ class GameServerManager:
 
 # --- App Setup ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-very-secret-key!'
+app.config['SECRET_KEY'] = 'secret-donk-bet'
 socketio = SocketIO(app)
 
 # --- Instantiate the OO Manager ---
@@ -258,9 +245,9 @@ def handle_connect():
     print(f'Client {player_id} connected. Waiting for them to join a game.')
 
 @socketio.on('join_game')
-def handle_join_game():
+def handle_join_game(data: dict):
     """Routes the 'join_game' request to the manager."""
-    manager.handle_join_game(request.sid)
+    manager.handle_join_game(request.sid, data)
 
 @socketio.on('disconnect')
 def handle_disconnect():

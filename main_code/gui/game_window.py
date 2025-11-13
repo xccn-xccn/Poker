@@ -99,6 +99,8 @@ class GameWindow(WindowBase):
 
     def _on_zoom(self):
         self.card_zoom = {1.0: 1.5, 1.5: 2.5, 2.5: 1.0}[self.card_zoom]
+        # self.controller.table.add_new_player(10000)
+
 
     def _on_slider_change(self, value):
         self.possible_bet = value

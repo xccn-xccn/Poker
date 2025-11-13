@@ -36,10 +36,8 @@ class PokerPlayer(ABC):
         5: "Cutoff",
     }
 
-    def __init__(self, position_i, profile_picture, table, id=0, chips=1000):
+    def __init__(self, table, id=0, chips=1000):
         self.chips = chips
-        self.position_i = self.table_position = position_i
-        self.profile_picture = profile_picture
         self.table = table
         self.id = id
         self.round_invested = 0
@@ -298,8 +296,8 @@ class RandomBot(Bot):
 
 
 class BotV1(Bot):
-    def __init__(self, position_i, profile_picture, table, id=0, chips=1000):
-        super().__init__(position_i, profile_picture, table, id=id, chips=chips)
+    def __init__(self, table, id=0, chips=1000):
+        super().__init__(table, id=id, chips=chips)
         self.MDFC = 1
         self.RMDFC = 1.3
 
@@ -533,8 +531,10 @@ class Table:
         self.r = 0
         self.ids = []
 
+    def add_new_player(self, chips=2001):
+        return self.add_player(Human(self, chips=chips))
+
     def add_player(self, new_player: PokerPlayer):
-        # self.players.append(newPlayer)
         if None not in self.players:
             return
 
@@ -543,13 +543,12 @@ class Table:
                 self.players[i] = new_player
                 break
 
-        self.active_players.append(new_player)
         self.ids.append(new_player.id)
 
-        if isinstance(new_player, Human):
-            self.human_player = new_player
-
         self.correct_total_chips += new_player.chips
+
+        print("Added Player")
+        return True
 
     def can_move(self):
         """Returns if the current player can make a move"""
@@ -749,6 +748,8 @@ class Table:
         for p in [x for x in self.players if x]:
             if p.chips:
                 self.active_players.append(p)
+                if p.inactive:
+                    raise Exception(self.players, [x.chips for x in self.players])
             elif not p.inactive:
                 p.inactive = True
                 # p.fold = True
@@ -844,26 +845,29 @@ class Table:
 
 def start():
     table1 = Table()
-    profile_pictures = ["calvin", "elliot", "teddy", "daniel_n"]
-    random.shuffle(profile_pictures)
-    profile_pictures = ["bot"] + profile_pictures
-    for r, p in enumerate(profile_pictures): #CHANGE for test
+    for r in range(5):  # CHANGE for test
         if r <= 0:
             chips = 2000
-            table1.add_player(RandomBot(r, p, table1, chips=chips))
+            table1.add_player(RandomBot(table1, chips=chips))
 
         else:
             chips = 2000
-            table1.add_player(BotV1(r, p, table1, chips=chips))
+            table1.add_player(BotV1(table1, chips=chips))
 
     table1.add_player(
         Human(
-            5,
-            "nature",
             table1,
             chips=3000,
         )
     )
+    # table1.add_player(
+    #     Human(
+    #         profile_pictures[-1],
+    #         table1,
+    #         chips=3000,
+    #     )
+    # )
+
     return table1
 
 

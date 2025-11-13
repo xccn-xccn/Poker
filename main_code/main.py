@@ -88,5 +88,6 @@ class PokerApp:
 
 
 if __name__ == "__main__":
-    app = PokerApp(testing=False)
+    arg = sys.argv
+    app = PokerApp(testing=len(arg) > 1 and arg[1] == 't')
     app.run()

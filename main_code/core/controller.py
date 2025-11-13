@@ -163,7 +163,7 @@ class OnlineController:
             print(f"Connected to server at {self.server_url}")
             # NEW: After connecting, we must ask to join a game
             print("Sending 'join_game' request...")
-            self.sio.emit("join_game")
+            self.sio.emit("join_game", {"chips": 2000})
 
         @self.sio.on("disconnect")
         def on_disconnect():
