@@ -847,7 +847,7 @@ def start():
     profile_pictures = ["calvin", "elliot", "teddy", "daniel_n"]
     random.shuffle(profile_pictures)
     profile_pictures = ["bot"] + profile_pictures
-    for r, p in enumerate(profile_pictures):
+    for r, p in enumerate(profile_pictures): #CHANGE for test
         if r <= 0:
             chips = 2000
             table1.add_player(RandomBot(r, p, table1, chips=chips))
