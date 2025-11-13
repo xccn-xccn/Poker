@@ -148,7 +148,7 @@ class PokerPlayer(ABC):
 
     def is_valid(self, table, action_info):
         print(action_info)
-        action, extra = action_info[0], action_info[1] - self.round_invested #CHANGE
+        action, extra = action_info[0], action_info[1] - self.round_invested  # CHANGE
 
         if isinstance(self, Human):
             if table.community:
@@ -161,7 +161,13 @@ class PokerPlayer(ABC):
             print(f"\n {self.position_name} cards are {self.hole_cards}")
 
         if action == 3:
-            print(self.round_invested, action_info, table.last_bet, table.min_raise, self.chips)
+            print(
+                self.round_invested,
+                action_info,
+                table.last_bet,
+                table.min_raise,
+                self.chips,
+            )
 
             if (
                 (
@@ -172,7 +178,7 @@ class PokerPlayer(ABC):
                 or table.only_call == True
                 or self.round_invested + extra < table.last_bet
             ):
-                print('invalid')
+                print("invalid")
                 return False
 
         return True
@@ -195,7 +201,10 @@ class PokerPlayer(ABC):
             return False
 
         # self.action, self.extra = action_info #CHANGE
-        self.action, self.extra = action_info[0], action_info[1] - self.round_invested #CHANGE
+        self.action, self.extra = (
+            action_info[0],
+            action_info[1] - self.round_invested,
+        )  # CHANGE
         self.move_action(table.last_bet)
 
         # TODO
@@ -241,7 +250,9 @@ class RandomBot(Bot):
 
         try:
             extra = random.randint(
-                min(self.chips + self.round_invested, table.last_bet + table.min_raise), #changed
+                min(
+                    self.chips + self.round_invested, table.last_bet + table.min_raise
+                ),  # changed
                 min(
                     max(
                         table.last_bet * 2 + table.min_raise,
@@ -316,10 +327,14 @@ class BotV1(Bot):
         print("bets", table.last_bet)
 
         if table.r == 0:
-            return min(self.pre_flop_bet(table), self.chips + self.round_invested) #changed
+            return min(
+                self.pre_flop_bet(table), self.chips + self.round_invested
+            )  # changed
         try:
             extra = random.randint(
-                min(self.chips + self.round_invested, table.last_bet + table.min_raise), #changed
+                min(
+                    self.chips + self.round_invested, table.last_bet + table.min_raise
+                ),  # changed
                 min(
                     max(
                         table.last_bet * 2 + table.min_raise,
@@ -507,7 +522,7 @@ class Table:
     # deck = ['🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂡', '🂢', '��', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍','🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃜', '🃝', '🃞']
 
     def __init__(self) -> None:
-        self.players = []
+        self.players = [None] * 6
         self.active_players = []
         self.deck = deck
         self.blinds = [10, 20]
@@ -518,15 +533,23 @@ class Table:
         self.r = 0
         self.ids = []
 
-    def add_player(self, newPlayer):
-        self.players.append(newPlayer)
-        self.active_players.append(newPlayer)
-        self.ids.append(newPlayer.id)
+    def add_player(self, new_player: PokerPlayer):
+        # self.players.append(newPlayer)
+        if None not in self.players:
+            return
 
-        if isinstance(newPlayer, Human):
-            self.human_player = newPlayer
+        for i, p in enumerate(self.players):
+            if p == None:
+                self.players[i] = new_player
+                break
 
-        self.correct_total_chips += newPlayer.chips
+        self.active_players.append(new_player)
+        self.ids.append(new_player.id)
+
+        if isinstance(new_player, Human):
+            self.human_player = new_player
+
+        self.correct_total_chips += new_player.chips
 
     def can_move(self):
         """Returns if the current player can make a move"""
@@ -720,15 +743,15 @@ class Table:
 
     def start_hand(self):
         self.running = True
-        old = self.active_players
         self.active_players = []
         button_bust = False
 
-        for p in old:
+        for p in [x for x in self.players if x]:
             if p.chips:
                 self.active_players.append(p)
-            else:
+            elif not p.inactive:
                 p.inactive = True
+                # p.fold = True
                 if p.position_i == 0:
                     button_bust = True
 
@@ -809,11 +832,11 @@ class Table:
 
         print(
             "total_chips",
-            sum(p.chips for p in self.players),
-            len([1 for x in self.players if x.chips]),
+            sum(p.chips for p in self.players if p),
+            len([1 for x in self.players if x and x.chips]),
         )
-        if sum(p.chips for p in self.players) != self.correct_total_chips:
-            raise Exception([p.chips for p in self.players])
+        if sum(p.chips for p in self.players if p) != self.correct_total_chips:
+            raise Exception([p.chips for p in self.players if p])
 
     def to_bb(self, chips):
         return chips / self.blinds[1]

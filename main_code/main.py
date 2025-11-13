@@ -88,5 +88,5 @@ class PokerApp:
 
 
 if __name__ == "__main__":
-    app = PokerApp()
+    app = PokerApp(testing=False)
     app.run()

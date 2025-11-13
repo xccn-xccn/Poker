@@ -58,7 +58,7 @@ class GameController:
         return end
 
     def _get_cards(self, player):
-        if player.fold:
+        if player.fold or player.inactive:
             return []
         if (
             isinstance(player, Human)
