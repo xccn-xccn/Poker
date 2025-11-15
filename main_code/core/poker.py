@@ -534,7 +534,7 @@ class Table:
     def add_new_player(self, chips=2001):
         return self.add_player(Human(self, chips=chips))
 
-    def add_player(self, new_player: PokerPlayer):
+    def add_player(self, new_player: PokerPlayer) -> int | None:
         if None not in self.players:
             return
 
@@ -548,7 +548,7 @@ class Table:
         self.correct_total_chips += new_player.chips
 
         print("Added Player")
-        return True
+        return i
 
     def can_move(self):
         """Returns if the current player can make a move"""
@@ -862,7 +862,6 @@ def start():
     )
     # table1.add_player(
     #     Human(
-    #         profile_pictures[-1],
     #         table1,
     #         chips=3000,
     #     )

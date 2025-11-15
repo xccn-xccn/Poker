@@ -111,22 +111,24 @@ class GameServerManager:
 
     def find_or_create_game(self):
         """Finds an available game room with an empty seat, or creates a new one."""
-        for room_name, game_table in self.active_games.items():
+        for room_id, game_table in self.active_games.items():
             
-            for i, p in enumerate(game_table):
-                if p == None:
-                    return game_table, room_name, i
+            if None in game_table.players:
+                return game_table, room_id
+            # for i, p in enumerate(game_table):
+            #     if p == None:
+            #         return game_table, room_name, i
 
         # If no available games create one
-        game_table, room_name, 0 = self.create_new_game()
-        return game_table, room_name
+        game_table, room_id = self.create_new_game()
+        return game_table, room_id
 
     def handle_join_game(self, player_id: int, data: dict):
         """Handles a client requesting to join a game."""
-        game_table, room_name, seat_index = self.find_or_create_game()
+        game_table, room_name = self.find_or_create_game()
         
         # Assign this player to the seat and update the table status
-        game_table.players[seat_index] = Human()
+        seat_index = game_table.add_new_player(data["chips"])
         
         # Store the mapping
         self.player_to_room[player_id] = {
