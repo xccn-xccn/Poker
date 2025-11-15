@@ -123,7 +123,7 @@ class GameServerManager:
         game_table, room_id = self.create_new_game()
         return game_table, room_id
 
-    def handle_join_game(self, player_id: int, data: dict):
+    def handle_join_game(self, player_sid: int, data: dict):
         """Handles a client requesting to join a game."""
         game_table, room_name = self.find_or_create_game()
         
@@ -131,15 +131,15 @@ class GameServerManager:
         seat_index = game_table.add_new_player(data["chips"])
         
         # Store the mapping
-        self.player_to_room[player_id] = {
+        self.player_to_room[player_sid] = {
             "room": room_name,
             "seat": seat_index
         }
         
         # Add the player to the SocketIO room
-        join_room(room_name)
+        join_room(room_name, sid=player_sid)
         
-        print(f"Human player {player_id} joined room {room_name} at seat {seat_index}.")
+        print(f"Human player {player_sid} joined room {room_name} at seat {seat_index}.")
         
         # Send the initial state back to the whole room
         socketio.emit('game_update', self.get_state(game_table, seat_index), room=room_name)
