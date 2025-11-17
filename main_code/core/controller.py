@@ -12,8 +12,6 @@ import socketio
 import threading
 
 
-# --- Offline Controller ---
-# (This is your original class, unchanged)
 class GameController:
     def __init__(self, testing: int = False):
         self.create_table()
@@ -144,11 +142,22 @@ class OnlineController:
 
         # This will hold the game state sent by the server
         self.state = {
-            "players": [],
+            "players": [{
+                    "chips": 0,
+                    "folded": True,
+                    "hole_cards": [],
+                    "action": "",
+                    "round_invested": 0,
+                    "seat": 0,  # TODO poss change
+                    "position_name": "",
+                    "poss_actions": ["Check", "Bet"],
+                    "profile_picture": "nature",
+                }],
             "community": [],
             "pot": 0,
             "running": False,
             "user_i": 0,
+            "new_player": False,
         }
         self.lock = threading.Lock()  # For thread-safe state updates
 
@@ -179,6 +188,8 @@ class OnlineController:
             # print("Received game update")
             with self.lock:
                 self.state = data
+
+            print(f"got state {data}")
 
     def _connect(self):
         """Tries to connect to the server."""

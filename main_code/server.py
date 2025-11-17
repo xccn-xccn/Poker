@@ -20,15 +20,17 @@ class GameRoom:
         self.sid_seat[sid] = seat_i
 
         self.full = None not in self.table.players
+        self.emit_state(new=True)
 
     def remove_player(self, sid: int):
         pass
 
-    def get_state(self):
-        pass
+    def start_hand(self):
+        if self.table.running:
+            return
 
-    def _emit_state(self):
-        pass
+        self.table.start_hand()
+        self._process_system_actions(end=False)
 
     def _single_auto_action(self):
         if self.table.can_move():
@@ -39,7 +41,7 @@ class GameRoom:
         else:
             return self.table.end_move()
 
-    def _process_system_actions(self, end):
+    def _process_system_actions(self, end=False):
 
         cont = True
         while self.table.running and cont:
@@ -52,7 +54,7 @@ class GameRoom:
             if end == None:
                 cont = False
 
-            self._emit_state()
+            self.emit_state()
             eventlet.sleep(1)
 
     def player_action(self, sid: int, data: int):
@@ -69,14 +71,95 @@ class GameRoom:
         end = self.table.single_move((data["action"], data["amount"]))
 
         if end == None:
+            print(f"User {sid} made an invalid action {data}")
             return
 
-        self._emit_state()
+        self.emit_state()
         eventlet.sleep(1)
 
         self._process_system_actions(end)
 
         return True
+    
+    # State related
+
+    def emit_state(self, new=False):
+        for sid, seat in self.sid_seat.items():
+            player = self.table.players[seat]
+            if not isinstance(player, Human):
+                continue
+            socketio.emit("game_update", self.get_specific_state(player, seat), to=sid)
+
+    def _get_cards(self, other_player, user_player):
+        if other_player.fold or other_player.inactive:
+            return []
+        if (
+            other_player == user_player
+            or self.table.r >= self.table.skip_round
+            or self.table.players_remaining > 1
+            and self.table.running == False
+        ):
+            return other_player.hole_cards
+        return ["card_back"] * 2
+
+    def _get_poss_actions(self, player):
+        return [
+            (
+                "Check"
+                if not self.table.running
+                or player.round_invested == self.table.last_bet
+                else "Call"
+            ),
+            "Bet" if not self.table.running or not self.table.last_bet else "Raise",
+        ]
+
+    #TODO put into local controller
+    def _get_profile_picture(self, i):
+        return ["nature", "bot", "calvin", "daniel_n", "elliot", "teddy"][i]
+
+    def _get_action(self, player):
+        action = player.action
+
+        if action == None:
+            return ""
+        if action == 1:
+            return "Fold"
+        if action == 2:
+            return "Call" if player.extra else "Check"
+        else:
+            word = (
+                "All In"
+                if player.chips == 0
+                else "Bet" if self.table.bet_count < 2 else "Raise"
+            )
+            return f"{word} {player.round_invested}"
+
+    def get_specific_state(self, user_player: Human, seat: int, new=False):
+        state = {
+            "players": [
+                {
+                    "chips": p.chips,
+                    "folded": p.fold,
+                    "hole_cards": self._get_cards(p, user_player),
+                    "action": self._get_action(p),
+                    "round_invested": p.round_invested,
+                    "seat": i,
+                    "position_name": p.position_name,
+                    "poss_actions": self._get_poss_actions(p),
+                    "profile_picture": self._get_profile_picture(i),
+                }
+                for i, p in enumerate(self.table.players)
+                if p is not None
+            ],
+            "community": self.table.community,
+            "pot": self.table.get_pot() if self.table.running else 0,
+            "running": self.table.running,
+            "round": self.table.r,
+            "user_i": seat,
+            "new_player": new,
+        }
+
+        return state
 
 
 class ServerManager:
@@ -88,13 +171,8 @@ class ServerManager:
         # sid to room_id
         self.sid_to_room: dict[int:int] = {}
 
-    # --- Helper Functions (Private Methods) ---
-    # These helpers now belong to the class and are used by get_state()
-
-    # --- Connection/Room Methods (Called by the Socket.IO handlers) ---
-
     def create_new_game(self) -> tuple[GameRoom | int]:
-        """Creates a new game table and adds it to the manager."""
+        """Creates a new game room"""
         room = GameRoom()
         room_id = str(id(room))
         self.rooms[room_id] = room
@@ -103,7 +181,7 @@ class ServerManager:
         return room, room_id
 
     def find_or_create_room(self) -> tuple[GameRoom | int]:
-        """Finds an available game room with an empty seat, or creates a new one."""
+        """Find an available game room with an empty seat or create a new one."""
         for room_id, game_room in self.rooms.items():
 
             if not game_room.full:
@@ -123,11 +201,6 @@ class ServerManager:
 
         print(f"Human player {player_sid} joined room {room_id}")
 
-        # # Send the initial state back to the whole room
-        # socketio.emit(
-        #     "game_update", self.get_state(game_room, seat_index), room=room_id
-        # )
-
     def handle_disconnect(self, sid):
         """Handles a client disconnecting."""
 
@@ -143,28 +216,19 @@ class ServerManager:
 
             print(f"Human player {sid} disconnected from room {room_id}.")
 
-            socketio.emit("game_update", room.get_state(0, 0), room=room_id)
+            # socketio.emit("game_update", room.get_state(0, 0), room=room_id)
 
     def handle_start_hand(self, sid):
         """Handles a client requesting to start a new hand."""
         if sid not in self.sid_to_room:
             return
 
-        mapping = self.sid_to_room[sid]
-        room_id = mapping["room"]
-        game_room = self.rooms.get(room_id)
-        if not game_room:
-            return
+        room_id = self.sid_to_room[sid]
+        game_room = self.rooms[room_id]
+
+        game_room.start_hand()
 
         print(f"Room {room_id}: Received request to start hand...")
-        if not game_room.running:
-            game_room.start_hand()
-            self.run_bot_moves(game_room)  # Run bots until human turn
-
-        # Broadcast the new state to everyone in the room
-        socketio.emit(
-            "game_update", self.get_state(game_room, mapping["seat"]), room=room_id
-        )
 
     def handle_player_action(self, sid: int, data: int):
         """Handles a human player performing an action (fold, bet, call, raise)."""
@@ -172,23 +236,20 @@ class ServerManager:
             return
 
         room_id = self.sid_to_room[sid]
-        
+
         game_room = self.rooms[room_id]
 
-        #could return the result
+        # could return the result
         game_room.player_action(sid, data)
 
+        print(f"Room {room_id}: Received action {data}")
 
-# --- App Setup ---
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret-donk-bet"
 socketio = SocketIO(app)
 
-# --- Instantiate the OO Manager ---
-# This single instance manages all the games
 manager = ServerManager()
-
-# --- Socket.IO Event Handlers (Routing requests to the Manager) ---
 
 
 @socketio.on("connect")
@@ -222,7 +283,6 @@ def handle_player_action(data):
     manager.handle_player_action(request.sid, data)
 
 
-# --- Run Server ---
 if __name__ == "__main__":
     print("Starting Flask-SocketIO server at http://localhost:5000")
     socketio.run(app, host="0.0.0.0", port=5000)

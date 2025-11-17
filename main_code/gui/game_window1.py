@@ -2,7 +2,7 @@ import pygame
 from gui.window_base import WindowBase
 from gui.buttons import Button, ImageButton, BetSlider
 from gui.player_view import PlayerView
-from gui.utility import centre_position
+from gui.utility import centre
 
 ROUND_END_EVENT = pygame.USEREVENT + 1
 
@@ -36,15 +36,15 @@ class GameWindow(WindowBase):
             ),
             "Bet": Button(
                 "Bet",
-                *centre_position(1575, 820, 150, 50),
+                *centre(1575, 820, 150, 50),
                 assets,
-                on_click=lambda: self._perform_action(3, self.possible_bet)
+                on_click=lambda: self._perform_action(3, self.possible_bet),
             ),
             "Deal": Button(
                 "Deal",
-                *centre_position(self.assets.base_resolution[0] // 2, 145, 150, 50),
+                *centre(self.assets.base_resolution[0] // 2, 145, 150, 50),
                 assets,
-                on_click=self._on_deal
+                on_click=self._on_deal,
             ),
             "Back": ImageButton(
                 "back_button",
@@ -90,7 +90,7 @@ class GameWindow(WindowBase):
         self.action_freeze = True
 
     def _on_deal(self):
-        #Backwards
+        # Backwards
         if self.state["running"]:
             return
 
@@ -122,7 +122,7 @@ class GameWindow(WindowBase):
             self._end_round()
 
     def _end_round(self):
-        #Backwards
+        # Backwards
         self.controller.end_round()
         self._sync_state()
         self.action_freeze = False
@@ -139,8 +139,18 @@ class GameWindow(WindowBase):
         self.screen.blit(table_img, pos)
 
     def _draw_community(self):
-        x = self.screen.get_width() / 2 - (5 / 2 * self.assets.sizes["card_w"] + 2 * self.assets.sizes["card_buffer"]) * self.card_zoom
-        y = self.screen.get_height() / 2 - 1 / 2 * self.assets.sizes["card_h"] * self.card_zoom
+        x = (
+            self.screen.get_width() / 2
+            - (
+                5 / 2 * self.assets.sizes["card_w"]
+                + 2 * self.assets.sizes["card_buffer"]
+            )
+            * self.card_zoom
+        )
+        y = (
+            self.screen.get_height() / 2
+            - 1 / 2 * self.assets.sizes["card_h"] * self.card_zoom
+        )
 
         for card in self.state["community"]:
             self.screen.blit(self.assets.get_card(card, self.card_zoom), (x, y))
@@ -149,14 +159,13 @@ class GameWindow(WindowBase):
                 + self.assets.sizes["card_buffer"]
             )
 
-
     def _draw_pot(self):
         pot_surf = self.assets.fonts["small"].render(
             str(self.state["pot"]), True, self.assets.colours["black"]
         )
         self.screen.blit(
             pot_surf,
-            centre_position(
+            centre(
                 self.assets.width // 2, 320, pot_surf.get_width(), pot_surf.get_height()
             )[0],
         )

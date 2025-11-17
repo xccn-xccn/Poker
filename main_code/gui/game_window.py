@@ -2,7 +2,7 @@ import pygame
 from gui.window_base import WindowBase
 from gui.buttons import Button, ImageButton, BetSlider
 from gui.player_view import PlayerView
-from gui.utility import centre_position
+from gui.utility import centre
 
 ROUND_END_EVENT = pygame.USEREVENT + 1
 
@@ -37,13 +37,13 @@ class GameWindow(WindowBase):
             ),
             "Bet": Button(
                 "Bet",
-                *centre_position(1575, 820, 150, 50),
+                *centre(1575, 820, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(3, self.possible_bet),
             ),
             "Deal": Button(
                 "Deal",
-                *centre_position(self.assets.base_resolution[0] // 2, 145, 150, 50),
+                *centre(self.assets.base_resolution[0] // 2, 145, 150, 50),
                 assets,
                 on_click=self._on_deal,
             ),
@@ -100,7 +100,6 @@ class GameWindow(WindowBase):
     def _on_zoom(self):
         self.card_zoom = {1.0: 1.5, 1.5: 2.5, 2.5: 1.0}[self.card_zoom]
         # self.controller.table.add_new_player(10000)
-
 
     def _on_slider_change(self, value):
         self.possible_bet = value
@@ -173,7 +172,7 @@ class GameWindow(WindowBase):
         )
         self.screen.blit(
             pot_surf,
-            centre_position(
+            centre(
                 self.assets.width // 2, 320, pot_surf.get_width(), pot_surf.get_height()
             )[0],
         )

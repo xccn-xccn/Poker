@@ -37,10 +37,13 @@ class Assets:
         self.rescale(self.current_resolution)
 
     
-    def rescale(self, new_size):
+    def rescale(self, new_size: tuple[int, int]):
         self.current_resolution = new_size
 
         self.width, self.height = new_size
+        self.centre = tuple(x // 2 for x in new_size)
+        self.centrex, self.centrey = self.centre
+
         bw, bh = self.base_resolution
         self.width_scale = Scale(self.width / bw)
         self.height_scale = Scale(self.height / bh)

@@ -20,16 +20,19 @@ class PokerApp:
         self.testing = testing
         self.set_menu_window()
 
-
     def set_initial_size(self):
-        scale = min(pygame.display.Info().current_w / BASE_RESOLUTION[0], pygame.display.Info().current_h / BASE_RESOLUTION[1]) * 0.8
+        scale = (
+            min(
+                pygame.display.Info().current_w / BASE_RESOLUTION[0],
+                pygame.display.Info().current_h / BASE_RESOLUTION[1],
+            )
+            * 0.8
+        )
 
-        width = scale * pygame.display.Info().current_w 
+        width = scale * pygame.display.Info().current_w
         height = scale * pygame.display.Info().current_h
 
         self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
-
-        # pygame.event.post(pygame.event.Event(pygame.VIDEORESIZE, {'size': (width, height), 'w': width, 'h': height}))
 
     def set_menu_window(self):
         self.current_window = MenuWindow(
@@ -38,12 +41,16 @@ class PokerApp:
         )
 
     def start_game(self, online=False, host=False, host_ip=None):
-        self.controller = OnlineController(is_host=host, host_ip=host_ip) if online else GameController(testing=self.testing)
+        self.controller = (
+            OnlineController(is_host=host, host_ip=host_ip)
+            if online
+            else GameController(testing=self.testing)
+        )
         self.current_window = GameWindow(
             screen=self.screen,
             assets=self.assets,
             controller=self.controller,
-            testing=self.testing
+            testing=self.testing,
         )
 
     def quit_game(self):
@@ -61,6 +68,8 @@ class PokerApp:
         if new_window:
             if new_window == "Offline Poker":
                 self.start_game()
+            elif new_window == "Online Poker":
+                self.start_game(online=True)
             elif new_window == "Menu":
                 self.set_menu_window()
 
@@ -68,7 +77,7 @@ class PokerApp:
         running = True
         while running:
             self.clock.tick(FPS)
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -89,5 +98,5 @@ class PokerApp:
 
 if __name__ == "__main__":
     arg = sys.argv
-    app = PokerApp(testing=len(arg) > 1 and arg[1] == 't')
+    app = PokerApp(testing=len(arg) > 1 and arg[1] == "t")
     app.run()
