@@ -69,7 +69,7 @@ class PokerApp:
             if new_window == "Offline Poker":
                 self.start_game()
             elif new_window == "Online Poker":
-                self.start_game(online=True)
+                self.start_game(online=True) # Add host here
             elif new_window == "Menu":
                 self.set_menu_window()
 
