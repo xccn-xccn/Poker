@@ -15,7 +15,11 @@ class Assets:
     def __init__(self, screen, base_resolution=(1700, 900)):
         self.screen = screen
         self.base_resolution = base_resolution
+        self.base_centre = (x//2 for x in base_resolution)
+        self.base_centrex, self.base_centrey = self.base_centre
+
         self.current_resolution = screen.get_size()
+
         self.root = os.path.join(os.path.dirname(__file__), "assets")
 
         self.colours = {
