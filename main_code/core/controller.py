@@ -11,6 +11,8 @@ from core.poker import Table, Human, Bot, start
 import socketio
 import threading
 
+#TODO remove uneeded default state?
+#Slider should reset on succesful actions
 
 class GameController:
     def __init__(self, testing: int = False):

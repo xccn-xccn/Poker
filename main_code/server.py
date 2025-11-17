@@ -6,7 +6,9 @@ from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from core.poker import Table, Human, Bot, start
 
-
+#TODO
+#Optimize making state
+#Add removing players
 class GameRoom:
     """Represents a single poker table"""
 
@@ -246,7 +248,7 @@ class ServerManager:
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "secret-donk-bet"
+app.config["SECRET_KEY"] = "secret-donk-bet" #TODO
 socketio = SocketIO(app)
 
 manager = ServerManager()
