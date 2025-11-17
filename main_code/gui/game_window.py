@@ -76,8 +76,8 @@ class GameWindow(WindowBase):
         end_valid = self.controller.perform_action(action, amount)
 
         # TODO deal with invalid moves if end_valid = None
-        if end_valid:
-            self._pre_end_round()
+        # if end_valid:
+        #     self._pre_end_round()
 
         if end_valid != None:
             self._after_action()
@@ -86,9 +86,9 @@ class GameWindow(WindowBase):
         self.possible_bet = 0
         self.widgets["Bet_slider"].set_value(0)
 
-    def _pre_end_round(self):
-        pygame.time.set_timer(ROUND_END_EVENT, 500 if not self.testing else 1, loops=1)
-        self.action_freeze = True
+    # def _pre_end_round(self):
+    #     pygame.time.set_timer(ROUND_END_EVENT, 500 if not self.testing else 1, loops=1)
+    #     self.action_freeze = True
 
     def _on_deal(self):
         # Backwards
@@ -105,14 +105,14 @@ class GameWindow(WindowBase):
         self.possible_bet = value
 
     def update(self):
-        if self.action_freeze:
-            # shouldn't need to call self._sync_state but check
-            return
+        # if self.action_freeze:
+        #     # shouldn't need to call self._sync_state but check
+        #     return
 
-        end_round = self.controller.update()
+        # end_round = self.controller.update()
 
-        if end_round:
-            self._pre_end_round()
+        # if end_round:
+        #     self._pre_end_round()
 
         self._sync_state()
         self._update_buttons()

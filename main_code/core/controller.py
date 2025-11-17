@@ -11,52 +11,92 @@ from core.poker import Table, Human, Bot, start
 import socketio
 import threading
 
-#TODO remove uneeded default state?
-#Slider should reset on succesful actions
+# TODO remove uneeded default state?
+# Slider should reset on succesful actions
 
-class GameController:
+
+class OfflineController:
     def __init__(self, testing: int = False):
         self.create_table()
         self.testing = testing
+        
+        self.set_state()
 
     def create_table(self):
         self.table = start() if callable(start) else Table()
 
     def start_hand(self):
         self.table.start_hand()
+        self._process_system_actions(end=False)
 
     def perform_action(self, action: int, amount: int = 0):
         """True/False if round end None if move was invalid"""
         if not self.table.running or not isinstance(self.table.current_player, Human):
             return
+        if not self.table.can_move():
+            raise Exception(
+                "Current player cannot make a move but this means their move should be skipped"
+            )
         if self.table.can_move():
-            end = self.table.single_move((action, amount))
-        else:
-            end = self.table.end_move()
+            end_valid = self.table.single_move((action, amount))
 
-        return end
-
-    def end_round(self):
-        self.table.end_round()
-
-    def update(self):
-        """Makes a bot move or skips the next players turn when appropriate"""
-        if not self.table.running:
+        if end_valid == None:
+            print(f"User made an invalid action {action, amount}")
             return
+
+        self.set_state()
+        #SLEEP
+
+        self._process_system_actions(end_valid)
+        return end_valid
+
+
+    # def update(self):
+    #     """Makes a bot move or skips the next players turn when appropriate"""
+    #     if not self.table.running:
+    #         return
+    #     if self.table.can_move():
+    #         player = self.table.current_player
+    #         if isinstance(player, Bot):
+    #             move = player.get_action(self.table)
+    #             end = self.table.single_move(move)
+    #         else:
+    #             if not self.testing:
+    #                 return
+    #             end = self.table.single_move((1, 0))
+    #     else:
+    #         end = self.table.end_move()
+
+    #     return end
+
+    def _single_auto_action(self):
         if self.table.can_move():
             player = self.table.current_player
             if isinstance(player, Bot):
                 move = player.get_action(self.table)
-                end = self.table.single_move(move)
-            else:
-                if not self.testing:
-                    return
-                end = self.table.single_move((1, 0))
+                return self.table.single_move(move)
+            elif self.testing:
+                return self.table.single_move((1, 0))
         else:
-            end = self.table.end_move()
+            return self.table.end_move()
 
-        return end
+    def _process_system_actions(self, end=False):
 
+        cont = True
+        while self.table.running and cont:
+            if end:
+                self.table.end_round()
+                end = False
+            else:
+                end = self._single_auto_action()
+
+            if end == None:
+                cont = False
+
+            self.set_state()
+            #SLEEP
+
+    #State related methods
     def _get_cards(self, player):
         if player.fold or player.inactive:
             return []
@@ -100,8 +140,8 @@ class GameController:
             )
             return f"{word} {player.round_invested}"
 
-    def get_state(self):
-        state = {
+    def set_state(self):
+        self.state = {
             "players": [
                 {
                     "chips": p.chips,
@@ -127,8 +167,8 @@ class GameController:
             "new_player": False,
         }
 
-        return state
-
+    def get_state(self):
+        return self.state
 
 
 class OnlineController:
@@ -144,7 +184,8 @@ class OnlineController:
 
         # This will hold the game state sent by the server
         self.state = {
-            "players": [{
+            "players": [
+                {
                     "chips": 0,
                     "folded": True,
                     "hole_cards": [],
@@ -154,7 +195,8 @@ class OnlineController:
                     "position_name": "",
                     "poss_actions": ["Check", "Bet"],
                     "profile_picture": "nature",
-                }],
+                }
+            ],
             "community": [],
             "pot": 0,
             "running": False,

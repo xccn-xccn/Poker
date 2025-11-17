@@ -3,7 +3,7 @@ import pygame
 from gui.assets import Assets
 from gui.menu_window import MenuWindow
 from gui.game_window import GameWindow
-from core.controller import GameController, OnlineController
+from core.controller import OfflineController, OnlineController
 
 BASE_RESOLUTION = (1700, 900)
 FPS = 60
@@ -44,7 +44,7 @@ class PokerApp:
         self.controller = (
             OnlineController(is_host=host, host_ip=host_ip)
             if online
-            else GameController(testing=self.testing)
+            else OfflineController(testing=self.testing)
         )
         self.current_window = GameWindow(
             screen=self.screen,
@@ -69,7 +69,7 @@ class PokerApp:
             if new_window == "Offline Poker":
                 self.start_game()
             elif new_window == "Online Poker":
-                self.start_game(online=True) # Add host here
+                self.start_game(online=True)  # Add host here
             elif new_window == "Menu":
                 self.set_menu_window()
 

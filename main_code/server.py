@@ -6,9 +6,10 @@ from flask import Flask, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from core.poker import Table, Human, Bot, start
 
-#TODO
-#Optimize making state
-#Add removing players
+
+# TODO
+# Optimize making state
+# Add removing players
 class GameRoom:
     """Represents a single poker table"""
 
@@ -68,22 +69,24 @@ class GameRoom:
             return
 
         if not self.table.can_move():
-            raise Exception()
+            raise Exception(
+                "Current player cannot make a move but this means their move should be skipped"
+            )
 
-        end = self.table.single_move((data["action"], data["amount"]))
+        end_valid = self.table.single_move((data["action"], data["amount"]))
 
-        if end == None:
+        if end_valid == None:
             print(f"User {sid} made an invalid action {data}")
             return
 
         self.emit_state()
         eventlet.sleep(1)
 
-        self._process_system_actions(end)
+        self._process_system_actions(end_valid)
 
         return True
-    
-    # State related
+
+    # State related methods
 
     def emit_state(self, new=False):
         for sid, seat in self.sid_seat.items():
@@ -115,7 +118,7 @@ class GameRoom:
             "Bet" if not self.table.running or not self.table.last_bet else "Raise",
         ]
 
-    #TODO put into local controller
+    # TODO put into local controller
     def _get_profile_picture(self, i):
         return ["nature", "bot", "calvin", "daniel_n", "elliot", "teddy"][i]
 
@@ -248,7 +251,7 @@ class ServerManager:
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "secret-donk-bet" #TODO
+app.config["SECRET_KEY"] = "secret-donk-bet"  # TODO
 socketio = SocketIO(app)
 
 manager = ServerManager()
