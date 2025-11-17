@@ -19,7 +19,7 @@ class OfflineController:
     def __init__(self, testing: int = False):
         self.create_table()
         self.testing = testing
-        
+
         self.set_state()
 
     def create_table(self):
@@ -45,29 +45,10 @@ class OfflineController:
             return
 
         self.set_state()
-        #SLEEP
+        # SLEEP
 
         self._process_system_actions(end_valid)
         return end_valid
-
-
-    # def update(self):
-    #     """Makes a bot move or skips the next players turn when appropriate"""
-    #     if not self.table.running:
-    #         return
-    #     if self.table.can_move():
-    #         player = self.table.current_player
-    #         if isinstance(player, Bot):
-    #             move = player.get_action(self.table)
-    #             end = self.table.single_move(move)
-    #         else:
-    #             if not self.testing:
-    #                 return
-    #             end = self.table.single_move((1, 0))
-    #     else:
-    #         end = self.table.end_move()
-
-    #     return end
 
     def _single_auto_action(self):
         if self.table.can_move():
@@ -94,9 +75,9 @@ class OfflineController:
                 cont = False
 
             self.set_state()
-            #SLEEP
+            # SLEEP
 
-    #State related methods
+    # State related methods
     def _get_cards(self, player):
         if player.fold or player.inactive:
             return []
@@ -149,7 +130,7 @@ class OfflineController:
                     "hole_cards": self._get_cards(p),
                     "action": self._get_action(p),
                     "round_invested": p.round_invested,
-                    "seat": i,  # TODO poss change
+                    "seat": i,
                     "position_name": p.position_name,
                     "poss_actions": self._get_poss_actions(p),
                     "profile_picture": self._get_profile_picture(i),
@@ -183,6 +164,7 @@ class OnlineController:
         self.server_url = f'http://{host_ip or "localhost"}:5000'
 
         # This will hold the game state sent by the server
+        # TODO check if needed
         self.state = {
             "players": [
                 {
@@ -214,7 +196,7 @@ class OnlineController:
         @self.sio.on("connect")
         def on_connect():
             print(f"Connected to server at {self.server_url}")
-            # NEW: After connecting, we must ask to join a game
+
             print("Sending 'join_game' request...")
             self.sio.emit("join_game", {"chips": 2000})
 
@@ -224,12 +206,7 @@ class OnlineController:
 
         @self.sio.on("game_update")
         def on_game_update(data):
-            """
-            This is the most important function.
-            The server sent a new game state. We just save it.
-            The GUI will ask for it in its next update().
-            """
-            # print("Received game update")
+            """Saves the game state sent by the server"""
             with self.lock:
                 self.state = data
 
@@ -241,17 +218,8 @@ class OnlineController:
             self.sio.connect(self.server_url)
         except socketio.exceptions.ConnectionError as e:
             print(f"Failed to connect to server: {e}")
-            # The GUI will get an empty state dict and show a blank table
-            self.state = {
-                "players": [],
-                "community": [],
-                "pot": 0,
-                "running": False,
-                "user_i": 0,
-            }
 
     def start_hand(self):
-        """Called when 'Deal' is clicked."""
         print("Requesting new hand...")
         self.sio.emit("request_start_hand", {})
 
@@ -260,31 +228,7 @@ class OnlineController:
         print(f"Sending action {action} ({amount}) to server...")
         self.sio.emit("request_action", {"action": action, "amount": amount})
 
-        # We return None because the server's response will
-        # come via 'game_update' later. The GUI is built
-        # to handle this (it won't freeze).
-        return None
-
-    def end_round(self):
-        """
-        The client-side timer calls this. We don't need to
-        tell the server anything, the server already knows
-        the round ended and is just waiting for 'start_hand'.
-        """
-        print("Client-side round end timer finished.")
-
-    def update(self):
-        """
-        Bots are run on the server, so the client's
-        update() method does nothing.
-        """
-        return None
-
     def get_state(self):
-        """
-        Called 60x/sec by the GUI.
-        We just return the last state we received from the server.
-        """
         with self.lock:
             return self.state
 

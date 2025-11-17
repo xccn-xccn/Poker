@@ -553,7 +553,6 @@ class Table:
     def remove_player(self, i: int):
         pass
 
-
     def can_move(self):
         """Returns if the current player can make a move"""
         return (
@@ -575,7 +574,7 @@ class Table:
 
     def single_move(self, action_info):
         """Returns None if the move was invalid else True if the round ends else False.
-        
+
         Calls and returns Table.end_move()"""
         print("player remaining", self.players_remaining)
 
