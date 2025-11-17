@@ -109,9 +109,6 @@ class GameWindow(WindowBase):
     def handle_event(self, event):
         super().handle_event(event)
 
-        if event.type == ROUND_END_EVENT:
-            self._end_round()
-
     def _update_buttons(self):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
