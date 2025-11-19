@@ -58,7 +58,8 @@ class PlayerView:
             - self.assets.sizes["card_w"] * card_zoom
             - self.assets.sizes["card_buffer"] // 2
         )
-        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"] * card_zoom
+        y = self.profile_rect.bottomright[1] - \
+            self.assets.sizes["card_h"] * card_zoom
         for card in hole_cards:
             surface.blit(self.assets.get_card(card, card_zoom), (x, y))
             x += (
@@ -66,9 +67,17 @@ class PlayerView:
                 + self.assets.sizes["card_buffer"]
             )
 
+    def _draw_button(self, surface):  # TODO
+        btn = self.assets.images["dealer_button"]
+        surface.blit(btn, self._centered_xcoords(btn.get_height(), 50))
+
     def _draw_centered(self, surface, text_surf, height):
+        surface.blit(text_surf, self._centered_xcoords(
+            text_surf.get_width(), height))
+
+    def _centered_xcoords(self, surf_width: int, height: int):
         px, py = self.profile_rect.midtop
-        surface.blit(text_surf, (px - text_surf.get_width() // 2, py + height))
+        return px - surf_width // 2, py + height
 
     def draw(self, surface, card_zoom=1.0):
         px, py = self.profile_rect.topleft
@@ -77,11 +86,16 @@ class PlayerView:
         chips = self.state["chips"]
         action = self.state["action"]
         hole = self.state["hole_cards"]
-        chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
+        chips_surf = self.assets.fonts["small"].render(
+            str(chips), True, (255, 215, 0))
 
         surface.blit(chips_surf, (px, py + self.profile_rect.height + 4))
 
         self._draw_hole(hole, surface, card_zoom)
+
+        if self.state["position_name"] == "Button":
+            self._draw_button(surface)
+
         if action:
             act_surf = self.assets.fonts["small"].render(
                 str(action), True, (255, 50, 50)

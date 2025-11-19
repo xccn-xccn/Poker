@@ -44,7 +44,7 @@ class PokerPlayer(ABC):
         self.inactive = False
         self.action = None
         self.hole_cards = None
-        self.position_name = None
+        self.position_name = ""
         self.fold = True
 
         while self.id == 0 or self.id in table.ids:
@@ -109,6 +109,10 @@ class PokerPlayer(ABC):
         self.extra = 0
         self.only_call = False
 
+    def set_inactive(self):
+        self.position_name = ""
+        self.inactive = True
+        
     def move_action(self, roundTotal):
         if self.action == 1:
             # self.action_text is only for debugging
@@ -756,7 +760,7 @@ class Table:
                 if p.inactive:
                     raise Exception(self.players, [x.chips for x in self.players])
             elif not p.inactive:
-                p.inactive = True
+                p.set_inactive()
                 # p.fold = True
                 if p.position_i == 0:
                     button_bust = True

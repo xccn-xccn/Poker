@@ -35,12 +35,11 @@ class Assets:
         self.images = {}
         self.sizes = {}
 
-        #Cards are loaded this amount * larger so they can be scaled down for greater detail
+        # Cards are loaded this amount * larger so they can be scaled down for greater detail
         self.card_overscale = 6
 
         self.rescale(self.current_resolution)
 
-    
     def rescale(self, new_size: tuple[int, int]):
         self.current_resolution = new_size
 
@@ -78,8 +77,9 @@ class Assets:
         self.sizes["card_w"] = 51 * self.width_scale
         self.sizes["card_h"] = 73 * self.height_scale
         self.sizes["card_buffer"] = 2 * self.height_scale
-        
-        self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
+
+        self.sizes["profile"] = (
+            125 * self.min_size_scale, 125 * self.min_size_scale)
 
         tx = (self.current_resolution[0] - table_w) // 2
         ty = (self.current_resolution[1] - table_h) // 2
@@ -149,7 +149,8 @@ class Assets:
             if fname.endswith(".png") or fname.endswith(".jpg"):
                 name = os.path.splitext(fname)[0]
                 path = os.path.join(buttons_dir, fname)
-                self.images["buttons"][name] = pygame.image.load(path).convert_alpha()
+                self.images["buttons"][name] = pygame.image.load(
+                    path).convert_alpha()
 
     def _preload_misc_images(self, misc_dir):
         table = pygame.image.load(
@@ -164,6 +165,15 @@ class Assets:
         ).convert_alpha()
         self.images["black_background1"] = pygame.transform.smoothscale(
             black_background1, self.current_resolution
+        )
+
+        dealer_button = pygame.image.load(
+            os.path.join(misc_dir, "dealer_button.png")
+        ).convert_alpha()
+
+        self.images["dealer_button"] = pygame.transform.smoothscale(
+            dealer_button,
+            (30 * self.min_size_scale, 30 * self.min_size_scale),
         )
 
         # TODO add the rest
@@ -184,9 +194,11 @@ class Assets:
             "K": "king",
             "A": "ace",
         }
-        suit_map = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
+        suit_map = {"C": "clubs", "D": "diamonds",
+                    "H": "hearts", "S": "spades"}
         self.images["cards"] = {}
-        cw, ch = self.sizes["card_w"] * self.card_overscale, self.sizes["card_h"] * self.card_overscale
+        cw, ch = self.sizes["card_w"] * \
+            self.card_overscale, self.sizes["card_h"] * self.card_overscale
         for val, vname in val_map.items():
             for sk, sname in suit_map.items():
                 name = f"{vname}_of_{sname}.png"
@@ -197,22 +209,22 @@ class Assets:
                         img, (cw, ch)
                     )
 
-        cb = pygame.image.load(os.path.join(cards_dir, "card_back.png")).convert_alpha()
+        cb = pygame.image.load(os.path.join(
+            cards_dir, "card_back.png")).convert_alpha()
         self.images["cards"]["card_back"] = pygame.transform.smoothscale(
             cb, (cw, ch)
         )
 
-
     def get_card(self, card_name, card_zoom=1):
         return pygame.transform.smoothscale_by(self.images["cards"][card_name], card_zoom/self.card_overscale)
-    
 
     def _preload_chip_images(self, chips_dir):
         self.images["chips"] = {}
         cw, ch = self.sizes["chip_w"], self.sizes["chip_h"]
         for fname in os.listdir(chips_dir):
             name = os.path.splitext(fname)[0]
-            img = pygame.image.load(os.path.join(chips_dir, fname)).convert_alpha()
+            img = pygame.image.load(os.path.join(
+                chips_dir, fname)).convert_alpha()
             self.images["chips"][name] = pygame.transform.smoothscale(
                 img, (cw, ch)
             )
