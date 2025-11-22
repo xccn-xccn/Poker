@@ -85,6 +85,8 @@ class Assets:
         ty = (self.current_resolution[1] - table_h) // 2
         self.sizes["table_pos"] = (tx, ty)
 
+        print(self.sizes, self.width_scale, self.height_scale, self.min_size_scale)
+
         tw, th = table_w, table_h
         X1 = tx + 700 / 1000 * tw
         Y1 = ty + th

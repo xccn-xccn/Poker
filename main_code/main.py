@@ -5,7 +5,8 @@ from gui.menu_window import MenuWindow
 from gui.game_window import GameWindow
 from core.controller import OfflineController, OnlineController
 
-BASE_RESOLUTION = (1700, 900)
+# BASE_RESOLUTION = (1700, 900)
+BASE_RESOLUTION = (1600, 900)
 FPS = 60
 
 
@@ -26,11 +27,11 @@ class PokerApp:
                 pygame.display.Info().current_w / BASE_RESOLUTION[0],
                 pygame.display.Info().current_h / BASE_RESOLUTION[1],
             )
-            * 0.8
+            * 0.9
         )
 
-        width = scale * pygame.display.Info().current_w
-        height = scale * pygame.display.Info().current_h
+        width = scale * BASE_RESOLUTION[0]
+        height = scale * BASE_RESOLUTION[1]
 
         self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
 
