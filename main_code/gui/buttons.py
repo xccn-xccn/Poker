@@ -143,7 +143,7 @@ class BetSlider(Button):
 
     def get_value(self):
         return self.value
-    
+
     def _update_handle_rect(self):
         h = self.rect.height
         handle_x = self._value_to_x()
@@ -152,7 +152,8 @@ class BetSlider(Button):
     def _value_to_x(self):
         if self.max_value == self.min_value:
             return self.rect.left
-        ratio = (self.value - self.min_value) / (self.max_value - self.min_value)
+        ratio = (self.value - self.min_value) / \
+            (self.max_value - self.min_value)
         return int(self.rect.left + ratio * self.rect.width)
 
     def _x_to_value(self, x):
@@ -170,7 +171,6 @@ class BetSlider(Button):
         self._update_handle_rect()
 
     def handle_event(self, event):
-        super().handle_event(event)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.handle_rect.collidepoint(event.pos) or self.rect.collidepoint(
                 event.pos
@@ -208,7 +208,8 @@ class BetSlider(Button):
         )
         fill_w = int(inner.width * fill_ratio)
         if fill_w > 0:
-            fill_rect = pygame.Rect(inner.left, inner.top, fill_w, inner.height)
+            fill_rect = pygame.Rect(
+                inner.left, inner.top, fill_w, inner.height)
             pygame.draw.rect(
                 surface,
                 self.assets.colours["button"],
@@ -228,3 +229,75 @@ class BetSlider(Button):
     def resize(self):
         super().resize()
         self._update_handle_rect()
+
+
+class VerticalSlider(BetSlider):
+    def _update_handle_rect(self):
+        w = self.rect.width
+        handle_y = self._value_to_y()
+        self.handle_rect = pygame.Rect(self.rect.left, handle_y - w // 2, w, w)
+
+    def _value_to_y(self):
+        if self.max_value == self.min_value:
+            return self.rect.bottom
+        ratio = (self.value - self.min_value) / \
+            (self.max_value - self.min_value)
+        # invert so min is at bottom, max at top
+        return int(self.rect.bottom - ratio * self.rect.height)
+
+    def _y_to_value(self, y):
+        ratio = (self.rect.bottom - y) / max(1, self.rect.height)
+        raw = self.min_value + ratio * (self.max_value - self.min_value)
+        stepped = int(round(raw / self.step) * self.step)
+        return max(self.min_value, min(self.max_value, stepped))
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.handle_rect.collidepoint(event.pos) or self.rect.collidepoint(event.pos):
+                self.dragging = True
+                self.value = self._y_to_value(event.pos[1])
+                self._update_handle_rect()
+                if self.on_change:
+                    self.on_change(self.value)
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+        elif event.type == pygame.MOUSEMOTION and self.dragging:
+            self.value = self._y_to_value(event.pos[1])
+            self._update_handle_rect()
+            if self.on_change:
+                self.on_change(self.value)
+
+    def draw(self, surface):
+        pygame.draw.rect(
+            surface,
+            self.assets.colours["outline"],
+            self.rect,
+            border_radius=int(6 * self.assets.min_size_scale),
+        )
+        inner = self.rect.inflate(-8, -4)
+        pygame.draw.rect(
+            surface,
+            (50, 50, 50),
+            inner,
+            border_radius=int(6 * self.assets.min_size_scale),
+        )
+
+        fill_ratio = (self.value - self.min_value) / \
+            max(1, (self.max_value - self.min_value))
+        fill_h = int(inner.height * fill_ratio)
+        if fill_h > 0:
+            fill_rect = pygame.Rect(
+                inner.left, inner.bottom - fill_h, inner.width, fill_h)
+            pygame.draw.rect(
+                surface,
+                self.assets.colours["button"],
+                fill_rect,
+                border_radius=int(6 * self.assets.min_size_scale),
+            )
+
+        pygame.draw.ellipse(surface, (220, 220, 220), self.handle_rect)
+
+        txt = self.assets.fonts["small"].render(
+            str(self.value), True, self.assets.colours["white"])
+        surface.blit(txt, (self.rect.centerx - txt.get_width() //
+                     2, self.rect.top - txt.get_height() - 5))

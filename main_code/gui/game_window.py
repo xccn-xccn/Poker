@@ -1,6 +1,6 @@
 import pygame
 from gui.window_base import WindowBase
-from gui.buttons import Button, ImageButton, BetSlider
+from gui.buttons import Button, ImageButton, BetSlider, VerticalSlider
 from gui.player_view import PlayerView
 from gui.utility import centre
 
@@ -57,11 +57,20 @@ class GameWindow(WindowBase):
             "Zoom": ImageButton(
                 "zoom_in", (1600, 20), (70, 70), assets, on_click=self._on_zoom
             ),
-            "Bet_slider": BetSlider(
-                pos=(400, 760),
-                size=(700, 40),
-                assets=assets,
-                min_value=0,
+            # "Bet_slider": BetSlider(
+            #     pos=(400, 760),
+            #     size=(700, 40),
+            #     assets=assets,
+            #     min_value=0,
+            #     max_value=1000,
+            #     step=10,
+            #     on_change=self._on_slider_change,
+            # ),
+            "Bet_slider": VerticalSlider(
+                (1550, 150),
+                (75, 600),
+                assets,
+                0,
                 max_value=1000,
                 step=10,
                 on_change=self._on_slider_change,
@@ -137,7 +146,8 @@ class GameWindow(WindowBase):
         )
 
         for card in self.state["community"]:
-            self.screen.blit(self.assets.get_card(card, self.card_zoom), (x, y))
+            self.screen.blit(self.assets.get_card(
+                card, self.card_zoom), (x, y))
             x += (
                 self.assets.sizes["card_w"] * self.card_zoom
                 + self.assets.sizes["card_buffer"]
