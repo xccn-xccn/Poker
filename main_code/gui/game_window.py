@@ -37,7 +37,7 @@ class GameWindow(WindowBase):
             ),
             "Bet": Button(
                 "Bet",
-                *centre(1575, 820, 150, 50),
+                *centre(self.assets.base_resolution[0]-155, 820, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(3, self.possible_bet),
             ),
@@ -55,7 +55,7 @@ class GameWindow(WindowBase):
                 on_click=lambda: self._set_window("Menu"),
             ),
             "Zoom": ImageButton(
-                "zoom_in", (1600, 20), (70, 70), assets, on_click=self._on_zoom
+                "zoom_in", (self.assets.base_resolution[0]-75, 20), (70, 70), assets, on_click=self._on_zoom
             ),
             # "Bet_slider": BetSlider(
             #     pos=(400, 760),
@@ -67,7 +67,7 @@ class GameWindow(WindowBase):
             #     on_change=self._on_slider_change,
             # ),
             "Bet_slider": VerticalSlider(
-                (1550, 150),
+                (self.assets.base_resolution[0]-80, 150),
                 (75, 600),
                 assets,
                 0,

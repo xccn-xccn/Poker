@@ -12,7 +12,7 @@ class Scale(float):
 
 
 class Assets:
-    def __init__(self, screen, base_resolution=(1700, 900)):
+    def __init__(self, screen, base_resolution=(1600, 900)):
         self.screen = screen
         self.base_resolution = base_resolution
         self.base_centre = (x//2 for x in base_resolution)

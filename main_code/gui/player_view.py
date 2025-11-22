@@ -58,8 +58,7 @@ class PlayerView:
             - self.assets.sizes["card_w"] * card_zoom
             - self.assets.sizes["card_buffer"] // 2
         )
-        y = self.profile_rect.bottomright[1] - \
-            self.assets.sizes["card_h"] * card_zoom
+        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"] * card_zoom
         for card in hole_cards:
             surface.blit(self.assets.get_card(card, card_zoom), (x, y))
             x += (
@@ -72,8 +71,7 @@ class PlayerView:
         surface.blit(btn, self._centered_xcoords(btn.get_height(), 50))
 
     def _draw_centered(self, surface, text_surf, height):
-        surface.blit(text_surf, self._centered_xcoords(
-            text_surf.get_width(), height))
+        surface.blit(text_surf, self._centered_xcoords(text_surf.get_width(), height))
 
     def _centered_xcoords(self, surf_width: int, height: int):
         px, py = self.profile_rect.midtop
@@ -86,8 +84,7 @@ class PlayerView:
         chips = self.state["chips"]
         action = self.state["action"]
         hole = self.state["hole_cards"]
-        chips_surf = self.assets.fonts["small"].render(
-            str(chips), True, (255, 215, 0))
+        chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
 
         surface.blit(chips_surf, (px, py + self.profile_rect.height + 4))
 
