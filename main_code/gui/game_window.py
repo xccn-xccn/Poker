@@ -22,22 +22,24 @@ class GameWindow(WindowBase):
 
         self.widgets = {
             "Fold": Button(
-                "Fold",
-                (100, 820),
-                (150, 50),
+                "Fold",                
+                *centre(1250, 750, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(1, 0),
+                base_colour=self.assets.colours["red"],
+                hover_colour=self.assets.colours["red2"],
             ),
             "Check": Button(
                 "Check",
-                (300, 820),
-                (150, 50),
+                *centre(1250, 820, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(2, 0),
+                base_colour=self.assets.colours["grey"],
+                hover_colour=self.assets.colours["grey2"],
             ),
             "Bet": Button(
                 "Bet",
-                *centre(self.assets.base_resolution[0]-155, 820, 150, 50),
+                *centre(1510, 820, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(3, self.possible_bet),
             ),
@@ -55,7 +57,7 @@ class GameWindow(WindowBase):
                 on_click=lambda: self._set_window("Menu"),
             ),
             "Zoom": ImageButton(
-                "zoom_in", (self.assets.base_resolution[0]-75, 20), (70, 70), assets, on_click=self._on_zoom
+                "zoom_in", (20, 90+20), (70, 70), assets, on_click=self._on_zoom
             ),
             # "Bet_slider": BetSlider(
             #     pos=(400, 760),
@@ -67,8 +69,8 @@ class GameWindow(WindowBase):
             #     on_change=self._on_slider_change,
             # ),
             "Bet_slider": VerticalSlider(
-                (self.assets.base_resolution[0]-80, 150),
-                (75, 600),
+                (self.assets.base_resolution[0]-160, 20),
+                (140, 675),
                 assets,
                 0,
                 max_value=1000,
@@ -102,7 +104,7 @@ class GameWindow(WindowBase):
         self.controller.start_hand()
 
     def _on_zoom(self):
-        self.card_zoom = {1.0: 1.5, 1.5: 2.5, 2.5: 1.0}[self.card_zoom]
+        self.card_zoom = {1.0: 1.5, 1.5: 2, 2: 1.0}[self.card_zoom]
         # self.controller.table.add_new_player(10000)
 
     def _on_slider_change(self, value):
