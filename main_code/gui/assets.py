@@ -96,24 +96,37 @@ class Assets:
         p_buff = 40 * self.min_size_scale
 
         dx = 1 / 5 * table_w
-        dy = (table_h + self.sizes["profile"][1]) // 2 + p_buff
+        pdy = (table_h + self.sizes["profile"][1]) // 2 + p_buff
 
-        X1 = self.centrex + dx
-        Y1 = self.centrey + dy
-        X2 = self.centrex - dx
-        Y2 = self.centrey - dy
-        X3 = tx - p_buff - self.sizes["profile"][0] // 2
-        Y3 = self.current_resolution[1] / 2
-        X4 = self.current_resolution[0] - X3
+        px1 = self.centrex + dx
+        py1 = self.centrey + pdy
+        px2 = self.centrex - dx
+        py2 = self.centrey - pdy
+        px3 = tx - p_buff - self.sizes["profile"][0] // 2
+        py3 = self.current_resolution[1] / 2
+        px4 = self.current_resolution[0] - px3
         self.player_coords = [
-            (X1, Y1),
-            (X2, Y1),
-            (X3, Y3),
-            (X2, Y2),
-            (X1, Y2),
-            (X4, Y3),
+            (px1, py1),
+            (px2, py1),
+            (px3, py3),
+            (px2, py2),
+            (px1, py2),
+            (px4, py3),
         ]
 
+        #TODO
+        # bdy = pdy - 
+        bx_buff = 20 * self.width_scale 
+        by_buff = 20 * self.height_scale
+
+        # by1 = self.centrey + bdy 
+        # by2 = self.current_resolution[1] - by1
+        self.button_coords = [
+            (px1 )
+        ]
+
+    # def _set_dealer_coords(self):
+        
     def _load_fonts(self):
         font_path = os.path.join(self.root, "misc", "JqkasWild-w1YD6.ttf")
         base_size = max(12, int(40 * self.width_scale))
