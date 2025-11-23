@@ -295,9 +295,9 @@ class VerticalSlider(BetSlider):
                 border_radius=int(6 * self.assets.min_size_scale),
             )
 
-        pygame.draw.ellipse(surface, (220, 220, 220), self.handle_rect)
+        # pygame.draw.ellipse(surface, (220, 220, 220), self.handle_rect)
 
         txt = self.assets.fonts["small"].render(
             str(self.value), True, self.assets.colours["white"])
         surface.blit(txt, (self.rect.centerx - txt.get_width() //
-                     2, self.rect.top - txt.get_height() - 5))
+                     2, self.rect.bottom + 5 * self.assets.height_scale))
