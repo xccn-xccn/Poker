@@ -34,6 +34,7 @@ class PokerApp:
         height = scale * BASE_RESOLUTION[1]
 
         self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+        # self.screen = pygame.display.set_mode(BASE_RESOLUTION, pygame.RESIZABLE)
 
     def set_menu_window(self):
         self.current_window = MenuWindow(
