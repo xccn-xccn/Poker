@@ -86,8 +86,9 @@ class PlayerView:
         hole = self.state["hole_cards"]
         chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
 
-        surface.blit(chips_surf, (px, py + self.profile_rect.height + 4))
-
+        self._draw_centered(
+            surface, chips_surf, self.profile_rect.height + 5 * self.assets.height_scale
+        )
         self._draw_hole(hole, surface, card_zoom)
 
         if self.state["position_name"] == "Button":

@@ -62,6 +62,8 @@ class Assets:
     def _set_sizes(self):
         self.sizes["button_w"] = 150 * self.width_scale
         self.sizes["button_h"] = 50 * self.height_scale
+        self.sizes["button_xb"] = 25 * self.width_scale
+
         self.sizes["chip_w"] = 40 * self.width_scale
         self.sizes["chip_h"] = 20 * self.height_scale
 
@@ -87,12 +89,17 @@ class Assets:
 
         print(self.sizes, self.width_scale, self.height_scale, self.min_size_scale)
 
-        tw, th = table_w, table_h
-        X1 = tx + 700 / 1000 * tw
-        Y1 = ty + th
-        X2 = self.current_resolution[0] - X1
-        Y2 = self.current_resolution[1] - Y1
-        X3 = tx
+        #The buffer between the edge of the table and the profile picture
+        p_buff = 40 * self.min_size_scale
+
+        dx = 1/5 * table_w
+        dy = (table_h + self.sizes["profile"][1]) // 2 + p_buff
+
+        X1 = self.centrex + dx
+        Y1 = self.centrey + dy
+        X2 = self.centrex - dx
+        Y2 = self.centrey - dy
+        X3 = tx - p_buff - self.sizes["profile"][0] // 2
         Y3 = self.current_resolution[1] / 2
         X4 = self.current_resolution[0] - X3
         self.player_coords = [
