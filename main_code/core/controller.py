@@ -97,17 +97,18 @@ class OfflineController(ControllerBase):
                 if end:
                     self.table.end_round()
                     end = False
+                    full_pause = True
                 else:
                     end, full_pause = self._single_auto_action()
 
                 if end is None:
                     cont = False
 
-                self.update_state()
-
                 if not self.testing:
                     elapsed = time.time() - start_time
                     time.sleep(max(0, 0.5 if full_pause else 0.1 - elapsed))
+                self.update_state()
+
 
         finally:
             self.auto_thread_running = False
