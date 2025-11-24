@@ -28,7 +28,7 @@ class ControllerBase(ABC):
         self.update_state()
 
 
-# Should probably have another class (similar to OnlineController) that uses async
+# Should probably have another class (similar to how OnlineController works) that uses async
 class OfflineController(ControllerBase):
     def __init__(self, testing: int = False, on_state_change=None):
         super().__init__(on_state_change)
