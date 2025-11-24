@@ -7,6 +7,7 @@ GUI should only call these methods
     controller.get_state()           → return dict of data for GUI rendering
 """
 
+from abc import ABC
 from core.poker import Table, Human, Bot, start
 import socketio
 import threading
@@ -15,12 +16,24 @@ import threading
 # Slider should reset on succesful actions
 
 
-class OfflineController:
-    def __init__(self, testing: int = False):
+class ControllerBase(ABC):
+    def __init__(self, on_state_change=None):
+        super().__init__()
+        self.on_state_change = on_state_change
+
+    def set_state_callback(self, on_state_change):
+        self.on_state_change = on_state_change
+        self.update_state()
+
+
+
+class OfflineController(ControllerBase):
+    def __init__(self, testing: int = False, on_state_change=None):
+        super().__init__(on_state_change)
         self.create_table()
         self.testing = testing
 
-        self.set_state()
+        # self.on_state_change: None | function = on_state_change
 
     def create_table(self):
         self.table = start() if callable(start) else Table()
@@ -44,7 +57,7 @@ class OfflineController:
             print(f"User made an invalid action {action, amount}")
             return
 
-        self.set_state()
+        self.update_state()
         # SLEEP
 
         self._process_system_actions(end_valid)
@@ -74,7 +87,7 @@ class OfflineController:
             if end == None:
                 cont = False
 
-            self.set_state()
+            self.update_state()
             # SLEEP
 
     # State related methods
@@ -121,6 +134,11 @@ class OfflineController:
             )
             return f"{word} {player.round_invested}"
 
+    def update_state(self):
+        """Updates state and calls the traceback self.on_state_change"""
+        self.set_state()
+        self.on_state_change(self.state)
+
     def set_state(self):
         self.state = {
             "players": [
@@ -159,11 +177,12 @@ class OnlineController:
     The GUI (GameWindow) doesn't know the difference.
     """
 
-    def __init__(self, is_host=False, host_ip=None):
+    def __init__(self, is_host=False, host_ip=None, on_state_change=None):
+        super().__init__(on_state_change)
+
         self.sio = socketio.Client()
         self.server_url = f'http://{host_ip or "localhost"}:5000'
 
-        # This will hold the game state sent by the server
         # TODO check if needed
         self.state = {
             "players": [
@@ -210,6 +229,8 @@ class OnlineController:
             with self.lock:
                 self.state = data
 
+            self.on_state_change(data)
+
             print(f"got state {data}")
 
     def _connect(self):
@@ -232,7 +253,10 @@ class OnlineController:
         with self.lock:
             return self.state
 
+    def set_state_callback(self, on_state_change):
+        self.on_state_change = on_state_change
+
     def __del__(self):
-        """Clean up the connection when this object is destroyed."""
+        """Clean up connection when this is destroyed"""
         if self.sio.connected:
             self.sio.disconnect()

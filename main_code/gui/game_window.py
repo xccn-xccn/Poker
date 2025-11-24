@@ -13,11 +13,9 @@ class GameWindow(WindowBase):
 
         self.testing = testing
         self.controller = controller
-
         self.player_views = []
-        self._sync_state()
+        self.controller.set_state_callback(self._apply_state)
         self.possible_bet = 0
-        self.player_views = []
         self.action_freeze = False
 
         self.widgets = {
@@ -111,7 +109,7 @@ class GameWindow(WindowBase):
         self.possible_bet = value
 
     def update(self):
-        self._sync_state()
+        # self._sync_state()
         self._update_buttons()
 
         if self.testing and self.state["running"] == False:
@@ -190,16 +188,16 @@ class GameWindow(WindowBase):
             PlayerView(p["seat"], p, self.assets) for p in self.state["players"]
         ]
 
-    def _sync_state(self):
+    def _apply_state(self, state: dict):
         """Refresh GUI objects with controller game state."""
-        self.state = self.controller.get_state()
 
-        self.user_state = self.state["players"][self.state["user_i"]]
-        if self.state["new_player"] or len(self.player_views) != len(
-            self.state["players"]
+        self.state = state
+        self.user_state = state["players"][state["user_i"]]
+        if state["new_player"] or len(self.player_views) != len(
+            state["players"]
         ):
             self._build_player_views()
             return
 
-        for player, p_data in zip(self.player_views, self.state["players"]):
+        for player, p_data in zip(self.player_views, state["players"]):
             player.update_state(p_data)
