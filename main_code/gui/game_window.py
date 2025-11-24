@@ -4,23 +4,19 @@ from gui.buttons import Button, ImageButton, BetSlider, VerticalSlider
 from gui.player_view import PlayerView
 from gui.utility import centre
 
-ROUND_END_EVENT = pygame.USEREVENT + 1
-
 
 class GameWindow(WindowBase):
     def __init__(self, screen, assets, controller, testing):
         super().__init__(screen, assets)
 
         self.testing = testing
-        self.controller = controller
         self.player_views = []
-        self.controller.set_state_callback(self._apply_state)
         self.possible_bet = 0
         self.action_freeze = False
 
         self.widgets = {
             "Fold": Button(
-                "Fold",                
+                "Fold",
                 *centre(1250, 750, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(1, 0),
@@ -55,7 +51,7 @@ class GameWindow(WindowBase):
                 on_click=lambda: self._set_window("Menu"),
             ),
             "Zoom": ImageButton(
-                "zoom_in", (20, 90+20), (70, 70), assets, on_click=self._on_zoom
+                "zoom_in", (20, 90 + 20), (70, 70), assets, on_click=self._on_zoom
             ),
             # "Bet_slider": BetSlider(
             #     pos=(400, 760),
@@ -67,7 +63,7 @@ class GameWindow(WindowBase):
             #     on_change=self._on_slider_change,
             # ),
             "Bet_slider": VerticalSlider(
-                (self.assets.base_resolution[0]-160, 20),
+                (self.assets.base_resolution[0] - 160, 20),
                 (140, 675),
                 assets,
                 0,
@@ -77,6 +73,8 @@ class GameWindow(WindowBase):
             ),
         }
 
+        self.controller = controller
+        self.controller.set_state_callback(self._apply_state)
         self.card_zoom = 1.0
 
     def _perform_action(self, action, amount=0):
@@ -84,6 +82,7 @@ class GameWindow(WindowBase):
             return
         end_valid = self.controller.perform_action(action, amount)
 
+        # end_valid = True
         # TODO deal with invalid moves if end_valid = None
 
         if end_valid != None:
@@ -110,8 +109,6 @@ class GameWindow(WindowBase):
 
     def update(self):
         # self._sync_state()
-        self._update_buttons()
-
         if self.testing and self.state["running"] == False:
             self.controller.start_hand()
 
@@ -146,8 +143,7 @@ class GameWindow(WindowBase):
         )
 
         for card in self.state["community"]:
-            self.screen.blit(self.assets.get_card(
-                card, self.card_zoom), (x, y))
+            self.screen.blit(self.assets.get_card(card, self.card_zoom), (x, y))
             x += (
                 self.assets.sizes["card_w"] * self.card_zoom
                 + self.assets.sizes["card_buffer"]
@@ -193,9 +189,9 @@ class GameWindow(WindowBase):
 
         self.state = state
         self.user_state = state["players"][state["user_i"]]
-        if state["new_player"] or len(self.player_views) != len(
-            state["players"]
-        ):
+        self._update_buttons()
+
+        if state["new_player"] or len(self.player_views) != len(state["players"]):
             self._build_player_views()
             return
 

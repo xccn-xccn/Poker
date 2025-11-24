@@ -8,9 +8,11 @@ GUI should only call these methods
 """
 
 from abc import ABC
+from copy import deepcopy
 from core.poker import Table, Human, Bot, start
 import socketio
 import threading
+import time
 
 # TODO remove uneeded default state?
 # Slider should reset on succesful actions
@@ -26,12 +28,13 @@ class ControllerBase(ABC):
         self.update_state()
 
 
-
+# Should probably have another class (similar to OnlineController) that uses async
 class OfflineController(ControllerBase):
     def __init__(self, testing: int = False, on_state_change=None):
         super().__init__(on_state_change)
         self.create_table()
         self.testing = testing
+        self.auto_thread_running = False
 
         # self.on_state_change: None | function = on_state_change
 
@@ -40,7 +43,16 @@ class OfflineController(ControllerBase):
 
     def start_hand(self):
         self.table.start_hand()
-        self._process_system_actions(end=False)
+        self.update_state()
+
+        if not self.auto_thread_running:
+            self.start_systems_thread()
+
+    def start_systems_thread(self, end_valid=False):
+        t = threading.Thread(target=self._process_system_actions, args=(end_valid,))
+        t.daemon = True
+        self.auto_thread_running = True
+        t.start()
 
     def perform_action(self, action: int, amount: int = 0):
         """True/False if round end None if move was invalid"""
@@ -57,10 +69,13 @@ class OfflineController(ControllerBase):
             print(f"User made an invalid action {action, amount}")
             return
 
-        self.update_state()
-        # SLEEP
+        if self.auto_thread_running == True:
+            return end_valid
 
-        self._process_system_actions(end_valid)
+        self.update_state()
+
+        self.start_systems_thread(end_valid)
+
         return end_valid
 
     def _single_auto_action(self):
@@ -68,27 +83,34 @@ class OfflineController(ControllerBase):
             player = self.table.current_player
             if isinstance(player, Bot):
                 move = player.get_action(self.table)
-                return self.table.single_move(move)
+                return self.table.single_move(move), True
             elif self.testing:
-                return self.table.single_move((1, 0))
+                return self.table.single_move((1, 0)), False
         else:
-            return self.table.end_move()
+            return self.table.end_move(), False
 
     def _process_system_actions(self, end=False):
+        try:
+            cont = True
+            while self.table.running and cont:
+                start_time = time.time()
+                if end:
+                    self.table.end_round()
+                    end = False
+                else:
+                    end, full_pause = self._single_auto_action()
 
-        cont = True
-        while self.table.running and cont:
-            if end:
-                self.table.end_round()
-                end = False
-            else:
-                end = self._single_auto_action()
+                if end is None:
+                    cont = False
 
-            if end == None:
-                cont = False
+                self.update_state()
 
-            self.update_state()
-            # SLEEP
+                if not self.testing:
+                    elapsed = time.time() - start_time
+                    time.sleep(max(0, 0.5 if full_pause else 0.1 - elapsed))
+
+        finally:
+            self.auto_thread_running = False
 
     # State related methods
     def _get_cards(self, player):
@@ -137,7 +159,7 @@ class OfflineController(ControllerBase):
     def update_state(self):
         """Updates state and calls the traceback self.on_state_change"""
         self.set_state()
-        self.on_state_change(self.state)
+        self.on_state_change(deepcopy(self.state))
 
     def set_state(self):
         self.state = {

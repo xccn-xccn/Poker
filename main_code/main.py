@@ -78,7 +78,7 @@ class PokerApp:
     def run(self):
         running = True
         while running:
-            self.clock.tick(FPS)
+            dt = self.clock.tick(FPS) / 1000
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
