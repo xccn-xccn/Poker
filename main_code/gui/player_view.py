@@ -21,6 +21,8 @@ class PlayerView:
             self.centre[0] - w // 2, self.centre[1] - h // 2, w, h
         )
 
+        self.button_coords = self.assets.button_coords[idx]
+
     def _load_profile_image(self):
         img = self.assets.get_profile_image(self.state["profile_picture"])
         size = self.profile_rect.size
@@ -68,7 +70,8 @@ class PlayerView:
 
     def _draw_button(self, surface):  # TODO
         btn = self.assets.images["dealer_button"]
-        surface.blit(btn, self._centered_xcoords(btn.get_height(), 50))
+        # surface.blit(btn, self._centered_xcoords(btn.get_height(), 50))
+        surface.blit(btn, self.button_coords)
 
     def _draw_centered(self, surface, text_surf, height):
         surface.blit(text_surf, self._centered_xcoords(text_surf.get_width(), height))

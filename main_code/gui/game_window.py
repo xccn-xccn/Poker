@@ -109,7 +109,7 @@ class GameWindow(WindowBase):
 
     def update(self):
         # self._sync_state()
-        if self.testing and self.state["running"] == False:
+        if self.testing and self.state["running"] == False and self.testing != "t1":
             self.controller.start_hand()
 
     def handle_event(self, event):

@@ -86,6 +86,7 @@ class Assets:
 
         self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 
+        self.sizes["dealer_button"] = (30 * self.min_size_scale, 30 * self.min_size_scale)
         tx = (self.current_resolution[0] - table_w) // 2
         ty = (self.current_resolution[1] - table_h) // 2
         self.sizes["table_pos"] = (tx, ty)
@@ -93,16 +94,16 @@ class Assets:
         print(self.sizes, self.width_scale, self.height_scale, self.min_size_scale)
 
         # The buffer between the edge of the table and the profile picture
-        p_buff = 40 * self.min_size_scale
+        profile_buff = 40 * self.min_size_scale
 
         dx = 1 / 5 * table_w
-        pdy = (table_h + self.sizes["profile"][1]) // 2 + p_buff
+        pdy = (table_h + self.sizes["profile"][1]) // 2 + profile_buff
 
         px1 = self.centrex + dx
         py1 = self.centrey + pdy
         px2 = self.centrex - dx
         py2 = self.centrey - pdy
-        px3 = tx - p_buff - self.sizes["profile"][0] // 2
+        px3 = tx - profile_buff - self.sizes["profile"][0] // 2
         py3 = self.current_resolution[1] / 2
         px4 = self.current_resolution[0] - px3
         self.player_coords = [
@@ -114,19 +115,53 @@ class Assets:
             (px4, py3),
         ]
 
-        #TODO
-        # bdy = pdy - 
-        bx_buff = 20 * self.width_scale 
-        by_buff = 20 * self.height_scale
+        # TODO
+        # bdy = pdy -
+        self.button_coords = []
 
-        # by1 = self.centrey + bdy 
-        # by2 = self.current_resolution[1] - by1
-        self.button_coords = [
-            (px1 )
-        ]
+        for i, coords in enumerate(self.player_coords):
+            forwards_scale = self.height_scale if i in [2, 5] else self.width_scale
+            x, y = coords
+
+            distance_left = 40 * forwards_scale
+
+            # TODO fix
+            dx, dy = self.fix_position(
+                self.sizes["dealer_button"],
+                self.relative_vector(
+                    i,
+                    (
+                        distance_left,
+                        profile_buff
+                        + self.sizes["profile"][0] // 2
+                        + 60 * forwards_scale,
+                    ),
+                ),
+            )
+            self.button_coords.append((x + dx, y + dy))
 
     # def _set_dealer_coords(self):
-        
+    @staticmethod
+    def relative_vector(index, vector: tuple[int, int]):
+        """Converts a vector so that it is relative towards the seat position. Input vector is the form of (distance to the left, distance towards the centre)"""
+        d_left, d_forwards = vector
+
+        if index <= 2:
+            d_left *= -1
+        if index <= 1 or index == 5:
+            d_forwards *= -1
+        if index in (2, 5):
+            d_forwards, d_left = d_left, d_forwards
+        return d_left, d_forwards
+
+    @staticmethod
+    def fix_position(
+        size: tuple[int, int], pos: tuple[int, int] = (0, 0)
+    ) -> tuple[int, int]:
+        """Fixes the position of an image by assuming the centre x and y have been used"""
+        width, height = size
+        return pos[0] - width // 2, pos[1] - height // 2
+
     def _load_fonts(self):
         font_path = os.path.join(self.root, "misc", "JqkasWild-w1YD6.ttf")
         base_size = max(12, int(40 * self.width_scale))
@@ -196,8 +231,7 @@ class Assets:
         ).convert_alpha()
 
         self.images["dealer_button"] = pygame.transform.smoothscale(
-            dealer_button,
-            (30 * self.min_size_scale, 30 * self.min_size_scale),
+            dealer_button, self.sizes["dealer_button"],
         )
 
         # TODO add the rest
@@ -226,7 +260,11 @@ class Assets:
         )
         for val, vname in val_map.items():
             for sk, sname in suit_map.items():
-                name = f"{vname}_of_{sname}.png"
+                extra = ""
+                if val in "JQK":
+                    extra = "2"
+                name = f"{vname}_of_{sname}{extra}.png"
+                    
                 path = os.path.join(cards_dir, name)
                 if os.path.exists(path):
                     img = pygame.image.load(path).convert_alpha()
@@ -238,6 +276,7 @@ class Assets:
         self.images["cards"]["card_back"] = pygame.transform.smoothscale(cb, (cw, ch))
 
     def get_card(self, card_name, card_zoom=1):
+        # return self.images["cards"][card_name]
         return pygame.transform.smoothscale_by(
             self.images["cards"][card_name], card_zoom / self.card_overscale
         )
