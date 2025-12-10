@@ -2,7 +2,7 @@ import pygame
 from gui.window_base import WindowBase
 from gui.buttons import Button, ImageButton, BetSlider, VerticalSlider
 from gui.player_view import PlayerView
-from gui.utility import centre
+from gui.utility import centre, get_chips, get_chip_buff
 
 
 class GameWindow(WindowBase):
@@ -156,9 +156,11 @@ class GameWindow(WindowBase):
         self.screen.blit(
             pot_surf,
             centre(
-                self.assets.width // 2, 320, pot_surf.get_width(), pot_surf.get_height()
+                self.assets.width // 2, self.assets.height // 2 - (self.assets.sizes["card_w"] * self.card_zoom + 15 * self.assets.height_scale), pot_surf.get_width(), pot_surf.get_height()
             )[0],
         )
+
+        #TODO draw chips
 
     def draw(self):
         self.screen.fill(self.assets.colours["background"])
@@ -172,6 +174,7 @@ class GameWindow(WindowBase):
 
         super().draw()
 
+    
     def resize(self, new_size):
         super().resize(new_size)
         for p in self.player_views:
@@ -191,9 +194,12 @@ class GameWindow(WindowBase):
         self.user_state = state["players"][state["user_i"]]
         self._update_buttons()
 
+        if self.state["new_round"]:
+            self.chip_buff = get_chip_buff()
+
         if state["new_player"] or len(self.player_views) != len(state["players"]):
             self._build_player_views()
             return
 
         for player, p_data in zip(self.player_views, state["players"]):
-            player.update_state(p_data)
+            player.update_state(p_data, new_round = self.state["new_round"])

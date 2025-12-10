@@ -1,4 +1,5 @@
 import pygame
+from gui.utility import get_chip_buff
 
 
 class PlayerView:
@@ -47,8 +48,17 @@ class PlayerView:
             img = surf
         self.profile_image = img
 
-    def update_state(self, new_state: dict):
+    def update_state(self, new_state: dict, new_round: bool = False):
         self.state = new_state.copy()
+
+        if new_round:
+            self.chip_buff = get_chip_buff()
+        # self._state_change()
+
+    def _state_change(self):
+        pass
+        # if self.new_round:
+        #     pass
 
     def resize(self):
         self._layout_from_assets()
@@ -60,7 +70,8 @@ class PlayerView:
             - self.assets.sizes["card_w"] * card_zoom
             - self.assets.sizes["card_buffer"] // 2
         )
-        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"] * card_zoom
+        y = self.profile_rect.bottomright[1] - \
+            self.assets.sizes["card_h"] * card_zoom
         for card in hole_cards:
             surface.blit(self.assets.get_card(card, card_zoom), (x, y))
             x += (
@@ -74,7 +85,8 @@ class PlayerView:
         surface.blit(btn, self.button_coords)
 
     def _draw_centered(self, surface, text_surf, height):
-        surface.blit(text_surf, self._centered_xcoords(text_surf.get_width(), height))
+        surface.blit(text_surf, self._centered_xcoords(
+            text_surf.get_width(), height))
 
     def _centered_xcoords(self, surf_width: int, height: int):
         px, py = self.profile_rect.midtop
@@ -87,7 +99,8 @@ class PlayerView:
         chips = self.state["chips"]
         action = self.state["action"]
         hole = self.state["hole_cards"]
-        chips_surf = self.assets.fonts["small"].render(str(chips), True, (255, 215, 0))
+        chips_surf = self.assets.fonts["small"].render(
+            str(chips), True, (255, 215, 0))
 
         self._draw_centered(
             surface, chips_surf, self.profile_rect.height + 5 * self.assets.height_scale

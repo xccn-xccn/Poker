@@ -1,10 +1,9 @@
+from core.poker import Table, Human, Bot, start
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask import Flask, request
 import eventlet
 
 eventlet.monkey_patch()
-
-from flask import Flask, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from core.poker import Table, Human, Bot, start
 
 
 # TODO
@@ -57,7 +56,7 @@ class GameRoom:
             if end == None:
                 cont = False
 
-            self.emit_state()
+            self.emit_state(new_round=(end == True))
             eventlet.sleep(1)
 
     def player_action(self, sid: int, data: int):
@@ -88,12 +87,13 @@ class GameRoom:
 
     # State related methods
 
-    def emit_state(self, new=False):
+    def emit_state(self, new=False, new_round=False):
         for sid, seat in self.sid_seat.items():
             player = self.table.players[seat]
             if not isinstance(player, Human):
                 continue
-            socketio.emit("game_update", self.get_specific_state(player, seat), to=sid)
+            socketio.emit("game_update", self.get_specific_state(
+                player, seat, new=new, new_round=new_round), to=sid)
 
     def _get_cards(self, other_player, user_player):
         if other_player.fold or other_player.inactive:
@@ -139,7 +139,7 @@ class GameRoom:
             )
             return f"{word} {player.round_invested}"
 
-    def get_specific_state(self, user_player: Human, seat: int, new=False):
+    def get_specific_state(self, user_player: Human, seat: int, new=False, new_round=False):
         state = {
             "players": [
                 {
@@ -160,6 +160,7 @@ class GameRoom:
             "pot": self.table.get_pot() if self.table.running else 0,
             "running": self.table.running,
             "round": self.table.r,
+            "new_round": new_round,
             "user_i": seat,
             "new_player": new,
         }
@@ -173,7 +174,7 @@ class ServerManager:
     def __init__(self):
         # room_id to GameRoom instance
         self.rooms: dict[int:GameRoom] = {}
-        # sid to room_id
+                      # sid to room_id
         self.sid_to_room: dict[int:int] = {}
 
     def create_new_game(self) -> tuple[GameRoom | int]:

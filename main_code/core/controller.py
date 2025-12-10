@@ -23,6 +23,29 @@ class ControllerBase(ABC):
         super().__init__()
         self.on_state_change = on_state_change
 
+        self.state = {
+            "players": [
+                {
+                    "chips": 0,
+                    "folded": True,
+                    "hole_cards": [],
+                    "action": "",
+                    "round_invested": 0,
+                    "seat": 0,  # TODO poss change
+                    "position_name": "",
+                    "poss_actions": ["Check", "Bet"],
+                    "profile_picture": "nature",
+                }
+            ],
+            "community": [],
+            "pot": 0,
+            "running": False,
+            "user_i": 0,
+            "new_player": False,
+            "round": 0,
+            "new_round": False,
+        }
+
     def set_state_callback(self, on_state_change):
         self.on_state_change = on_state_change
         self.update_state()
@@ -55,6 +78,7 @@ class OfflineController(ControllerBase):
         t.start()
 
     def perform_action(self, action: int, amount: int = 0):
+        #TODO
         """True/False if round end None if move was invalid"""
         if not self.table.running or not isinstance(self.table.current_player, Human):
             return
@@ -72,13 +96,13 @@ class OfflineController(ControllerBase):
         if self.auto_thread_running == True:
             return end_valid
 
-        self.update_state()
+        # self.update_state(end_round = end)
 
         self.start_systems_thread(end_valid)
 
         return end_valid
 
-    def _single_auto_action(self):
+    def _single_auto_action(self) -> tuple[None, bool]:
         if self.table.can_move():
             player = self.table.current_player
             if isinstance(player, Bot):
@@ -88,6 +112,8 @@ class OfflineController(ControllerBase):
                 return self.table.single_move((1, 0)), False
         else:
             return self.table.end_move(), False
+
+        return None, False
 
     def _process_system_actions(self, end=False):
         try:
@@ -107,7 +133,7 @@ class OfflineController(ControllerBase):
                 if not self.testing:
                     elapsed = time.time() - start_time
                     time.sleep(max(0, 0.5 if full_pause else 0.1 - elapsed))
-                self.update_state()
+                self.update_state(round_end=(end==True))
 
 
         finally:
@@ -157,12 +183,12 @@ class OfflineController(ControllerBase):
             )
             return f"{word} {player.round_invested}"
 
-    def update_state(self):
+    def update_state(self, round_end=False):
         """Updates state and calls the traceback self.on_state_change"""
-        self.set_state()
+        self.set_state(round_end)
         self.on_state_change(deepcopy(self.state))
 
-    def set_state(self):
+    def set_state(self, round_end=False):
         self.state = {
             "players": [
                 {
@@ -183,6 +209,7 @@ class OfflineController(ControllerBase):
             "pot": self.table.get_pot() if self.table.running else 0,
             "running": self.table.running,
             "round": self.table.r,
+            "new_round": round_end,
             "user_i": next(
                 i for i, p in enumerate(self.table.players) if isinstance(p, Human)
             ),
@@ -205,29 +232,7 @@ class OnlineController:
 
         self.sio = socketio.Client()
         self.server_url = f'http://{host_ip or "localhost"}:5000'
-
-        # TODO check if needed
-        self.state = {
-            "players": [
-                {
-                    "chips": 0,
-                    "folded": True,
-                    "hole_cards": [],
-                    "action": "",
-                    "round_invested": 0,
-                    "seat": 0,  # TODO poss change
-                    "position_name": "",
-                    "poss_actions": ["Check", "Bet"],
-                    "profile_picture": "nature",
-                }
-            ],
-            "community": [],
-            "pot": 0,
-            "running": False,
-            "user_i": 0,
-            "new_player": False,
-        }
-        self.lock = threading.Lock()  # For thread-safe state updates
+        self.lock = threading.Lock()  # thread safe state updates
 
         self._register_handlers()
         self._connect()

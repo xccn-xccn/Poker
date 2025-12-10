@@ -1,3 +1,4 @@
+import random
 import pygame
 import os
 
@@ -86,7 +87,10 @@ class Assets:
 
         self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 
-        self.sizes["dealer_button"] = (30 * self.min_size_scale, 30 * self.min_size_scale)
+        self.sizes["dealer_button"] = (
+            30 * self.min_size_scale,
+            30 * self.min_size_scale,
+        )
         tx = (self.current_resolution[0] - table_w) // 2
         ty = (self.current_resolution[1] - table_h) // 2
         self.sizes["table_pos"] = (tx, ty)
@@ -115,32 +119,55 @@ class Assets:
             (px4, py3),
         ]
 
-        # TODO
-        # bdy = pdy -
-        self.button_coords = []
+        self.button_coords = self.create_relative_image_pos(self.sizes["dealer_button"], (40, 60), (0, profile_buff + self.sizes["profile"][0] // 2))
+        self.chips_coords = self.create_relative_image_pos((self.sizes["chip_w"], self.sizes["chip_h"]), (0, 60), (0, profile_buff + self.sizes["profile"][0] // 2))
+        
+    def get_left_scale(self, i):
+        return self.height_scale if i in [2, 5] else self.width_scale
+    
+    def get_forward_scale(self, i):
+        return self.width_scale if i in [2, 5] else self.height_scale
+    
+    def create_relative_image_pos(
+        self, image_size: tuple[int, int], vector: tuple[int, int], fixed_vector: tuple[int, int] = (0, 0)
+    ) -> list[tuple[int, int]]:
+        """
+        image_size: (width, height) 
+        vector: (distance_left, distance_right) each will be multiplied by the correct scale
+        fixed_vector: (distance_left, distance_right) will not be multiplied by a scale
 
-        for i, coords in enumerate(self.player_coords):
-            forwards_scale = self.height_scale if i in [2, 5] else self.width_scale
+        returns a list of tuples of the position for the image with the image_size to be blitted so 
+        that the image will be centered at the position of the inputted vector
+        """
+
+        positions = []
+        o_left, o_forward = vector
+
+        fixed_left, fixed_forward = fixed_vector
+
+        for i, coords in enumerate(self.player_coords): #TODO
+            left_scale = self.get_left_scale(i)
+            forward_scale = self.get_forward_scale(i)
+
             x, y = coords
 
-            distance_left = 40 * forwards_scale
+            distance_left = o_left * left_scale + fixed_left
+            distance_forwards = o_forward * forward_scale + fixed_forward
 
-            # TODO fix
             dx, dy = self.fix_position(
-                self.sizes["dealer_button"],
+                image_size,
                 self.relative_vector(
                     i,
                     (
                         distance_left,
-                        profile_buff
-                        + self.sizes["profile"][0] // 2
-                        + 60 * forwards_scale,
+                        distance_forwards,
                     ),
                 ),
             )
-            self.button_coords.append((x + dx, y + dy))
+            positions.append((x + dx, y + dy))
 
-    # def _set_dealer_coords(self):
+        return positions
+
     @staticmethod
     def relative_vector(index, vector: tuple[int, int]):
         """Converts a vector so that it is relative towards the seat position. Input vector is the form of (distance to the left, distance towards the centre)"""
@@ -188,6 +215,7 @@ class Assets:
                 "arial", max(24, int(120 * self.width_scale))
             )
 
+
     def _load_images(self):
         misc_dir = os.path.join(self.root, "misc")
         cards_dir = os.path.join(self.root, "cards")
@@ -231,7 +259,8 @@ class Assets:
         ).convert_alpha()
 
         self.images["dealer_button"] = pygame.transform.smoothscale(
-            dealer_button, self.sizes["dealer_button"],
+            dealer_button,
+            self.sizes["dealer_button"],
         )
 
         # TODO add the rest
@@ -264,7 +293,7 @@ class Assets:
                 if val in "JQK":
                     extra = "2"
                 name = f"{vname}_of_{sname}{extra}.png"
-                    
+
                 path = os.path.join(cards_dir, name)
                 if os.path.exists(path):
                     img = pygame.image.load(path).convert_alpha()

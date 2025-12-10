@@ -239,7 +239,7 @@ class VerticalSlider(BetSlider):
         if self.max_value == self.min_value:
             return self.rect.bottom
         ratio = (self.value - self.min_value) / (self.max_value - self.min_value)
-        # invert so min is at bottom, max at top
+        # invert so min is at bottom max at top
         return int(self.rect.bottom - ratio * self.rect.height)
 
     def _y_to_value(self, y):
