@@ -80,7 +80,7 @@ class OfflineController(ControllerBase):
     def perform_action(self, action: int, amount: int = 0):
         #TODO
         """True/False if round end None if move was invalid"""
-        if not self.table.running or not isinstance(self.table.current_player, Human):
+        if not self.table.running or not isinstance(self.table.current_player, Human) or self.auto_thread_running == True:
             return
         if not self.table.can_move():
             raise Exception(
@@ -96,7 +96,7 @@ class OfflineController(ControllerBase):
         if self.auto_thread_running == True:
             return end_valid
 
-        # self.update_state(end_round = end)
+        self.update_state()
 
         self.start_systems_thread(end_valid)
 
