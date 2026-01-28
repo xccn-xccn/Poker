@@ -14,10 +14,10 @@ class PokerApp:
     def __init__(self, testing=False):
         pygame.init()
         pygame.display.set_caption("Poker")
-        self.clock = pygame.time.Clock()
+        self.__clock = pygame.time.Clock()
         self.set_initial_size()
         self.assets = Assets(self.screen, BASE_RESOLUTION)
-        self.controller = None
+        self.__controller = None
         self.testing = testing
         self.set_menu_window()
 
@@ -34,7 +34,7 @@ class PokerApp:
         height = scale * BASE_RESOLUTION[1]
 
         self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
-        # self.screen = pygame.display.set_mode(BASE_RESOLUTION, pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode(BASE_RESOLUTION, pygame.RESIZABLE)
 
     def set_menu_window(self):
         self.current_window = MenuWindow(
@@ -43,7 +43,7 @@ class PokerApp:
         )
 
     def start_game(self, online=False, host=False, host_ip=None):
-        self.controller = (
+        self.__controller = (
             OnlineController(is_host=host, host_ip=host_ip)
             if online
             else OfflineController(testing=self.testing)
@@ -51,7 +51,7 @@ class PokerApp:
         self.current_window = GameWindow(
             screen=self.screen,
             assets=self.assets,
-            controller=self.controller,
+            controller=self.__controller,
             testing=self.testing,
         )
 
@@ -71,14 +71,14 @@ class PokerApp:
             if new_window == "Offline Poker":
                 self.start_game()
             elif new_window == "Online Poker":
-                self.start_game(online=True)  # Add host here
+                self.start_game(online=True, host=None)  # Add host here
             elif new_window == "Menu":
                 self.set_menu_window()
 
     def run(self):
         running = True
         while running:
-            dt = self.clock.tick(FPS) / 1000
+            dt = self.__clock.tick(FPS) / 1000
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -88,9 +88,9 @@ class PokerApp:
                 else:
                     self.current_window.handle_event(event)
 
+            self.check_window_change()
             self.current_window.update()
             self.current_window.draw()
-            self.check_window_change()
 
             pygame.display.flip()
 

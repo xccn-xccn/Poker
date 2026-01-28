@@ -1,9 +1,11 @@
 from core.poker import Table, Human, Bot, start
+import eventlet
+eventlet.monkey_patch()
+
+
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask import Flask, request
-import eventlet
 
-eventlet.monkey_patch()
 
 
 # TODO
@@ -163,6 +165,7 @@ class GameRoom:
             "new_round": new_round,
             "user_i": seat,
             "new_player": new,
+            "bb": self.table.blinds[1],
         }
 
         return state
