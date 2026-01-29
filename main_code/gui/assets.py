@@ -1,6 +1,7 @@
 import random
 import pygame
 import os
+from gui.utility import centre
 
 
 class Scale(float):
@@ -119,24 +120,61 @@ class Assets:
             (px4, py3),
         ]
 
-        self.button_coords = self.create_relative_image_pos(self.sizes["dealer_button"], (40, 60), (0, profile_buff + self.sizes["profile"][0] // 2))
-        self.chips_coords = self.create_relative_image_pos((self.sizes["chip_w"], self.sizes["chip_h"]), (0, 60), (0, profile_buff + self.sizes["profile"][0] // 2))
-        
+        self.button_coords = self.create_relative_image_pos(
+            self.sizes["dealer_button"],
+            (40, 60),
+            (0, profile_buff + self.sizes["profile"][0] // 2),
+        )
+        self.chips_coords = []
+
+        for i in range(-1, 2):
+            self.chips_coords.append(
+                self.create_relative_image_pos(
+                    (self.sizes["chip_w"], self.sizes["chip_h"]),
+                    (0 + i * 5, 60),
+                    (
+                        0 + i * self.sizes["chip_w"],
+                        profile_buff + self.sizes["profile"][0] // 2,
+                    ),
+                )
+            )
+
+        # print(self.chips_coords ,'\n')
+        self.chips_coords = list(zip(*self.chips_coords))
+
+        # print(self.chips_coords)
+        self.dealer_chips_coords = []
+
+        dx, dy = centre(
+            self.width // 2,
+            self.height // 2 - 40 * self.height_scale,
+            self.sizes["chip_w"],
+            self.sizes["chip_h"],
+        )[0]
+
+        for i in range(-1, 2):
+            self.dealer_chips_coords.append(
+                (dx + i * (5 * self.width_scale + self.sizes["chip_w"]), dy)
+            )
+
     def get_left_scale(self, i):
         return self.height_scale if i in [2, 5] else self.width_scale
-    
+
     def get_forward_scale(self, i):
         return self.width_scale if i in [2, 5] else self.height_scale
-    
+
     def create_relative_image_pos(
-        self, image_size: tuple[int, int], vector: tuple[int, int], fixed_vector: tuple[int, int] = (0, 0)
+        self,
+        image_size: tuple[int, int],
+        vector: tuple[int, int],
+        fixed_vector: tuple[int, int] = (0, 0),
     ) -> list[tuple[int, int]]:
         """
-        image_size: (width, height) 
+        image_size: (width, height)
         vector: (distance_left, distance_right) each will be multiplied by the correct scale
         fixed_vector: (distance_left, distance_right) will not be multiplied by a scale
 
-        returns a list of tuples of the position for the image with the image_size to be blitted so 
+        returns a list of tuples of the position for the image with the image_size to be blitted so
         that the image will be centered at the position of the inputted vector
         """
 
@@ -145,7 +183,7 @@ class Assets:
 
         fixed_left, fixed_forward = fixed_vector
 
-        for i, coords in enumerate(self.player_coords): #TODO
+        for i, coords in enumerate(self.player_coords):  # TODO
             left_scale = self.get_left_scale(i)
             forward_scale = self.get_forward_scale(i)
 
@@ -214,7 +252,6 @@ class Assets:
             self.fonts["title"] = pygame.font.SysFont(
                 "arial", max(24, int(120 * self.width_scale))
             )
-
 
     def _load_images(self):
         misc_dir = os.path.join(self.root, "misc")
@@ -314,7 +351,7 @@ class Assets:
         self.images["chips"] = {}
         cw, ch = self.sizes["chip_w"], self.sizes["chip_h"]
         for fname in os.listdir(chips_dir):
-            name = os.path.splitext(fname)[0]
+            name = os.path.splitext(fname)[0].split("_")[0]
             img = pygame.image.load(os.path.join(chips_dir, fname)).convert_alpha()
             self.images["chips"][name] = pygame.transform.smoothscale(img, (cw, ch))
 
