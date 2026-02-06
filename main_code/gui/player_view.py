@@ -92,6 +92,9 @@ class PlayerView:
         px, py = self.profile_rect.midtop
         return px - surf_width // 2, py + height
 
+    def draw_chips(self):
+        pass
+    
     def draw(self, surface, card_zoom=1.0):
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))

@@ -50,7 +50,7 @@ class GameRoom:
         cont = True
         while self.table.running and cont:
             if end:
-                self.table.end_round()
+                self.table.start_round()
                 end = False
             else:
                 end = self._single_auto_action()
@@ -90,6 +90,7 @@ class GameRoom:
     # State related methods
 
     def emit_state(self, new=False, new_round=False):
+        """Sends state to each user in the room"""
         for sid, seat in self.sid_seat.items():
             player = self.table.players[seat]
             if not isinstance(player, Human):
@@ -142,6 +143,8 @@ class GameRoom:
             return f"{word} {player.round_invested}"
 
     def get_specific_state(self, user_player: Human, seat: int, new=False, new_round=False):
+        """Returns the state for a specific player, 
+        insuring that they only get information they should access"""
         state = {
             "players": [
                 {
@@ -177,10 +180,11 @@ class ServerManager:
     def __init__(self):
         # room_id to GameRoom instance
         self.rooms: dict[int:GameRoom] = {}
-                      # sid to room_id
+        
+        # sid to room_id
         self.sid_to_room: dict[int:int] = {}
 
-    def create_new_game(self) -> tuple[GameRoom | int]:
+    def create_new_room(self) -> tuple[GameRoom | int]:
         """Creates a new game room"""
         room = GameRoom()
         room_id = str(id(room))
@@ -196,7 +200,7 @@ class ServerManager:
             if not game_room.full:
                 return game_room, room_id
 
-        game_room, room_id = self.create_new_game()
+        game_room, room_id = self.create_new_room()
         return game_room, room_id
 
     def handle_join_game(self, player_sid: int, data: dict):
