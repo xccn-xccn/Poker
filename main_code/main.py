@@ -14,7 +14,7 @@ class PokerApp:
     def __init__(self, testing=False):
         pygame.init()
         pygame.display.set_caption("Poker")
-        self.__clock = pygame.time.Clock()
+        # self.__clock = pygame.time.Clock()
         self.set_initial_size()
         self.assets = Assets(self.screen, BASE_RESOLUTION)
         self.__controller = None
@@ -30,11 +30,12 @@ class PokerApp:
             * 0.9
         )
 
+        # scale = 1
         width = scale * BASE_RESOLUTION[0]
         height = scale * BASE_RESOLUTION[1]
 
         self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
-        self.screen = pygame.display.set_mode(BASE_RESOLUTION, pygame.RESIZABLE)
+        # self.screen = pygame.display.set_mode(BASE_RESOLUTION, pygame.RESIZABLE)
 
     def set_menu_window(self):
         self.current_window = MenuWindow(
@@ -78,7 +79,6 @@ class PokerApp:
     def run(self):
         running = True
         while running:
-            dt = self.__clock.tick(FPS) / 1000
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
