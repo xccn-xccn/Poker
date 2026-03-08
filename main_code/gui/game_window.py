@@ -137,8 +137,7 @@ class GameWindow(WindowBase):
 
     def _after_action(self):
         self.possible_bet = 0
-        self.user_view.possible_bet= 0
-        self.widgets["Bet_slider"].set_value(0)
+        self._after_pbet_change()
 
     def _update_slider(self):
         self.widgets["Bet_slider"].set_value(self.possible_bet)
@@ -164,7 +163,12 @@ class GameWindow(WindowBase):
             self._apply_state()
             self.state_update = False
 
-        if self.testing and self.state["running"] == False and self.testing != "t1":
+        if (
+            self.testing
+            and self.state["running"] == False
+            and len(self.testing) >= 2
+            and self.testing[1] in "0248"
+        ):
             self.controller.start_hand()
 
     def handle_event(self, event):
@@ -297,7 +301,6 @@ class GameWindow(WindowBase):
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
 
-        print("LINE 296 \n\n\n", self.state)
         bb = self.state["bb"]
         for btn_name, action in zip(
             ("Set_Bet1", "Set_Bet2", "Set_Bet3"),
