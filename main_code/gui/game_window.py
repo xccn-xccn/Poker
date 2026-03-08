@@ -97,10 +97,9 @@ class GameWindow(WindowBase):
         }
 
         self.controller = controller
-        # self.controller.set_state_callback(self._apply_state)
         self.state_update = False
         self.controller.set_state_callback(self.update_state)
-        self.chip_buff = get_chip_buff()  # Maybe bad
+        self.chip_buff = get_chip_buff()
         self.chips = []
         self.card_zoom = 1.0
 
@@ -221,24 +220,11 @@ class GameWindow(WindowBase):
             )[0],
         )
 
-        # TODO
-
         self.draw_chips(
             self.chip_buff,
             self.chips,
             offset=(0, -self.assets.sizes["card_w"] * self.card_zoom),
         )
-        # ind = 1 if len(chips) <= 10 else -2
-        # for i, chip in enumerate(chips):
-        #     if i % 10 == 0:
-        #         ind += 1
-        #     cx, cy = self.assets.dealer_chip_coords[ind]
-        #     self.screen.blit(
-        #         self.assets.image["chips"][chip],
-        #         (cx, cy + self.assets.sizes["chip_h"] * i % 10),
-        #     )
-
-        # TODO draw chips
 
     def draw_chips(
         self,

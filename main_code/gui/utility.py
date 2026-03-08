@@ -22,11 +22,9 @@ def get_chips(bb: int, bet: int):
     chips = []
     remaining = bet
 
-    # print(bb, list(chip_values.items()))
     for value, name in sorted(
         list(chip_values.items()), key=lambda x: x[0], reverse=True
     ):
-        # print(remaining, value, remaining // value)
         chips += [name] * int(remaining // value)
         remaining = remaining % value
 
