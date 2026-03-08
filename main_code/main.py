@@ -5,7 +5,6 @@ from gui.game_window import GameWindow
 from core.controller import OfflineController, OnlineController
 
 # BASE_RESOLUTION = (1700, 900)
-#Try web app
 BASE_RESOLUTION = (1600, 900)
 FPS = 60
 
