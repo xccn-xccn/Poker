@@ -3,6 +3,7 @@ from gui.window_base import WindowBase
 from gui.buttons import Button, ImageButton, BetSlider, VerticalSlider
 from gui.player_view import PlayerView
 from gui.utility import centre, get_chips, get_chip_buff
+from math import floor
 
 
 class GameWindow(WindowBase):
@@ -14,6 +15,8 @@ class GameWindow(WindowBase):
         self.possible_bet = 0
         self.action_freeze = False
 
+        set_bet_width = 70
+        set_bet_buffer = 10
         self.widgets = {
             "Fold": Button(
                 "Fold",
@@ -33,7 +36,7 @@ class GameWindow(WindowBase):
             ),
             "Bet": Button(
                 "Bet",
-                *centre(1510, 820, 150, 50),
+                *centre(1485, 820, 150, 50),
                 assets,
                 on_click=lambda: self._perform_action(3, self.possible_bet),
             ),
@@ -48,10 +51,30 @@ class GameWindow(WindowBase):
                 (20, 20),
                 (70, 70),
                 assets,
-                on_click=lambda: self._set_window("Menu"),
+                on_click=lambda: self.set_window("Menu"),
             ),
             "Zoom": ImageButton(
                 "zoom_in", (20, 90 + 20), (70, 70), assets, on_click=self._on_zoom
+            ),
+            "Set_Bet1": Button(
+                "x0.5",
+                *centre(1400, 760, set_bet_width, 50),
+                assets,
+                on_click=lambda: self._set_bet(0),
+            ),
+            "Set_Bet2": Button(
+                "x1",
+                *centre(1400 + set_bet_width + set_bet_buffer, 760, set_bet_width, 50),
+                assets,
+                on_click=lambda: self._set_bet(1),
+            ),
+            "Set_Bet3": Button(
+                "ALL",
+                *centre(
+                    1400 + (set_bet_width + set_bet_buffer) * 2, 760, set_bet_width, 50
+                ),
+                assets,
+                on_click=lambda: self._set_bet(2),
             ),
             # "Bet_slider": BetSlider(
             #     pos=(400, 760),
@@ -74,25 +97,51 @@ class GameWindow(WindowBase):
         }
 
         self.controller = controller
-        self.controller.set_state_callback(self._apply_state)
+        # self.controller.set_state_callback(self._apply_state)
+        self.state_update = False
+        self.controller.set_state_callback(self.update_state)
+        self.chip_buff = get_chip_buff()  # Maybe bad
+        self.chips = []
         self.card_zoom = 1.0
 
+    def _set_bet(self, button_index):
+        print("set bet called")
+
+        p_bet = 0
+        if self.state["round"] == 0:
+            bb = self.state["bb"]
+            p_bet = [bb * 3, bb * 6, bb * 12][button_index]
+        else:
+            pot = self.state["pot"]
+            p_bet = [pot * 0.5, pot * 1, self.user_state["chips"]][button_index]
+
+        self.possible_bet = floor(min(self.user_state["chips"], p_bet))
+        # self._update_buttons()
+        # TODO
+        self._after_pbet_change()
+
+        print(self.possible_bet)
+
+    def _after_pbet_change(self):
+        self.user_view.possible_bet = self.possible_bet
+        self.user_view.set_chips_names(self.state["bb"])
+        self._update_slider()
+
     def _perform_action(self, action, amount=0):
-        if self.action_freeze:
-            return
-        end_valid = self.controller.perform_action(action, amount)
+        self.controller.perform_action(action, amount)
 
         # end_valid = True
         # TODO deal with invalid moves if end_valid = None
 
-        if end_valid != None:
-            self._after_action()
+        self._after_action()
 
     def _after_action(self):
         self.possible_bet = 0
+        self.user_view.possible_bet= 0
         self.widgets["Bet_slider"].set_value(0)
 
-    #     pygame.time.set_timer(ROUND_END_EVENT, 500 if not self.testing else 1, loops=1)
+    def _update_slider(self):
+        self.widgets["Bet_slider"].set_value(self.possible_bet)
 
     def _on_deal(self):
         if self.state["running"]:
@@ -101,27 +150,25 @@ class GameWindow(WindowBase):
         self.controller.start_hand()
 
     def _on_zoom(self):
-        self.card_zoom = {1.0: 1.5, 1.5: 2, 2: 1.0}[self.card_zoom]
+
+        self.card_zoom = {1.0: 1.5, 1.5: 1.9, 1.9: 1.0}[self.card_zoom]
         # self.controller.table.add_new_player(10000)
 
     def _on_slider_change(self, value):
         self.possible_bet = value
+        self._after_pbet_change()
 
     def update(self):
         # self._sync_state()
+        if self.state_update:
+            self._apply_state()
+            self.state_update = False
+
         if self.testing and self.state["running"] == False and self.testing != "t1":
             self.controller.start_hand()
 
     def handle_event(self, event):
         super().handle_event(event)
-
-    def _update_buttons(self):
-        for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
-            self.widgets[btn_name].set_text(action)
-
-        self.widgets["Bet_slider"].set_max_value(
-            self.user_state["chips"] + self.user_state["round_invested"]
-        )
 
     def _draw_table(self):
         table_img = self.assets.get_table_image()
@@ -150,17 +197,76 @@ class GameWindow(WindowBase):
             )
 
     def _draw_pot(self):
+        # Because self.card_zoom cannot be taken into account in assets.py
+        # Anything offset to do with card_zoom must be calculated here
+
         pot_surf = self.assets.fonts["small"].render(
             str(self.state["pot"]), True, self.assets.colours["black"]
         )
         self.screen.blit(
             pot_surf,
             centre(
-                self.assets.width // 2, self.assets.height // 2 - (self.assets.sizes["card_w"] * self.card_zoom + 15 * self.assets.height_scale), pot_surf.get_width(), pot_surf.get_height()
+                self.assets.width // 2,
+                self.assets.height // 2
+                - (
+                    self.assets.sizes["card_w"] * self.card_zoom
+                    + 8 * self.assets.height_scale
+                ),
+                pot_surf.get_width(),
+                pot_surf.get_height(),
             )[0],
         )
 
-        #TODO draw chips
+        # TODO
+
+        self.draw_chips(
+            self.chip_buff,
+            self.chips,
+            offset=(0, -self.assets.sizes["card_w"] * self.card_zoom),
+        )
+        # ind = 1 if len(chips) <= 10 else -2
+        # for i, chip in enumerate(chips):
+        #     if i % 10 == 0:
+        #         ind += 1
+        #     cx, cy = self.assets.dealer_chip_coords[ind]
+        #     self.screen.blit(
+        #         self.assets.image["chips"][chip],
+        #         (cx, cy + self.assets.sizes["chip_h"] * i % 10),
+        #     )
+
+        # TODO draw chips
+
+    def draw_chips(
+        self,
+        chip_buffer: list[int],
+        chips: list,
+        seat_i: int = -1,
+        offset: tuple[int, int] = (0, 0),
+    ):
+
+        # images[:10], images[10:20] = images[10:20], images[:10]
+        # images = [chip] * 30 test
+
+        chips_coords = (
+            self.assets.dealer_chips_coords
+            if seat_i == -1
+            else self.assets.chips_coords[seat_i]
+        )
+
+        p = 0
+        if len(chips) > 10:
+            p = -1
+
+        for i, chip in enumerate(chips[:30]):
+            if i % 10 == 0:
+                p += 1
+
+            cx, cy = chips_coords[p]
+            cx += chip_buffer[i] + offset[0]
+            cy += offset[1] - (0.35 * self.assets.sizes["chip_h"]) * (i % 10)
+            # TODO
+            c_image = self.assets.images["chips"][chip]
+            self.screen.blit(c_image, (cx, cy))
 
     def draw(self):
         self.screen.fill(self.assets.colours["background"])
@@ -174,7 +280,6 @@ class GameWindow(WindowBase):
 
         super().draw()
 
-    
     def resize(self, new_size):
         super().resize(new_size)
         for p in self.player_views:
@@ -184,22 +289,50 @@ class GameWindow(WindowBase):
         """Creates PlayerView objects for each seat."""
         self.state = self.controller.get_state()
         self.player_views = [
-            PlayerView(p["seat"], p, self.assets) for p in self.state["players"]
+            PlayerView(p["seat"], p, self.assets, self) for p in self.state["players"]
         ]
+        self.user_view = self.player_views[self.state["user_i"]]
 
-    def _apply_state(self, state: dict):
-        """Refresh GUI objects with controller game state."""
+    def _update_buttons(self):
+        for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
+            self.widgets[btn_name].set_text(action)
 
+        print("LINE 296 \n\n\n", self.state)
+        bb = self.state["bb"]
+        for btn_name, action in zip(
+            ("Set_Bet1", "Set_Bet2", "Set_Bet3"),
+            [(str(bb * 3), "x0.5"), (str(bb * 6), "x1"), (str(bb * 12), "ALL")],
+        ):
+            self.widgets[btn_name].set_text(action[int(self.state["round"] != 0)])
+
+        self.widgets["Bet_slider"].set_max_value(
+            self.user_state["chips"] + self.user_state["round_invested"]
+        )
+
+    def update_state(self, state):
+        self.state_update = True
         self.state = state
-        self.user_state = state["players"][state["user_i"]]
+        # no changes made straight away for thread safety
+
+    def _apply_state(self):
+        """Updates GUI with game state."""
+
+        self.user_state = self.state["players"][self.state["user_i"]]
         self._update_buttons()
 
-        if self.state["new_round"]:
+        if self.state["running"] == False:
             self.chip_buff = get_chip_buff()
 
-        if state["new_player"] or len(self.player_views) != len(state["players"]):
+        if self.state["new_round"]:
+            self.chips = get_chips(self.state["bb"], self.state["pot"])
+
+        if self.state["new_player"] or len(self.player_views) != len(
+            self.state["players"]
+        ):
             self._build_player_views()
             return
 
-        for player, p_data in zip(self.player_views, state["players"]):
-            player.update_state(p_data, new_round = self.state["new_round"])
+        for player, p_data in zip(self.player_views, self.state["players"]):
+            player.update_state(
+                p_data, self.state["bb"], new_round=self.state["new_round"]
+            )

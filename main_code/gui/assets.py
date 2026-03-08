@@ -38,7 +38,7 @@ class Assets:
         }
 
         self.fonts = {}
-        self.images = {}
+        self.images: dict[dict[str, pygame.Surface]] = {}
         self.sizes = {}
 
         # Cards are loaded this amount * larger so they can be scaled down for greater detail
@@ -158,6 +158,7 @@ class Assets:
             )
 
     def get_left_scale(self, i):
+        """Returns the scale factor for the direction perpendicular to towards the table for a player seated at the given index"""
         return self.height_scale if i in [2, 5] else self.width_scale
 
     def get_forward_scale(self, i):
@@ -223,7 +224,7 @@ class Assets:
     def fix_position(
         size: tuple[int, int], pos: tuple[int, int] = (0, 0)
     ) -> tuple[int, int]:
-        """Fixes the position of an image by assuming the centre x and y have been used"""
+        """Fixes the position of an image by assuming the centre x and y are pos"""
         width, height = size
         return pos[0] - width // 2, pos[1] - height // 2
 
@@ -372,9 +373,3 @@ class Assets:
             print("invalid profile pic path")
             return
         return pygame.transform.smoothscale(img, self.sizes["profile"])
-
-    def get_chip_image(self, key):
-        return self.images["chips"].get(key)
-
-    def scale_value(self, v):
-        return int(v * ((self.width_scale + self.height_scale) / 2))

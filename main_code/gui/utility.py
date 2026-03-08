@@ -1,26 +1,37 @@
 import random
 
-def centre(cx: int, cy: int, w: int, h: int) -> tuple[tuple[int, int], tuple[int, int]]:
-    return (cx - w // 2, cy - h // 2), (w, h)
 
-def get_chips(bb, bet):
+def centre(
+    centre_x: int, centre_y: int, w: int, h: int
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    return (centre_x - w // 2, centre_y - h // 2), (w, h)
+
+
+def get_chips(bb: int, bet: int):
     chip_values = {
-        bb // 20: "white",
-        bb // 2: "red",
-        bb: "orange",
-        int(2.5 * bb): "green",
-        5 * bb: "blue",
-        25 * bb: "black",
-        50 * bb: "purple",
-        500 * bb: "brown",
+        max(bb // 20, 1): "white",
+        max(bb // 2, 1): "red",
+        max(bb, 1): "orange",
+        max(int(2.5 * bb), 1): "green",
+        max(5 * bb, 1): "blue",
+        max(25 * bb, 1): "black",
+        max(50 * bb, 1): "purple",
+        max(500 * bb, 1): "brown",
     }
+
     chips = []
     remaining = bet
-    for value, name in sorted(list(chip_values.items()), key= lambda x: x[0], reverse=True):
-        chips += [name] * (remaining // value)
+
+    # print(bb, list(chip_values.items()))
+    for value, name in sorted(
+        list(chip_values.items()), key=lambda x: x[0], reverse=True
+    ):
+        # print(remaining, value, remaining // value)
+        chips += [name] * int(remaining // value)
         remaining = remaining % value
 
     return chips
+
 
 def get_chip_buff():
     l = [0]
@@ -29,5 +40,7 @@ def get_chip_buff():
         l.append(l[-1] + random.randint(-1, 1))
 
     return l
+
+
 if __name__ == "__main__":
     print(get_chips(20, 149))

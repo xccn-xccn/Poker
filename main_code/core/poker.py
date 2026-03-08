@@ -6,12 +6,12 @@ from core.winner import get_winner, all_hands_ranked, group_rank_pre
 from core.core_lib import *
 
 
+# BUG Line 490 could result in key error when calling no matter what but check
+# BUG stuff gets weird when a player unecessarily folds
 # TODO test valid bets on raises
-# TODO show hands if only one player left
 # TODO make calling range capped and raising range tighter with percentages
 # TODO Consider hand within all hands (not just range)
 # TODO test get_ps_strength
-# BUG main player could do an uneccessary fold and make chips disappear
 # TODO bots dont bet thinly enough post flop
 # TODO consider draws
 # TODO tighten opening range
@@ -101,19 +101,19 @@ class PokerPlayer(ABC):
         self.chips -= self.round_invested
         self.all_in = not (bool(self.chips) or self.fold)
 
-    def end_round(self, start=False):
+    def start_round(self, start=False):
         if not start:
             # for the blinds
             self.round_invested = 0
         self.action = self.action_text = None
         self.extra = 0
-        self.only_call = False
+        self.invalid_raise = False
 
     def set_inactive(self):
         self.position_name = ""
         self.inactive = True
 
-    def move_action(self, roundTotal):
+    def _apply_action(self, roundTotal):
         """Updates values depending on self.action and and self.round_invested"""
         if self.action == 1:
             # self.action_text is only for debugging
@@ -137,9 +137,9 @@ class PokerPlayer(ABC):
 
             self.agg = True
 
-            self.only_call = (
+            self.invalid_raise = (
                 self.round_invested + self.extra
-                < self.table.last_bet + self.table.min_raise
+                < self.table.last_bet + self.table.min_increase
             )
 
         self.round_invested += self.extra
@@ -168,13 +168,13 @@ class PokerPlayer(ABC):
                 self.round_invested,
                 action_info,
                 table.last_bet,
-                table.min_raise,
+                table.min_increase,
                 self.chips,
             )
 
             if (
                 (
-                    self.round_invested + extra < table.last_bet + table.min_raise
+                    self.round_invested + extra < table.last_bet + table.min_increase
                     and extra < self.chips
                 )
                 or extra > self.chips
@@ -189,7 +189,7 @@ class PokerPlayer(ABC):
     def move(self, table, action_info) -> bool:
         """Call with table and action_info
         This method will call all other required methods to
-        update values. Will return if action was valid"""
+        apply action. Will return if action was valid"""
         valid = self.is_valid(table, action_info)
 
         if not valid and isinstance(self, Bot):
@@ -209,7 +209,7 @@ class PokerPlayer(ABC):
             action_info[0],
             action_info[1] - self.round_invested,
         )
-        self.move_action(table.last_bet)
+        self._apply_action(table.last_bet)
 
         # TODO
         name = "(YOU)" if isinstance(self, Human) else "(BOT)"
@@ -222,9 +222,8 @@ class PokerPlayer(ABC):
     def add_chips(self, extra):
         self.chips += extra
 
-    def get_pot(
-        self,
-    ):
+    def get_pot(self):
+        """Returns the total chips the player can win in the current pot"""
         count = 0
         pot_sum = 0
         for p in self.table.pot:
@@ -240,8 +239,12 @@ class PokerPlayer(ABC):
         return min(self.table.last_bet, self.chips + self.round_invested)
 
 
-class Bot(PokerPlayer):
-    def can_only_call(self):
+class Human(PokerPlayer):
+    pass
+
+
+class Bot(PokerPlayer, ABC):
+    def can_only_call(self) -> bool:
         return (
             self.table.last_bet >= self.round_invested + self.chips
             or self.table.only_call == True
@@ -255,11 +258,12 @@ class RandomBot(Bot):
         try:
             extra = random.randint(
                 min(
-                    self.chips + self.round_invested, table.last_bet + table.min_raise
+                    self.chips + self.round_invested,
+                    table.last_bet + table.min_increase,
                 ),  # changed
                 min(
                     max(
-                        table.last_bet * 2 + table.min_raise,
+                        table.last_bet * 2 + table.min_increase,
                         int(table.get_pot() * 2.5),
                     ),
                     self.chips + self.round_invested,
@@ -311,6 +315,70 @@ class BotV1(Bot):
         self._current_range = None
         return super().new_hand(i)
 
+    def get_action(self, table):
+        self.to_call = min(
+            table.last_bet - self.round_invested, self.chips
+        )  # make function
+
+        if table.r == 0:
+            action = self.pre_flop(table)
+            self._set_pre_range(action)
+        else:
+            action = self.post_flop(table)
+
+        # return 2, 0
+        return action
+
+    def pre_flop(self, table) -> tuple[int, int]:
+        """Returns the action if it is currently the pre_flop"""
+
+        self.set_pre_var(table)
+
+        r = random.randint(1, 10)
+
+        print(
+            "max_chips",
+            self.round_total,
+            self.max_chips,
+            self.min_call,
+            self.max_call,
+            # pot_odds,
+            self.to_call,
+            table.curr_player_i == table.last_agg_i,
+            (table.curr_player_i + 1) % table.no_players,
+            table.last_agg_i,
+            r,
+            table.still_to_act(),
+            table.last_bet,
+            self.get_pot(),
+        )
+
+        if self.max_call != True and (
+            (self.round_total < self.max_chips / 2 and r >= 2)
+            or (self.min_call and (r >= 10 or table.last_bet == 20))
+        ):
+            return 3, self._get_bet(table)
+        elif self.min_call:
+            return 2, 0
+        return 1, 0
+
+    def set_pre_var(self, table):
+        """Sets variables required to determine action for pre-flop"""
+        self.round_total = self.get_round_total()
+        self.pot_odds = self.calc_po(frac=True)
+
+        c1, c2 = self.hole_cards
+
+        i1, i2 = strength_index(c1, c2)
+
+        strength = strengths[i1][i2]
+        self.max_chips = strength**3 * 3 * table.blinds[-1]
+        self.min_call = self.round_total < self.max_chips
+        self.max_call = False
+        if self.min_call == False and (self.to_call == 0 or self.valid_pre_po()):
+            self.min_call = self.max_call = True
+        self.max_call = self.max_call or self.can_only_call()
+
     def _pre_flop_bet(self, table):
         if table.to_bb(table.last_bet) <= 3 or table.still_to_act == 0:
             print("in bb", table.to_bb(table.last_bet))
@@ -327,6 +395,35 @@ class BotV1(Bot):
 
         return table.last_bet * 2
 
+    def _set_pre_range(self, action):
+        """Sets range for pre-flop"""
+        if action == 1:
+            self._current_range = None
+            return
+        flag = action == 3
+        self.pre_calling_range(flag)
+
+    def pre_raising_range(self):  # TODO
+        """Sets pre_flop raising range"""
+        if self.table.last_bet == 20:
+            self.pre_calling_range(flag=True)
+        else:
+            min_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
+
+            self.update_range(min_strength=min_strength)
+
+    def pre_calling_range(self, flag=False):
+        """Sets pre flop folding range"""
+        if self.valid_pre_po() or self.to_call == 0 and not flag:
+            min_strength = 0
+            if self._current_range != None:
+                return
+        else:
+            min_strength = (self.round_total / self.table.blinds[-1] / 3) ** (1 / 3)
+            # max_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
+
+        self.update_range(min_strength=min_strength)
+
     def _get_bet(self, table):
         print("bets", table.last_bet)
 
@@ -337,11 +434,12 @@ class BotV1(Bot):
         try:
             extra = random.randint(
                 min(
-                    self.chips + self.round_invested, table.last_bet + table.min_raise
+                    self.chips + self.round_invested,
+                    table.last_bet + table.min_increase,
                 ),  # changed
                 min(
                     max(
-                        table.last_bet * 2 + table.min_raise,
+                        table.last_bet * 2 + table.min_increase,
                         int(table.get_pot() * 2.5),
                     ),
                     self.chips + self.round_invested,
@@ -361,58 +459,12 @@ class BotV1(Bot):
 
         return extra
 
-    def pre_flop(self, table) -> tuple[int, int]:
-        """Returns the action if it is currently the pre_flop"""
-
-        self.set_pre_var(table)
-
-        r = random.randint(1, 10)
-
-        print(
-            "max_chips",
-            self.round_total,
-            self.max_chips,
-            self.min_call,
-            self.max_call,
-            # pot_odds,
-            self.to_call,
-            table.curr_player_i == table.last_agg,
-            (table.curr_player_i + 1) % table.no_players,
-            table.last_agg,
-            r,
-            table.still_to_act(),
-            table.last_bet,
-            self.get_pot(),
-        )
-
-        if self.max_call != True and (
-            (self.round_total < self.max_chips / 2 and r >= 2)
-            or (self.min_call and (r >= 10 or table.last_bet == 20))
-        ):
-            return 3, self._get_bet(table)
-        elif self.min_call:
-            return 2, 0
-        return 1, 0
-
     def valid_pre_po(self):
-        return self.pot_odds > 3 and self.table.still_to_act() == 0
-
-    def set_pre_var(self, table):
-        """Sets variables required to determine action for pre-flop"""
-        self.round_total = self.get_round_total()
-        self.pot_odds = self.calc_po(frac=True)
-
-        c1, c2 = self.hole_cards
-
-        i1, i2 = strength_index(c1, c2)
-
-        strength = strengths[i1][i2]
-        self.max_chips = strength**3 * 3 * table.blinds[-1]
-        self.min_call = self.round_total < self.max_chips
-        self.max_call = False
-        if self.min_call == False and (self.to_call == 0 or self.valid_pre_po()):
-            self.min_call = self.max_call = True
-        self.max_call = self.max_call or self.can_only_call()
+        return (
+            self.pot_odds > 3
+            and self.table.still_to_act() == 0
+            and len([p for p in self.table.active_players if not p.fold])
+        )
 
     def update_range(self, hands=None, min_strength=-1, max_strength=float("inf")):
         """Updates range with given minimum and maximum strength"""
@@ -426,35 +478,6 @@ class BotV1(Bot):
                 + 1
             ],
         )
-
-    def pre_calling_range(self, flag=False):
-        """Sets pre flop folding range"""
-        if self.valid_pre_po() or self.to_call == 0 and not flag:
-            min_strength = 0
-            if self._current_range != None:
-                return
-        else:
-            min_strength = (self.round_total / self.table.blinds[-1] / 3) ** (1 / 3)
-            # max_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
-
-        self.update_range(min_strength=min_strength)
-
-    def pre_raising_range(self):  # TODO
-        """Sets pre_flop raising range"""
-        if self.table.last_bet == 20:
-            self.pre_calling_range(flag=True)
-        else:
-            min_strength = (self.round_total * 2 / self.table.blinds[-1] / 3) ** (1 / 3)
-
-            self.update_range(min_strength=min_strength)
-
-    def _set_pre_range(self, action):
-        """Sets range for pre-flop"""
-        if action == 1:
-            self._current_range = None
-            return
-        flag = action == 3
-        self.pre_calling_range(flag)
 
     def post_flop(self, table):
         """Returns action for post flop"""
@@ -495,21 +518,7 @@ class BotV1(Bot):
         if rank > len(self._current_range):
             self._current_range[sort_hole(*self.hole_cards)] = (
                 len(self._current_range) + 1
-            )  # uneeded?
-        return action
-
-    def get_action(self, table):
-        self.to_call = min(
-            table.last_bet - self.round_invested, self.chips
-        )  # make function
-
-        if table.r == 0:
-            action = self.pre_flop(table)
-            self._set_pre_range(action)
-        else:
-            action = self.post_flop(table)
-
-        # return 2, 0
+            )
         return action
 
     def calc_mdf(self, applied=True, bet=None):
@@ -524,10 +533,6 @@ class BotV1(Bot):
         """Calculate pot odds"""
         po = (self.to_call) / (self.get_pot() + self.to_call)
         return po if frac == False else po**-1 if po != 0 else float("inf")
-
-
-class Human(PokerPlayer):
-    pass
 
 
 class Table:
@@ -565,7 +570,23 @@ class Table:
         return i
 
     def remove_player(self, i: int):
-        pass
+        # TODO test
+        # potential BUG where player leaves during all in and results in chips disappearing
+        player = self.players[i]
+
+        # This is a fallback incase the player to be removed
+        # Is the next player to act
+        if player == self.current_player:
+            self.full_single_move((1, 0))
+        else:
+            player.fold = True
+            self.players_remaining -= 1
+            self.active_in_hand -= 1
+            self.set_skip_r()
+
+        self.players[i] = None
+        self.ids.remove(player.id)
+        self.correct_total_chips -= player.chips
 
     def can_move(self):
         """Returns if the current player can make a move"""
@@ -580,23 +601,35 @@ class Table:
             c = self.curr_player_i
         return (c + 1) % self.no_players
 
-    def validate_move(self, player_id, action_info):
-        if player_id != self.current_player.id:
-            return False
+    # def validate_move(self, player_id, action_info):
+    #     if player_id != self.current_player.id:
+    #         return False
 
-        return self.current_player.is_valid(self, action_info)
+    #     return self.current_player.is_valid(self, action_info)
 
-    def single_move(self, action_info):
+    def full_single_move(self, action_info: tuple[int, int | float]):
+        """Validates and executes a user action
+        Automatically ends the round
+        Should not be used if state needs to be emitted before round ends"""
+        end_valid = self.single_move(action_info)
+
+        if end_valid:
+            self.start_round()
+
+    def single_move(self, action_info: tuple[int, int | float]):
         """Returns None if the move was invalid else True if the round ends else False.
 
         Checks if the action is valid, and if the current player can make an action.
+        If valid, executes the action
 
-        If so, calls and returns Table.end_move() to finish the action"""
+        If so, calls and returns Table.end_move() to finish the action
+        Will not end the round automatically (to give state a chance to be returned)
+        """
         print("player remaining", self.players_remaining)
 
         valid = self.current_player.move(self, action_info)
 
-        if not valid:  # TODO decide if to return something better
+        if not (self.running and valid):  # TODO decide if to return something better
             print("not valid", action_info)
             return
 
@@ -606,8 +639,9 @@ class Table:
         if self.current_player.fold or self.current_player.all_in:
             self.active_in_hand -= 1
 
-            if self.active_in_hand == 1:
-                self.skip_round = self.r + 1
+            self.set_skip_r()
+            # if self.active_in_hand == 1:
+            #     self.skip_round = self.r + 1
 
         print("pre", self.pot, "\n")
         self.set_pot()
@@ -617,16 +651,24 @@ class Table:
     def end_move(self):
         """Returns True if a betting round has finished else False
 
-        Updates attributes (last_agg, min_raise, current_player)"""
+        Updates attributes (last_agg_i, min_raise, current_player ...)"""
         if self.players_remaining == 1:
             self.end_hand()
             return False
 
         if self.current_player.agg:
-            self.last_agg = self.curr_player_i
-            self.min_raise = self.current_player.round_invested - self.last_bet
+            # The index of the player at which players can only call
+            self.only_call_i: int = (
+                self.last_agg_i if self.current_player.invalid_raise else -1
+            )
+            self.last_agg_i: int = self.curr_player_i
+
+            if not self.current_player.invalid_raise:
+                self.min_increase = self.current_player.round_invested - self.last_bet
+                print("invalid raise")
+
             self.last_bet = self.current_player.round_invested
-            self.only_call = self.current_player.only_call
+            print(self.min_increase)
 
         if self.current_player.action == 3:
             self.bet_count += 1
@@ -634,14 +676,12 @@ class Table:
         self.current_player.agg = False
         self.curr_player_i = self.next_player()
         self.current_player = self.active_players[self.curr_player_i]
-
-        if self.current_player.agg != False:
-            raise Exception(self.current_player.agg)
-
         self.current_player.agg = False
 
-        if self.last_agg == self.curr_player_i:
+        if self.last_agg_i == self.curr_player_i:
             return True
+        if self.only_call_i == self.curr_player_i:
+            self.only_call = True
 
         return False
 
@@ -653,7 +693,7 @@ class Table:
             self.r += 1
 
         for p in self.active_players:
-            p.end_round(first)
+            p.start_round(first)
 
         if self.r == 4:
             self.end_hand()
@@ -661,10 +701,11 @@ class Table:
 
         name = {0: "Pre Flop", 1: "Flop", 2: "Turn", 3: "River"}
 
-        self.min_raise = self.blinds[-1]
+        self.min_increase = self.blinds[-1]
         self.only_call = False
+        self.only_call_i = -1
         if self.r == 0:
-            self.curr_player_i = self.last_agg = (
+            self.curr_player_i = self.last_agg_i = (
                 self.sb_i + (2 if self.no_players != 2 else 1)
             ) % self.no_players
             self.last_bet = self.blinds[-1]
@@ -672,10 +713,10 @@ class Table:
             self.bet_count = 1
 
         else:
-            self.curr_player_i = self.last_agg = self.sb_i
+            self.curr_player_i = self.last_agg_i = self.sb_i
             self.last_bet = 0
             self.community = self.deck[
-                self.communityCard_i : self.communityCard_i + self.r + 2
+                self.community_card_i : self.community_card_i + self.r + 2
             ]
             self.bet_count = 0
 
@@ -695,6 +736,7 @@ class Table:
             raise Exception
 
     def set_pot(self, player=None):
+        """Sets the pot. Must be called after each action"""
         if player == None:
             player = self.current_player
 
@@ -709,32 +751,33 @@ class Table:
                 if end:
                     raise Exception(p_before, "\n", p, end)
 
-                to_call, required, contents = p.copy()
+                single_investment, required, contents = p.copy()
                 if remaining <= 0:  # no chips remaining (just keep it the same)
                     new_pot.append(p)
                     continue
 
-                rem_after = remaining + contents[player] - to_call
+                rem_after = remaining + contents[player] - single_investment
 
                 if rem_after < 0:  # make it subtract from the current pot
                     remaining += contents[player]
-                    n_contents = defaultdict(int)
-                    for k, v in contents.items():
-                        n_contents[k] = min(remaining, v)
-                        contents[k] = max(0, v - remaining)
+                    new_contents = defaultdict(int)
+                    for key, value in contents.items():
+                        new_contents[key] = min(remaining, value)
+                        contents[key] = max(0, value - remaining)
 
-                    n_contents[player] = remaining
-                    new_pot.append([remaining, player.all_in, n_contents])
-                    new_pot.append([to_call - remaining, required, contents])
+                    new_contents[player] = remaining
+                    new_pot.append([remaining, player.all_in, new_contents])
+                    new_pot.append([single_investment - remaining, required, contents])
 
                     remaining = 0
 
                 elif rem_after == 0 or required:
-                    contents[player] = to_call
-                    new_pot.append([to_call, required or player.all_in, contents])
+                    contents[player] = single_investment
+                    new_pot.append([single_investment, required or player.all_in, contents])
                     remaining = rem_after
 
                 else:
+                    #current pot is not re-added
                     if rem_after <= 0:
                         raise Exception(rem_after)
                     end = True
@@ -747,26 +790,23 @@ class Table:
             if remaining:
 
                 if not end:
-                    to_call = 0
+                    single_investment = 0
                     contents = defaultdict(int)
 
-                contents[player] = to_call + remaining
-                new_pot.append([to_call + remaining, player.all_in, contents])
+                contents[player] = single_investment + remaining
+                new_pot.append([single_investment + remaining, player.all_in, contents])
 
             self.pot = new_pot
 
     def get_pot(self):
         return sum(sum(p[2].values()) for p in self.pot)
 
-    def next_player_i(self):
-        pass
-
     def still_to_act(self):
         c = 0
         ci = self.next_player()
         while True:
             p = self.active_players[ci]
-            if self.last_agg == ci or ci == self.curr_player_i:
+            if self.last_agg_i == ci or ci == self.curr_player_i:
                 return c
             if not (p.fold or p.all_in):
                 c += 1
@@ -795,8 +835,10 @@ class Table:
             self.sb_i = self.sb_i + 1
 
         self.sb_i %= self.no_players
-        self.pot = [[0, False, defaultdict(int)]]
         # to_call, 1 or more players all in, each player invested in pot
+        self.pot = [[0, False, defaultdict(int)]]
+
+        # indexing from 0-3
         self.r = 0
         self.skip_round = float("inf")
         random.shuffle(self.deck)
@@ -815,7 +857,7 @@ class Table:
             [1 for p in self.active_players if not p.fold and not p.all_in]
         )
         self.players_remaining = sum([1 for p in self.active_players if not p.fold])
-        self.communityCard_i = self.no_players * 2
+        self.community_card_i = self.no_players * 2
 
         self.start_round(first=True)
 
@@ -872,10 +914,16 @@ class Table:
             len([1 for x in self.players if x and x.chips]),
         )
         if sum(p.chips for p in self.players if p) != self.correct_total_chips:
-            raise Exception([p.chips for p in self.players if p])
+            raise Exception(
+                [p.chips for p in self.players if p], self.correct_total_chips
+            )
 
     def to_bb(self, chips):
         return chips / self.blinds[1]
+
+    def set_skip_r(self):
+        if self.active_in_hand == 1:
+            self.skip_round = self.r + 1
 
 
 def start():

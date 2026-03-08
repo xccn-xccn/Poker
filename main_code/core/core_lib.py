@@ -18,21 +18,7 @@ def get_min_hand(strength):
 
 
 strengths = [
-    [
-        float("inf"),
-        3.44,
-        2.80,
-        2.36,
-        2.06,
-        1.65,
-        1.52,
-        1.39,
-        1.29,
-        1.38,
-        1.29,
-        1.20,
-        1.10,
-    ],
+    [float("inf"), 3.44, 2.80, 2.36, 2.06, 1.65, 1.52, 1.39, 1.29, 1.38, 1.29, 1.20, 1.10,],
     [3.00, 6.58, 2.26, 1.98, 1.77, 1.40, 1.19, 1.10, 1.03, 0.95, 0.86, 0.80, 0.74],
     [2.14, 1.62, 5.48, 1.82, 1.67, 1.32, 1.10, 0.89, 0.84, 0.76, 0.70, 0.64, 0.59],
     [1.66, 1.33, 1.20, 4.53, 1.62, 1.28, 1.06, 0.83, 0.63, 0.58, 0.52, 0.47, 0.42],
@@ -54,13 +40,13 @@ for v, k in enumerate("23456789TJQKA", 2):
 
 flatt_strengths = sorted([a for b in strengths for a in b], reverse=True)
 deck = [c + s for s in "CSHD" for c in "23456789TJQKA"]
-all_p_hands = [
+all_hole_cards = [
     (c1, c2)
     for c1 in deck
     for c2 in deck
     if card_values[c1[0]] > card_values[c2[0]] or c1[0] == c2[0] and c1[1] > c2[1]
 ]
-sorted_hands = sorted(all_p_hands, key=lambda x: pre_strength(*x), reverse=True)
+sorted_hands = sorted(all_hole_cards, key=lambda x: pre_strength(*x), reverse=True)
 strengths_to_index = defaultdict(list)
 for i, x in enumerate(sorted_hands):
     strengths_to_index[pre_strength(*x)].append(i)

@@ -1,12 +1,22 @@
 import pygame
-from gui.utility import get_chip_buff
+from gui.utility import get_chip_buff, get_chips
+
+# from gui.game_window import GameWindow
+# from gui.assets import Assets
 
 
 class PlayerView:
-    def __init__(self, seat_index: int, state: dict, assets):
+    def __init__(self, seat_index: int, state: dict, assets, window):
         self.assets = assets
         self.seat = seat_index
         self.state = state.copy()
+        self.window = window
+        self.chip_names: list[str] = []
+
+        # the possible bet of the user
+        self.possible_bet: int = 0
+
+        self.chip_buff = get_chip_buff()
         self._layout_from_assets()
         self._load_profile_image()
 
@@ -48,21 +58,21 @@ class PlayerView:
             img = surf
         self.profile_image = img
 
-    def update_state(self, new_state: dict, new_round: bool = False):
+    def update_state(self, new_state: dict, bb: int, new_round: bool = False):
         self.state = new_state.copy()
-
+        self.set_chips_names(bb)
         if new_round:
             self.chip_buff = get_chip_buff()
-        # self._state_change()
-
-    def _state_change(self):
-        pass
-        # if self.new_round:
-        #     pass
 
     def resize(self):
         self._layout_from_assets()
         self._load_profile_image()
+
+    def set_chips_names(self, bb):
+        """Sets the chips names using round invested or the possible bet if this PlayerView is the user's"""
+        self.chip_names = get_chips(
+            bb, max(self.state["round_invested"], self.possible_bet)
+        )
 
     def _draw_hole(self, hole_cards, surface, card_zoom):
         x = (
@@ -70,8 +80,7 @@ class PlayerView:
             - self.assets.sizes["card_w"] * card_zoom
             - self.assets.sizes["card_buffer"] // 2
         )
-        y = self.profile_rect.bottomright[1] - \
-            self.assets.sizes["card_h"] * card_zoom
+        y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"] * card_zoom
         for card in hole_cards:
             surface.blit(self.assets.get_card(card, card_zoom), (x, y))
             x += (
@@ -85,16 +94,15 @@ class PlayerView:
         surface.blit(btn, self.button_coords)
 
     def _draw_centered(self, surface, text_surf, height):
-        surface.blit(text_surf, self._centered_xcoords(
-            text_surf.get_width(), height))
+        surface.blit(text_surf, self._centered_xcoords(text_surf.get_width(), height))
 
     def _centered_xcoords(self, surf_width: int, height: int):
         px, py = self.profile_rect.midtop
         return px - surf_width // 2, py + height
 
-    def draw_chips(self):
-        pass
-    
+    def _draw_chips(self):
+        self.window.draw_chips(self.chip_buff, self.chip_names, self.seat)
+
     def draw(self, surface, card_zoom=1.0):
         px, py = self.profile_rect.topleft
         surface.blit(self.profile_image, (px, py))
@@ -102,14 +110,17 @@ class PlayerView:
         chips = self.state["chips"]
         action = self.state["action"]
         hole = self.state["hole_cards"]
-        chips_surf = self.assets.fonts["small"].render(
-            str(chips), True, (255, 215, 0))
+        chips_text_surf = self.assets.fonts["small"].render(
+            str(chips), True, (255, 215, 0)
+        )
 
         self._draw_centered(
-            surface, chips_surf, self.profile_rect.height + 5 * self.assets.height_scale
+            surface,
+            chips_text_surf,
+            self.profile_rect.height + 5 * self.assets.height_scale,
         )
         self._draw_hole(hole, surface, card_zoom)
-
+        self._draw_chips()
         if self.state["position_name"] == "Button":
             self._draw_button(surface)
 

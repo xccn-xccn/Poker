@@ -1,32 +1,60 @@
 from collections import Counter
 from functools import cmp_to_key
-from main_code.core.core_lib import *
+from core.core_lib import *
 from time import perf_counter
 from random import choices
+
 # NOTE functions like get_four will not only select the best quads but all possible quads meaning they cannot be used as kickers (important for 4 card poker)
 # TODO check if bug fixed
 
-def get_winner(hands, community):
 
-    cards = [list(h) + community for h in hands]
+def get_winner(hands: list[tuple[str]], community: list[str]) -> list[list[list, int]]:
+    """
+    Args:
+        hands: List of the hole cards of each player
+        community: List of the 5 shared community cards
+
+    Returns:
+        list: List of each winner's (poss multiple since there may be a tie) 5 card hand and their index in hands parameter list
+    """
+
+    player_cards = [list(h) + community for h in hands]
     best = [[]]
     for f in order:
-        for i, player in enumerate(cards):
-            finalHand = get_hand(player, f)
-            if finalHand:
+        for i, all_cards in enumerate(player_cards):
+            final_hand = get_hand(all_cards, f)
+            if final_hand:
                 if best == [[]]:
-                    best = [[finalHand, i]]
+                    best = [[final_hand, i]]
                 else:
-                    best_player = compare_hand_k(finalHand, best[0][0])
+                    best_player = compare_hand_k(final_hand, best[0][0])
                     if best_player == 1:
-                        best = [[finalHand, i]]
+                        best = [[final_hand, i]]
                     if best_player == 0:  # draw
-                        best.append([finalHand, i])
+                        best.append([final_hand, i])
 
         if best != [[]]:
             break
 
     return best
+
+
+# @cache
+def get_hand(cards: list[str], f) -> bool | list[str]:
+    """Adds kickers to result of f(cards)
+    Args:
+        cards: List of hole cards + community cards
+        f (_type_): function for a specific type of hand (two pair, flush, etc)
+
+    Returns:
+        bool | list: best 5 card hand of hand type f otherwise False if impossible
+    """
+    used = f(cards)
+    if used == False:
+        return False
+    remaining = card_value_sort([c for c in cards if c not in used])
+
+    return used[:5] + remaining[: 5 - len(used)]
 
 
 def all_hands_ranked(community, known=None, p_hands=None):
@@ -35,15 +63,15 @@ def all_hands_ranked(community, known=None, p_hands=None):
     if known == None:
         known = []
     if p_hands == None:
-        p_hands = all_p_hands
+        p_hands = all_hole_cards
 
     o_hands = []
     buckets = [[] for _ in range(21)]
 
     for h in p_hands:
-        i1, f_hand = get_hand_rank(h, community)
         if h[0] in community + known or h[1] in community + known:
             continue
+        i1, f_hand = get_hand_rank(h, community)
 
         buckets[i1].append((h, f_hand))
 
@@ -88,7 +116,7 @@ def group_rank(hands, f=None):
 
 def all_hands2(community, known=[]):
     seen = set(community + known)
-    o_hands = [h for h in all_p_hands if h[0] not in seen and h[1] not in seen]
+    o_hands = [h for h in all_hole_cards if h[0] not in seen and h[1] not in seen]
     print(o_hands, "\n\n")
 
     o_hands = list(
@@ -105,6 +133,7 @@ def all_hands2(community, known=[]):
 
 
 def get_hand_rank(hand, community):
+    """Returns the best hand and an index for the bucket in all_hands_ranked"""
     for i, f in enumerate(order):
         final_hand = get_hand(list(hand) + community, f)
         if final_hand:
@@ -125,7 +154,18 @@ def compare_hand_k(hand1, hand2):
     return 0
 
 
-def hand_p(*hands, community=[], samples=100):
+def hand_p(*hands, community=[], samples=100) -> list[float]:
+    """Monte Carlo samples all hands to estimate their probability of winning
+
+    Args:
+        *hands: Any number of hole cards
+        community (list, optional): Shared community cards.
+        samples (int, optional): Number of samples. Larger values increase accuracy but also time. Defaults to 100.
+
+    Returns:
+        list: List containing probability of each hand winning
+    """
+
     seen = set(community + [x for xs in hands for x in xs])
     n_deck = [c for c in deck if c not in seen]
     w_count = [0 for _ in range(len(hands))]
@@ -142,18 +182,8 @@ def hand_p_k(hand1, hand2, community=[], samples=100):
     return hand_p(hand1, hand2, community=community, samples=samples)[0] - 0.5
 
 
-def cardValue_sort(x):
+def card_value_sort(x):
     return sorted(x, key=lambda y: card_values[y[0]], reverse=True)
-
-
-# @cache
-def get_hand(cards, f):
-    used = f(cards)
-    if used == False:
-        return False
-    remaining = cardValue_sort([c for c in cards if c not in used])
-
-    return used[:5] + remaining[: 5 - len(used)]
 
 
 def get_same(cards, n):
@@ -164,7 +194,7 @@ def get_same(cards, n):
         if val >= n:
             pairs.append(card)
 
-    output = cardValue_sort([c for c in cards if c[0] in pairs])
+    output = card_value_sort([c for c in cards if c[0] in pairs])
 
     return output if output else False
 
@@ -219,7 +249,7 @@ def get_straight(cards, l_5=True):
         if c[0] == "A":
             cards.append((1, c[1]))
 
-    cards = sorted(list(set(cards)), key=lambda x: x[0], reverse=True)  # necessary?
+    cards = sorted(list(set(cards)), key=lambda x: x[0], reverse=True)
 
     straight = [cards[0]]
     for c1, c2 in zip(cards, cards[1:]):
@@ -249,7 +279,7 @@ def get_flush(cards, l_5=True):
     else:
         return False
 
-    output = cardValue_sort([c for c in cards if c[1] == suit])
+    output = card_value_sort([c for c in cards if c[1] == suit])
     if l_5:
         output = output[:5]
 
@@ -282,13 +312,13 @@ order = [
     get_three,
     get_2pair,
     get_pair,
-    cardValue_sort,
+    card_value_sort,
 ]
 
 if __name__ == "__main__":
     start = perf_counter()
     # main()
-    # print(get_flush(["AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "KD"]))
+    print(get_flush(["AC", "2C", "3C", "4C", "5C", "6C", "7C", "8C", "9C", "KD"]))
     # print(get_straight(["AC", "2C", "4C", "5C", "7C", "3D"], True))
     # # print(get_pairs(["AC", "2C", "4C", "5C", "6C", "6D", "8D", "9C", "2D"]))
     # print(get_straight_flush(["AC", "2C", "4C", "5C", "6C", "7C", "8D", "9C", "3C"]))

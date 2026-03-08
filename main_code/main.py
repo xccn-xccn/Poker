@@ -1,11 +1,11 @@
-import sys
-import pygame
+import sys, pygame, socketio, asyncio
 from gui.assets import Assets
 from gui.menu_window import MenuWindow
 from gui.game_window import GameWindow
 from core.controller import OfflineController, OnlineController
 
 # BASE_RESOLUTION = (1700, 900)
+#Try web app
 BASE_RESOLUTION = (1600, 900)
 FPS = 60
 
@@ -44,11 +44,19 @@ class PokerApp:
         )
 
     def start_game(self, online=False, host=False, host_ip=None):
-        self.__controller = (
-            OnlineController(is_host=host, host_ip=host_ip)
-            if online
-            else OfflineController(testing=self.testing)
-        )
+
+        try:
+            self.__controller = (
+                OnlineController(is_host=host, host_ip=host_ip)
+                if online
+                else OfflineController(testing=self.testing)
+            )
+        except socketio.exceptions.ConnectionError as e:
+            print(f"Failed to connect to server: {e}")
+            self.current_window.set_window("")
+            return 
+
+
         self.current_window = GameWindow(
             screen=self.screen,
             assets=self.assets,
@@ -76,7 +84,7 @@ class PokerApp:
             elif new_window == "Menu":
                 self.set_menu_window()
 
-    def run(self):
+    async def run(self):
         running = True
         while running:
 
@@ -93,6 +101,7 @@ class PokerApp:
             self.current_window.draw()
 
             pygame.display.flip()
+            await asyncio.sleep(0)
 
         pygame.quit()
         sys.exit(0)
@@ -101,4 +110,4 @@ class PokerApp:
 if __name__ == "__main__":
     arg = sys.argv
     app = PokerApp(testing=arg[1] if len(arg) > 1 and arg[1][0] == "t" else False)
-    app.run()
+    asyncio.run(app.run())

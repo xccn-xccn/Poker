@@ -1,11 +1,11 @@
-from core.poker import Table, Human, Bot, start
+from core.poker import Table, Human, Bot
 import eventlet
+
 eventlet.monkey_patch()
 
 
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask import Flask, request
-
 
 
 # TODO
@@ -23,20 +23,30 @@ class GameRoom:
         seat_i = self.table.add_new_player(data["chips"])
         self.sid_seat[sid] = seat_i
 
-        self.full = None not in self.table.players
+        self.set_full()
         self.emit_state(new=True)
 
     def remove_player(self, sid: int):
-        pass
+        #TODO test
+        player_i = self.sid_seat[sid]
+        if self.table.running and self.table.players[player_i] == self.table.current_player:
+            self.player_action(sid, {"action": 1, "amount": 0})
+
+        self.table.remove_player(player_i)
+        self.full = False
+        del self.sid_seat[sid]
+
+        self.emit_state()
 
     def start_hand(self):
-        if self.table.running:
+        if self.table.running or len([x for x in self.table.players if x]) <= 1:
             return
 
         self.table.start_hand()
         self._process_system_actions(end=False)
 
     def _single_auto_action(self):
+        """Runs a bot move or skips the current player's turn if they cannot make an action e.g has no chips remaining"""
         if self.table.can_move():
             player = self.table.current_player
             if isinstance(player, Bot):
@@ -95,8 +105,11 @@ class GameRoom:
             player = self.table.players[seat]
             if not isinstance(player, Human):
                 continue
-            socketio.emit("game_update", self.get_specific_state(
-                player, seat, new=new, new_round=new_round), to=sid)
+            socketio.emit(
+                "game_update",
+                self.get_specific_state(player, seat, new=new, new_round=new_round),
+                to=sid,
+            )
 
     def _get_cards(self, other_player, user_player):
         if other_player.fold or other_player.inactive:
@@ -142,9 +155,13 @@ class GameRoom:
             )
             return f"{word} {player.round_invested}"
 
-    def get_specific_state(self, user_player: Human, seat: int, new=False, new_round=False):
-        """Returns the state for a specific player, 
+    def get_specific_state(
+        self, user_player: Human, seat: int, new=False, new_round=False
+    ):
+        """Returns the state for a specific player,
         insuring that they only get information they should access"""
+
+        user_i = len([x for i, x in enumerate(self.table.players) if x and i < seat])
         state = {
             "players": [
                 {
@@ -166,26 +183,28 @@ class GameRoom:
             "running": self.table.running,
             "round": self.table.r,
             "new_round": new_round,
-            "user_i": seat,
+            "user_i": user_i,
             "new_player": new,
             "bb": self.table.blinds[1],
         }
 
         return state
+    
+    def set_full(self):
+        self.full = None not in self.table.players
 
 
 class ServerManager:
-    """Manages player connections."""
+    """Manages player connections"""
 
     def __init__(self):
         # room_id to GameRoom instance
         self.rooms: dict[int:GameRoom] = {}
-        
+
         # sid to room_id
         self.sid_to_room: dict[int:int] = {}
 
     def create_new_room(self) -> tuple[GameRoom | int]:
-        """Creates a new game room"""
         room = GameRoom()
         room_id = str(id(room))
         self.rooms[room_id] = room
@@ -194,7 +213,6 @@ class ServerManager:
         return room, room_id
 
     def find_or_create_room(self) -> tuple[GameRoom | int]:
-        """Find an available game room with an empty seat or create a new one."""
         for room_id, game_room in self.rooms.items():
 
             if not game_room.full:
@@ -204,7 +222,6 @@ class ServerManager:
         return game_room, room_id
 
     def handle_join_game(self, player_sid: int, data: dict):
-        """Handles a client requesting to join a game."""
         game_room, room_id = self.find_or_create_room()
 
         game_room.add_player(player_sid, data)
@@ -215,8 +232,6 @@ class ServerManager:
         print(f"Human player {player_sid} joined room {room_id}")
 
     def handle_disconnect(self, sid):
-        """Handles a client disconnecting."""
-
         if sid in self.sid_to_room:
             room_id = self.sid_to_room.pop(sid)
             room = self.rooms[room_id]
@@ -232,7 +247,6 @@ class ServerManager:
             # socketio.emit("game_update", room.get_state(0, 0), room=room_id)
 
     def handle_start_hand(self, sid):
-        """Handles a client requesting to start a new hand."""
         if sid not in self.sid_to_room:
             return
 
@@ -244,7 +258,6 @@ class ServerManager:
         print(f"Room {room_id}: Received request to start hand...")
 
     def handle_player_action(self, sid: int, data: int):
-        """Handles a human player performing an action (fold, bet, call, raise)."""
         if sid not in self.sid_to_room:
             return
 
@@ -252,14 +265,13 @@ class ServerManager:
 
         game_room = self.rooms[room_id]
 
-        # could return the result
         game_room.player_action(sid, data)
 
-        print(f"Room {room_id}: Received action {data}")
+        print(f"Room {room_id}: Received action {data} sid {sid}")
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "secret-donk-bet"  # TODO
+app.config["SECRET_KEY"] = "e281c3cbc82d9c62e4_change_for_production"
 socketio = SocketIO(app)
 
 manager = ServerManager()
@@ -279,8 +291,10 @@ def handle_join_game(data: dict):
 
 
 @socketio.on("disconnect")
-def handle_disconnect():
+def handle_disconnect(data):
     """Routes the 'disconnect' event to the manager."""
+
+    print(f'Handle disconnect data {data}')
     manager.handle_disconnect(request.sid)
 
 

@@ -1,5 +1,5 @@
 import pygame
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class WindowBase(ABC):
@@ -21,7 +21,7 @@ class WindowBase(ABC):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             print(pygame.mouse.get_pos())
 
-    def _set_window(self, name):
+    def set_window(self, name):
         self.new_window = name
 
     def update(self):
