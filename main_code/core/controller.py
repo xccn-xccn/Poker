@@ -55,14 +55,20 @@ class ControllerBase(ABC):
 class OfflineController(ControllerBase):
     def __init__(self, testing: int = False, on_state_change: None | Callable = None):
         super().__init__(on_state_change)
-        self.create_table()
         self.testing = testing
+
+        print("testing", self.testing)
+        self.create_table()
         self.auto_thread_running = False
 
         # self.on_state_change: None | function = on_state_change
 
     def create_table(self):
-        self.table = start() if callable(start) else Table()
+        self.table = start() if callable(start) and self.testing != "human" else Table()
+
+        if self.testing == "human":
+            for r in range(6):
+                self.table.add_new_player()
 
     def start_hand(self):
         self.table.start_hand()
@@ -97,11 +103,6 @@ class OfflineController(ControllerBase):
             print(f"User made an invalid action {action, amount}")
             return
 
-        if self.auto_thread_running == True:
-            #TODO test
-            raise Exception('didnt expect that')
-            return end_valid
-
         self.update_state()
 
         self.start_systems_thread(end_valid)
@@ -114,7 +115,7 @@ class OfflineController(ControllerBase):
             if isinstance(player, Bot):
                 move = player.get_action(self.table)
                 return self.table.single_move(move), True
-            elif self.testing:
+            elif self.testing and self.testing[0] == "t":
                 return self.table.single_move((1, 0)), False
         else:
             return self.table.end_move(), False
@@ -139,9 +140,14 @@ class OfflineController(ControllerBase):
                 if round_end is None:
                     cont = False
 
-                if not self.testing:
+                if not (self.testing and len(self.testing) >= 2 and self.testing[1] in "02"):
                     elapsed = time.time() - start_time
-                    time.sleep(max(0, 0.5 if full_pause else 0.1 - elapsed))
+                    sleep_time = max(0, 0.5 if full_pause else 0.1 - elapsed)
+
+                    if self.state["players"][self.state["user_i"]]["folded"]:
+                        sleep_time /= 2
+
+                    time.sleep(sleep_time)
                 self.update_state(round_end=bool(round_end or old_end))
 
         finally:
@@ -226,7 +232,7 @@ class OfflineController(ControllerBase):
         }
 
     def get_state(self):
-        return self.state
+        return deepcopy(self.state)
 
 
 class OnlineController(ControllerBase):

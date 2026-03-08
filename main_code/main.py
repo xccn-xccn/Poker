@@ -108,5 +108,5 @@ class PokerApp:
 
 if __name__ == "__main__":
     arg = sys.argv
-    app = PokerApp(testing=arg[1] if len(arg) > 1 and arg[1][0] == "t" else False)
+    app = PokerApp(testing=arg[1] if len(arg) > 1 and arg[1][0] in "th" else False)
     asyncio.run(app.run())
