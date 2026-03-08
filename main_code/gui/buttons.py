@@ -134,11 +134,12 @@ class BetSlider(Button):
 
     def set_max_value(self, max_value):
         self.max_value = max_value
+        self.set_value(self.value)
         self._update_handle_rect()
-        # TODO hmm
+        
 
     def set_value(self, value):
-        self.value = value
+        self.value = min(value, self.max_value)
         self._update_handle_rect()
 
     def get_value(self):
