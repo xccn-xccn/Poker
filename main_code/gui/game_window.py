@@ -76,15 +76,6 @@ class GameWindow(WindowBase):
                 assets,
                 on_click=lambda: self._set_bet(2),
             ),
-            # "Bet_slider": BetSlider(
-            #     pos=(400, 760),
-            #     size=(700, 40),
-            #     assets=assets,
-            #     min_value=0,
-            #     max_value=1000,
-            #     step=10,
-            #     on_change=self._on_slider_change,
-            # ),
             "Bet_slider": VerticalSlider(
                 (self.assets.base_resolution[0] - 160, 20),
                 (140, 675),
@@ -106,17 +97,16 @@ class GameWindow(WindowBase):
     def _set_bet(self, button_index):
         print("set bet called")
 
+        max_bet = self.user_state["chips"] + self.user_state["round_invested"]
         p_bet = 0
         if self.state["round"] == 0:
             bb = self.state["bb"]
             p_bet = [bb * 3, bb * 6, bb * 12][button_index]
         else:
             pot = self.state["pot"]
-            p_bet = [pot * 0.5, pot * 1, self.user_state["chips"]][button_index]
+            p_bet = [pot * 0.5, pot * 1, max_bet][button_index]
 
-        self.possible_bet = floor(min(self.user_state["chips"], p_bet))
-        # self._update_buttons()
-        # TODO
+        self.possible_bet = floor(min(max_bet, p_bet))
         self._after_pbet_change()
 
         print(self.possible_bet)
