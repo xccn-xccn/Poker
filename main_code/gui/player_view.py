@@ -21,6 +21,7 @@ class PlayerView:
         self._load_profile_image()
 
     def _layout_from_assets(self):
+        """Sets layout using assets, depending on self.seat"""
         coords = self.assets.player_coords
         idx = self.seat % len(coords)
 

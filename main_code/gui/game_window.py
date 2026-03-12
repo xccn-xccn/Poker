@@ -95,7 +95,6 @@ class GameWindow(WindowBase):
         self.card_zoom = 1.0
 
     def _set_bet(self, button_index):
-        print("set bet called")
 
         max_bet = self.user_state["chips"] + self.user_state["round_invested"]
         p_bet = 0
@@ -109,8 +108,6 @@ class GameWindow(WindowBase):
         self.possible_bet = floor(min(max_bet, p_bet))
         self._after_pbet_change()
 
-        print(self.possible_bet)
-
     def _after_pbet_change(self):
         self.user_view.possible_bet = self.possible_bet
         self.user_view.set_chips_names(self.state["bb"])
@@ -118,10 +115,6 @@ class GameWindow(WindowBase):
 
     def _perform_action(self, action, amount=0):
         self.controller.perform_action(action, amount)
-
-        # end_valid = True
-        # TODO deal with invalid moves if end_valid = None
-
         self._after_action()
 
     def _after_action(self):
@@ -147,7 +140,7 @@ class GameWindow(WindowBase):
         self._after_pbet_change()
 
     def update(self):
-        # self._sync_state()
+        """Updates that are needed for frame"""
         if self.state_update:
             self._apply_state()
             self.state_update = False
@@ -169,6 +162,8 @@ class GameWindow(WindowBase):
         self.screen.blit(table_img, pos)
 
     def _draw_community(self):
+        """Draws community cards depending on self.card_zoom"""
+
         x = (
             self.screen.get_width() / 2
             - (
@@ -191,7 +186,7 @@ class GameWindow(WindowBase):
 
     def _draw_pot(self):
         # Because self.card_zoom cannot be taken into account in assets.py
-        # Anything offset to do with card_zoom must be calculated here
+        # Any offset to do with card_zoom must be calculated here
 
         pot_surf = self.assets.fonts["small"].render(
             str(self.state["pot"]), True, self.assets.colours["black"]
@@ -223,9 +218,9 @@ class GameWindow(WindowBase):
         seat_i: int = -1,
         offset: tuple[int, int] = (0, 0),
     ):
+        """Draws the chips for a player depending on seat_i 
+        or the pot if no seat_i provided"""
 
-        # images[:10], images[10:20] = images[10:20], images[:10]
-        # images = [chip] * 30 test
 
         chips_coords = (
             self.assets.dealer_chips_coords
@@ -244,7 +239,6 @@ class GameWindow(WindowBase):
             cx, cy = chips_coords[p]
             cx += chip_buffer[i] + offset[0]
             cy += offset[1] - (0.35 * self.assets.sizes["chip_h"]) * (i % 10)
-            # TODO
             c_image = self.assets.images["chips"][chip]
             self.screen.blit(c_image, (cx, cy))
 
@@ -289,6 +283,8 @@ class GameWindow(WindowBase):
         )
 
     def update_state(self, state):
+        """Stores the new game state
+            Does not update UI"""
         self.state_update = True
         self.state = state
         # no changes made straight away for thread safety

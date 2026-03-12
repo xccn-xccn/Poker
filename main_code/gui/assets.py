@@ -57,7 +57,7 @@ class Assets:
         self.width_scale = Scale(self.width / bw)
         self.height_scale = Scale(self.height / bh)
         self.min_size_scale = Scale(min(self.width_scale, self.height_scale))
-        self._set_sizes()
+        self._set_sizes_coords()
         self._load_fonts()
         self._load_images()
 
@@ -65,9 +65,8 @@ class Assets:
         """Rescales the input relative to base resolution against current resolution"""
         return x * self.width_scale, y * self.height_scale
 
-    def _set_sizes(self):
-        self.sizes["button_w"] = 150 * self.width_scale
-        self.sizes["button_h"] = 50 * self.height_scale
+    def _set_sizes_coords(self):
+        """Sets the sizes and coordinates of assets depending on the current display resolution"""
         self.sizes["button_xb"] = 25 * self.width_scale
 
         self.sizes["chip_w"] = 40 * self.width_scale
@@ -96,15 +95,16 @@ class Assets:
         ty = (self.current_resolution[1] - table_h) // 2
         self.sizes["table_pos"] = (tx, ty)
 
-        print(self.sizes, self.width_scale, self.height_scale, self.min_size_scale)
-
         # The buffer between the edge of the table and the profile picture
         profile_buff = 40 * self.min_size_scale
 
+        #Change in x between center of screen and first profile picture
         dx = 1 / 5 * table_w
         pdy = (table_h + self.sizes["profile"][1]) // 2 + profile_buff
 
+        #X postiion of player 1
         px1 = self.centrex + dx
+
         py1 = self.centrey + pdy
         px2 = self.centrex - dx
         py2 = self.centrey - pdy
@@ -139,10 +139,8 @@ class Assets:
                 )
             )
 
-        # print(self.chips_coords ,'\n')
         self.chips_coords = list(zip(*self.chips_coords))
 
-        # print(self.chips_coords)
         self.dealer_chips_coords = []
 
         dx, dy = centre(
