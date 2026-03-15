@@ -1,15 +1,13 @@
 import pygame
 from gui.utility import get_chip_buff, get_chips
-
-# from gui.game_window import GameWindow
-# from gui.assets import Assets
+from copy import deepcopy
 
 
 class PlayerView:
     def __init__(self, seat_index: int, state: dict, assets, window):
         self.assets = assets
         self.seat = seat_index
-        self.state = state.copy()
+        self.state = deepcopy(state)
         self.window = window
         self.chip_names: list[str] = []
 
@@ -36,6 +34,7 @@ class PlayerView:
         self.button_coords = self.assets.button_coords[idx]
 
     def _load_profile_image(self):
+        """Loads the profile picture, cuts it to become circular and adds a border"""
         img = self.assets.get_profile_image(self.state["profile_picture"])
         size = self.profile_rect.size
 
@@ -78,8 +77,12 @@ class PlayerView:
     def _draw_hole(self, hole_cards, surface, card_zoom):
         x = (
             self.centre[0]
-            - self.assets.sizes["card_w"] * card_zoom
-            - self.assets.sizes["card_buffer"] // 2
+            - len(hole_cards)
+            * (
+                +self.assets.sizes["card_w"] * card_zoom
+                + self.assets.sizes["card_buffer"] // 2
+            )
+            // 2
         )
         y = self.profile_rect.bottomright[1] - self.assets.sizes["card_h"] * card_zoom
         for card in hole_cards:
@@ -89,15 +92,16 @@ class PlayerView:
                 + self.assets.sizes["card_buffer"]
             )
 
-    def _draw_button(self, surface):  # TODO
+    def _draw_button(self, surface):
         btn = self.assets.images["dealer_button"]
-        # surface.blit(btn, self._centered_xcoords(btn.get_height(), 50))
         surface.blit(btn, self.button_coords)
 
     def _draw_centered(self, surface, text_surf, height):
+        """Blits a surface to the screen at the given height and centered horizontally"""
         surface.blit(text_surf, self._centered_xcoords(text_surf.get_width(), height))
 
     def _centered_xcoords(self, surf_width: int, height: int):
+        """Returns the coordinates to centre a surface to the screen at the given"""
         px, py = self.profile_rect.midtop
         return px - surf_width // 2, py + height
 
@@ -129,6 +133,13 @@ class PlayerView:
             act_surf = self.assets.fonts["small"].render(
                 str(action), True, (255, 50, 50)
             )
+
             self._draw_centered(
-                surface, act_surf, -5 * self.assets.height_scale - act_surf.get_height()
+                surface,
+                act_surf,
+                min(
+                    self.profile_rect.height - self.assets.sizes["card_h"] * card_zoom,
+                    -5 * self.assets.height_scale,
+                )
+                - act_surf.get_height(),
             )

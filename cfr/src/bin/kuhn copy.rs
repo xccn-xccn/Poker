@@ -50,7 +50,7 @@ fn make_new(n: usize) -> Kuhn {
 impl Kuhn {
     fn train(&mut self, iterations: usize) -> HashMap<String, Node> {
         for _ in 1..iterations {
-            //0 - n non-inclusive where n is the number of cards in the deck
+            //0..n where n is the number of cards in the deck
             for (c1, c2) in (0..self.deck_size).permutations(2).map(|v| (v[0], v[1])) {
                 self.reset();
                 self.cards = [c1, c2];
@@ -316,15 +316,10 @@ impl Node {
         [call_prob, 1.0 - call_prob]
     }
 }
-fn split_key(s: &str) -> (u32, String) {
-    let i = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
-    let (num, rest) = s.split_at(i);
-    (num.parse::<u32>().unwrap(), rest.to_string())
-}
 
 fn main() {
     let start = Instant::now();
-    let mut kuhn = make_new(13);
+    let mut kuhn = make_new(10);
     let mut strategy_file = File::create("strategy.txt").unwrap();
 
     let _ = strategy_file.write_all(b"{");
@@ -334,7 +329,7 @@ fn main() {
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
 
-    strategy.sort_by_key(|(k, _)| split_key(k));
+    strategy.sort_by_key(|(k, _)| k.clone());
     for (k, node) in strategy {
         let fs: [f64; 2] = node.get_final_strategy();
         // println!("{} {:?} {}", k, fs, fs.iter().sum::<f64>());

@@ -27,8 +27,8 @@ class Assets:
         self.colours = {
             "white": (255, 255, 255),
             "black": (0, 0, 0),
-            "background": pygame.Color("#009900"),
-            "button": pygame.Color("#228C22"),
+            "background": pygame.Color("#0E6D00C3"),
+            "button": pygame.Color("#258625"),
             "button_hover": pygame.Color("#3CA064"),
             "outline": (0, 0, 0),
             "red": pygame.Color("#CE2121"),
@@ -57,16 +57,35 @@ class Assets:
         self.width_scale = Scale(self.width / bw)
         self.height_scale = Scale(self.height / bh)
         self.min_size_scale = Scale(min(self.width_scale, self.height_scale))
+        self.max_size_scale = Scale(
+            min(self.min_size_scale * 1.3, max(self.width_scale, self.height_scale))
+        )
+
         self._set_sizes_coords()
         self._load_fonts()
         self._load_images()
 
-    def rescale_single(self, x, y):
-        """Rescales the input relative to base resolution against current resolution"""
-        return x * self.width_scale, y * self.height_scale
+    def rescale_single(
+        self, x: int | float, y: int | float, scale_i: int = 0
+    ) -> tuple[int, int]:
+        """Rescales the input x and y (potentially position or coordinates)
+        relative to base resolution against current resolution.
+
+        scale_i == 0: width and height scales used.
+        scale_i == 1: min scale used.
+        scale_i == 2: max scale used."""
+        width_scale = [self.width_scale, self.min_size_scale, self.max_size_scale][
+            scale_i
+        ]
+        height_scale = [self.height_scale, self.min_size_scale, self.max_size_scale][
+            scale_i
+        ]
+        return x * width_scale, y * height_scale
 
     def _set_sizes_coords(self):
         """Sets the sizes and coordinates of assets depending on the current display resolution"""
+
+        # x direction buffer between buttons
         self.sizes["button_xb"] = 25 * self.width_scale
 
         self.sizes["chip_w"] = 40 * self.width_scale
@@ -81,9 +100,11 @@ class Assets:
         table_h = 423 * self.height_scale
         self.sizes["table_size"] = (table_w, table_h)
 
-        self.sizes["card_w"] = 51 * self.width_scale
-        self.sizes["card_h"] = 73 * self.height_scale
-        self.sizes["card_buffer"] = 2 * self.height_scale
+        self.sizes["card_w"] = 51 * self.max_size_scale
+        self.sizes["card_h"] = 73 * self.max_size_scale
+
+        # x direction buffer between cards
+        self.sizes["card_buffer"] = 2 * self.width_scale
 
         self.sizes["profile"] = (125 * self.min_size_scale, 125 * self.min_size_scale)
 
@@ -98,11 +119,11 @@ class Assets:
         # The buffer between the edge of the table and the profile picture
         profile_buff = 40 * self.min_size_scale
 
-        #Change in x between center of screen and first profile picture
+        # Change in x between centre of screen and first profile picture
         dx = 1 / 5 * table_w
         pdy = (table_h + self.sizes["profile"][1]) // 2 + profile_buff
 
-        #X postiion of player 1
+        # x postion of player 1
         px1 = self.centrex + dx
 
         py1 = self.centrey + pdy
@@ -122,12 +143,16 @@ class Assets:
 
         self.button_coords = self.create_relative_image_pos(
             self.sizes["dealer_button"],
-            (40, 60),
+            (40, 80),
             (0, profile_buff + self.sizes["profile"][0] // 2),
         )
+
+        # Tuple of coordinates of chips
         self.chips_coords = []
 
         for i in range(-1, 2):
+
+            # Calculates chip positions relative to profile pictures
             self.chips_coords.append(
                 self.create_relative_image_pos(
                     (self.sizes["chip_w"], self.sizes["chip_h"]),
@@ -173,8 +198,9 @@ class Assets:
         vector: (distance_left, distance_right) each will be multiplied by the correct scale
         fixed_vector: (distance_left, distance_right) will not be multiplied by a scale
 
-        returns a list of tuples of the position for the image with the image_size to be blitted so
-        that the image will be centered at the position of the inputted vector
+        Returns a list of tuples of the position for the image for each profile picture
+        with the image_size to be blitted so that the image will be centered at the
+        position of the inputted vector
         """
 
         positions = []
@@ -207,7 +233,9 @@ class Assets:
 
     @staticmethod
     def relative_vector(index, vector: tuple[int, int]):
-        """Converts a vector so that it is relative towards the seat position. Input vector is the form of (distance to the left, distance towards the centre)"""
+        """Converts a vector so that it is relative towards the seat position.
+        Input vector is the form of (distance to the left, distance towards the centre)
+        """
         d_left, d_forwards = vector
 
         if index <= 2:
@@ -222,34 +250,37 @@ class Assets:
     def fix_position(
         size: tuple[int, int], pos: tuple[int, int] = (0, 0)
     ) -> tuple[int, int]:
-        """Fixes the position of an image by assuming the centre x and y are pos"""
+        """Centers an image at the given pos coordinates"""
         width, height = size
         return pos[0] - width // 2, pos[1] - height // 2
 
     def _load_fonts(self):
         font_path = os.path.join(self.root, "misc", "JqkasWild-w1YD6.ttf")
-        base_size = max(12, int(40 * self.width_scale))
         if os.path.exists(font_path):
             self.fonts["small"] = pygame.font.Font(
-                font_path, max(10, int(30 * self.width_scale))
+                font_path, max(1, int(30 * self.max_size_scale))
             )
-            self.fonts["main"] = pygame.font.Font(font_path, base_size)
+            self.fonts["main"] = pygame.font.Font(
+                font_path, max(1, int(40 * self.max_size_scale))
+            )
             self.fonts["large"] = pygame.font.Font(
-                font_path, max(20, int(80 * self.width_scale))
+                font_path, max(1, int(80 * self.max_size_scale))
             )
             self.fonts["title"] = pygame.font.Font(
-                font_path, max(24, int(120 * self.width_scale))
+                font_path, max(1, int(120 * self.max_size_scale))
             )
         else:
             self.fonts["small"] = pygame.font.SysFont(
-                "arial", max(10, int(30 * self.width_scale))
+                "arial", max(1, int(30 * self.max_size_scale))
             )
-            self.fonts["main"] = pygame.font.SysFont("arial", base_size)
+            self.fonts["main"] = pygame.font.SysFont(
+                "arial", max(1, int(40 * self.max_size_scale))
+            )
             self.fonts["large"] = pygame.font.SysFont(
-                "arial", max(20, int(80 * self.width_scale))
+                "arial", max(1, int(80 * self.max_size_scale))
             )
             self.fonts["title"] = pygame.font.SysFont(
-                "arial", max(24, int(120 * self.width_scale))
+                "arial", max(1, int(120 * self.max_size_scale))
             )
 
     def _load_images(self):
@@ -298,8 +329,6 @@ class Assets:
             dealer_button,
             self.sizes["dealer_button"],
         )
-
-        # TODO add the rest
 
     def _preload_card_images(self, cards_dir):
         val_map = {

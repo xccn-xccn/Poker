@@ -13,6 +13,7 @@ class Button:
         hover_colour=None,
         text_colour=None,
         border_width=2,
+        scale_i=0
     ):
         self.text = text
         self.assets = assets
@@ -21,6 +22,7 @@ class Button:
 
         self.original_pos = pos
         self.original_size = size
+        self.scale_i = scale_i
 
         self.rect = pygame.Rect(pos, size)
 
@@ -37,8 +39,8 @@ class Button:
         self._update_rendered_text()
 
     def _update_size_position(self):
-        self.pos = self.assets.rescale_single(*self.original_pos)
-        self.size = self.assets.rescale_single(*self.original_size)
+        self.pos = self.assets.rescale_single(*self.original_pos, self.scale_i)
+        self.size = self.assets.rescale_single(*self.original_size, self.scale_i)
         self.rect.width, self.rect.height = self.size
 
         self.rect = pygame.Rect(*self.pos, *self.size)
@@ -89,8 +91,8 @@ class Button:
 
 
 class ImageButton(Button):
-    def __init__(self, image_key, pos, size, assets, on_click=None, border_width=0):
-        super().__init__("", pos, size, assets, on_click, border_width=border_width)
+    def __init__(self, image_key, pos, size, assets, on_click=None, border_width=0, scale_i=0):
+        super().__init__("", pos, size, assets, on_click, border_width=border_width, scale_i=scale_i)
         self.image_key = image_key
         self.image = self.assets.images["buttons"][image_key]
         self._scale_image()

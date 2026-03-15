@@ -2,19 +2,19 @@ from time import perf_counter
 from collections import defaultdict
 
 
-def strength_index(c1, c2):
-    return sorted(
+def strength_index(c1: str, c2: str) -> tuple[int, int]:
+    """Returns the index from 2 hole cards so they can be used for the strengths index
+    
+        All hands of the same type always map to the same index"""
+    return tuple(sorted(
         (14 - card_values[c1[0]], 14 - card_values[c2[0]]), reverse=c1[1] != c2[1]
-    )
+    ))
 
 
-def pre_strength(c1, c2):
+def pre_strength(c1: str, c2: str) -> float:
+    """Returns the pre flop strength of the two inputted cards"""
     i1, i2 = strength_index(c1, c2)
     return strengths[i1][i2]
-
-
-def get_min_hand(strength):
-    pass
 
 
 strengths = [
@@ -52,13 +52,17 @@ for i, x in enumerate(sorted_hands):
     strengths_to_index[pre_strength(*x)].append(i)
 
 
-def sort_hole(c1, c2):
+def sort_hole(c1: str, c2: str) -> tuple[str, str]:
+    """Normalises a pair of hole cards so they can be used as keys in range dictionary
+    
+        If c1 and c2 are swapped, the same value is returned"""
     return tuple(
         sorted((c1, c2), key=lambda x: (card_values[x[0]], x[1]), reverse=True)
     )
 
 
-def get_ps_index(c_range, m_strength):
+def get_ps_index(c_range, m_strength: float) -> int:
+    """Returns the index of the weakest possible hand in the range pre-flop"""
     l, h = 0, len(c_range) - 1
 
     while l <= h:
@@ -76,7 +80,8 @@ def get_ps_index(c_range, m_strength):
     return m
 
 
-def get_ps_strength(m_strength, minimum=True):
+def get_ps_strength(m_strength: float, minimum=True) -> float:
+    """Returns the minimum hand strength greater than m_strength pre-flop"""
     l, h = 0, len(flatt_strengths) - 1
 
     while l <= h:
@@ -95,11 +100,8 @@ def get_ps_strength(m_strength, minimum=True):
 
 
 def main():
-
-    # print(sorted_hands[get_ps_index(sorted_hands, 3.00)])
     print(get_ps_strength(float("inf"), minimum=False))
     print(sort_hole("AH", "AD"))
-    pass
 
 
 if __name__ == "__main__":

@@ -27,9 +27,12 @@ class GameRoom:
         self.emit_state(new=True)
 
     def remove_player(self, sid: int):
-        #TODO test
+        # TODO test
         player_i = self.sid_seat[sid]
-        if self.table.running and self.table.players[player_i] == self.table.current_player:
+        if (
+            self.table.running
+            and self.table.players[player_i] == self.table.current_player
+        ):
             self.player_action(sid, {"action": 1, "amount": 0})
 
         self.table.remove_player(player_i)
@@ -59,16 +62,19 @@ class GameRoom:
 
         cont = True
         while self.table.running and cont:
+
+            old_end = False
             if end:
                 self.table.start_round()
                 end = False
+                old_end = True
             else:
                 end = self._single_auto_action()
 
             if end == None:
                 cont = False
 
-            self.emit_state(new_round=(end == True))
+            self.emit_state(new_round=(old_end))
             eventlet.sleep(1)
 
     def player_action(self, sid: int, data: int):
@@ -101,6 +107,7 @@ class GameRoom:
 
     def emit_state(self, new=False, new_round=False):
         """Sends state to each user in the room"""
+        print("player to seat", self.sid_seat.items())
         for sid, seat in self.sid_seat.items():
             player = self.table.players[seat]
             if not isinstance(player, Human):
@@ -134,9 +141,8 @@ class GameRoom:
             "Bet" if not self.table.running or not self.table.last_bet else "Raise",
         ]
 
-    # TODO put into local controller
     def _get_profile_picture(self, i):
-        return ["nature", "bot", "calvin", "daniel_n", "elliot", "teddy"][i]
+        return ["jerry", "bot", "calvin2", "dog", "elliot", "teddy2"][i]
 
     def _get_action(self, player):
         action = player.action
@@ -150,7 +156,7 @@ class GameRoom:
         else:
             word = (
                 "All In"
-                if player.chips == 0
+                if player.all_in
                 else "Bet" if self.table.bet_count < 2 else "Raise"
             )
             return f"{word} {player.round_invested}"
@@ -189,9 +195,9 @@ class GameRoom:
         }
 
         return state
-    
+
     def set_full(self):
-        self.full = None not in self.table.players
+        self.full = self.table.players.count(None) == 0
 
 
 class ServerManager:
@@ -294,7 +300,7 @@ def handle_join_game(data: dict):
 def handle_disconnect(data):
     """Routes the 'disconnect' event to the manager."""
 
-    print(f'Handle disconnect data {data}')
+    print(f"Handle disconnect data {data}")
     manager.handle_disconnect(request.sid)
 
 

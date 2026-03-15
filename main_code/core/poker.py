@@ -159,7 +159,7 @@ class PokerPlayer(ABC):
             else:
                 end = ""
 
-            print(f"\n Your cards are {self.hole_cards}{end}")
+            print(f"\n User cards are {self.hole_cards}{end}")
         else:
             print(f"\n {self.position_name} cards are {self.hole_cards}")
 
@@ -212,7 +212,7 @@ class PokerPlayer(ABC):
         self._apply_action(table.last_bet)
 
         # TODO
-        name = "(YOU)" if isinstance(self, Human) else "(BOT)"
+        name = "(USER)" if isinstance(self, Human) else "(BOT)"
         print(
             f"\n {self.position_name} {name} {self.action_text} with {self.chips} chips behind {self.round_invested} invested this round"
         )
@@ -548,9 +548,11 @@ class Table:
         self.community = []
         self.correct_total_chips = 0
         self.r = 0
+        self.pot = [[0, False, {}]]
         self.ids = []
+        self.current_player = -1
 
-    def add_new_player(self, chips=2001):
+    def add_new_player(self, chips=2500):
         return self.add_player(Human(self, chips=chips))
 
     def add_player(self, new_player: PokerPlayer) -> int | None:
@@ -563,10 +565,8 @@ class Table:
                 break
 
         self.ids.append(new_player.id)
-
         self.correct_total_chips += new_player.chips
 
-        print("Added Player")
         return i
 
     def remove_player(self, i: int):
@@ -583,6 +583,7 @@ class Table:
             self.players_remaining -= 1
             self.active_in_hand -= 1
             self.set_skip_r()
+            self.poss
 
         self.players[i] = None
         self.ids.remove(player.id)
@@ -601,12 +602,13 @@ class Table:
             c = self.curr_player_i
         return (c + 1) % self.no_players
 
-    # def validate_move(self, player_id, action_info):
-    #     if player_id != self.current_player.id:
-    #         return False
-
-    #     return self.current_player.is_valid(self, action_info)
-
+    def poss_end_hand(self) -> bool | None:
+        """Checks if there is only 1 player remaining
+            and if so, ends the hand and returns True"""
+        if self.players_remaining == 1:
+            self.end_hand()
+            return True
+        
     def full_single_move(self, action_info: tuple[int, int | float]):
         """Validates and executes a user action
         Automatically ends the round
@@ -652,8 +654,7 @@ class Table:
         """Returns True if a betting round has finished else False
 
         Updates attributes (last_agg_i, min_raise, current_player ...)"""
-        if self.players_remaining == 1:
-            self.end_hand()
+        if self.poss_end_hand() == True:
             return False
 
         if self.current_player.agg:
@@ -927,22 +928,26 @@ class Table:
 
 
 def start():
+
     table1 = Table()
-    for r in range(5):  # CHANGE for test
+    
+    table1.add_player(
+        Human(
+            table1,
+            chips=4000,
+        )
+    )
+
+    for r in range(5):  # change to testing
         if r <= 0:
             chips = 2000
-            table1.add_player(RandomBot(table1, chips=chips))
+            table1.add_player(BotV1(table1, chips=chips))
 
         else:
             chips = 2000
             table1.add_player(BotV1(table1, chips=chips))
 
-    table1.add_player(
-        Human(
-            table1,
-            chips=3000,
-        )
-    )
+    
     # table1.add_player(
     #     Human(
     #         table1,

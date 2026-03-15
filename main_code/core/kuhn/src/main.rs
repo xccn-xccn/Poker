@@ -2,23 +2,9 @@ use itertools::Itertools;
 // use rand::distributions::WeightedIndex;
 // use rand::prelude::*;
 use std::collections::HashMap;
-use std::time::Instant;
 use std::fs::File;
 use std::io::Write;
-
-// Output:
-// {'0': [0.7799834412423152, 0.22001655875768475]
-// '0b': [0.9999974999749998, 2.5000250002500025e-6]
-// '0p': [0.668248515106399, 0.33175148489360085]
-// '0pb': [0.9999983973858495, 1.6026141505440668e-6]
-// '1': [0.9999881248812488, 1.1875118751187512e-5]
-// '1b': [0.6641445170761001, 0.3358554829239]
-// '1p': [0.9999808331416647, 1.9166858335250016e-5]
-// '1pb': [0.444743509072289, 0.555256490927711]
-// '2': [0.336977839243968, 0.6630221607560319]
-// '2b': [2.5000250002500025e-6, 0.9999974999749998]
-// '2p': [1.000010000100001e-5, 0.999989999899999]
-// '2pb': [3.709479836803149e-6, 0.9999962905201631]}
+use std::time::Instant;
 
 #[derive(Clone)]
 struct Node {
@@ -236,38 +222,6 @@ impl Kuhn {
         // both values are from P0's perspective, so negate br1 to get P1's gain
         (br0 + br1) / 2.0
     }
-
-    fn self_play_ev(&mut self) -> f64 {
-        fn rec(k: &mut Kuhn, player: usize) -> f64 {
-            if k.is_terminal() {
-                let (c1, c2) = k.get_cards(player);
-                return k.get_reward(c1, c2) as f64;
-            }
-            let actions = ['p', 'b'];
-            let (card1, _) = k.get_cards(player);
-            let key = card1.to_string() + &k.history;
-            let strat = if let Some(node) = k.node_map.get(&key) {
-                node.get_final_strategy()
-            } else {
-                [0.5, 0.5]
-            };
-            let mut ev = 0.0;
-            for a in 0..2 {
-                k.history.push(actions[a]);
-                ev += strat[a] * (-rec(k, (player + 1) % 2));
-                k.history.pop();
-            }
-            ev
-        }
-
-        let mut total = 0.0;
-        for (c1, c2) in (0..self.deck_size).permutations(2).map(|v| (v[0], v[1])) {
-            self.reset();
-            self.cards = [c1, c2];
-            total += rec(self, 0);
-        }
-        total / (self.deck_size * (self.deck_size - 1)) as f64
-    }
 }
 
 impl Node {
@@ -329,7 +283,7 @@ fn main() {
 
     let _ = strategy_file.write_all(b"{");
     let mut strategy: Vec<(String, Node)> = kuhn
-        .train(100_000)
+        .train(3000_000)
         .iter()
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
@@ -343,8 +297,7 @@ fn main() {
     }
 
     let _ = strategy_file.write_all(b"}");
-    
-    println!("Self play EV of P1: {:.9}", kuhn.self_play_ev());
+
     println!("Exploitability: {}", kuhn.calc_exploit());
 
     println!("Time taken: {:.2?}", start.elapsed());

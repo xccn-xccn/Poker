@@ -1,8 +1,23 @@
-import sys, pygame, socketio, asyncio
+import sys, os
+
+# If using windows
+if sys.platform.startswith("win"):
+    import ctypes
+
+    try:
+        # try to use windows newest dots per inch (DPI) scaling
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except:
+        # otherwise disable windows DPI scaling
+        ctypes.windll.user32.SetProcessDPIAware()
+
+os.environ["SDL_VIDEO_HIGHDPI_DISABLED"] = "1"
+
+import pygame, socketio, asyncio
 from gui.assets import Assets
 from gui.menu_window import MenuWindow
 from gui.game_window import GameWindow
-from core.controller import OfflineController, OnlineController
+from core.controller import OfflineController, OnlineController, KuhnController
 
 BASE_RESOLUTION = (1600, 900)
 FPS = 60
@@ -39,25 +54,29 @@ class PokerApp:
             assets=self.assets,
         )
 
-    def start_game(self, online=False, host=False, host_ip=None):
-
+    def start_game(self, mode="Offline", host=False, host_ip=None):
+        """Instantiates correct controller depending on button clicked
+        also instantiates the game window"""
         try:
-            self.__controller = (
-                OnlineController(is_host=host, host_ip=host_ip)
-                if online
-                else OfflineController(testing=self.testing)
-            )
+            if mode == "Kuhn":
+                self.__controller = KuhnController()
+            elif mode == "Online":
+                self.__controller = OnlineController(is_host=host, host_ip=host_ip)
+            else:
+                self.__controller = OfflineController(testing=self.testing)
+
         except socketio.exceptions.ConnectionError as e:
             print(f"Failed to connect to server: {e}")
             self.current_window.set_window("")
-            return 
-
+            return
 
         self.current_window = GameWindow(
             screen=self.screen,
             assets=self.assets,
             controller=self.__controller,
             testing=self.testing,
+            mode="Kuhn" if mode == "Kuhn" else "Poker"
+            
         )
 
     def quit_game(self):
@@ -74,9 +93,11 @@ class PokerApp:
 
         if new_window:
             if new_window == "Offline Poker":
-                self.start_game()
+                self.start_game(mode="Offline")
+            elif new_window == "Kuhn Poker":
+                self.start_game(mode="Kuhn")
             elif new_window == "Online Poker":
-                self.start_game(online=True, host=None)  # Add host here
+                self.start_game(mode="Online", host=None)  # Add host here
             elif new_window == "Menu":
                 self.set_menu_window()
 

@@ -1,4 +1,5 @@
 import random
+from math import ceil
 
 
 def centre(
@@ -9,10 +10,10 @@ def centre(
 
 def get_chips(bb: int, bet: int):
     chip_values = {
-        max(bb // 20, 1): "white",
+        max(bb // 5, 1): "white",
         max(bb // 2, 1): "red",
         max(bb, 1): "orange",
-        max(int(2.5 * bb), 1): "green",
+        max(ceil(2.5 * bb), 1): "green",
         max(5 * bb, 1): "blue",
         max(25 * bb, 1): "black",
         max(50 * bb, 1): "purple",

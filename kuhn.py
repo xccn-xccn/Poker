@@ -15,7 +15,7 @@ class Kunh:
         self.current_player = 0
         self.n_actions = 2
 
-    def train(self, n_iterations=50000):
+    def train(self, n_iterations=50_000):
         expected_game_value = 0
         for _ in range(n_iterations):
             shuffle(self.deck)
@@ -147,6 +147,6 @@ def display_results(ev, i_map):
 if __name__ == "__main__":
     time1 = time.time()
     trainer = Kunh()
-    trainer.train(n_iterations=25000)
+    trainer.train(n_iterations=50_000)
     print(abs(time1 - time.time()))
     print(sys.getsizeof(trainer))

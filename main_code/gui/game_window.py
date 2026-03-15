@@ -4,28 +4,22 @@ from gui.buttons import Button, ImageButton, BetSlider, VerticalSlider
 from gui.player_view import PlayerView
 from gui.utility import centre, get_chips, get_chip_buff
 from math import floor
+from copy import deepcopy
 
 
 class GameWindow(WindowBase):
-    def __init__(self, screen, assets, controller, testing):
+    def __init__(self, screen, assets, controller, testing, mode="Poker"):
         super().__init__(screen, assets)
 
         self.testing = testing
         self.player_views = []
         self.possible_bet = 0
         self.action_freeze = False
+        self.mode = mode
 
         set_bet_width = 70
         set_bet_buffer = 10
         self.widgets = {
-            "Fold": Button(
-                "Fold",
-                *centre(1250, 750, 150, 50),
-                assets,
-                on_click=lambda: self._perform_action(1, 0),
-                base_colour=self.assets.colours["red"],
-                hover_colour=self.assets.colours["red2"],
-            ),
             "Check": Button(
                 "Check",
                 *centre(1250, 820, 150, 50),
@@ -52,9 +46,26 @@ class GameWindow(WindowBase):
                 (70, 70),
                 assets,
                 on_click=lambda: self.set_window("Menu"),
+                scale_i=2,
             ),
             "Zoom": ImageButton(
-                "zoom_in", (20, 90 + 20), (70, 70), assets, on_click=self._on_zoom
+                "zoom_in",
+                (20, 90 + 20),
+                (70, 70),
+                assets,
+                on_click=self._on_zoom,
+                scale_i=2,
+            ),
+        }
+
+        poker_widgets = {
+            "Fold": Button(
+                "Fold",
+                *centre(1250, 750, 150, 50),
+                assets,
+                on_click=lambda: self._perform_action(1, 0),
+                base_colour=self.assets.colours["red"],
+                hover_colour=self.assets.colours["red2"],
             ),
             "Set_Bet1": Button(
                 "x0.5",
@@ -86,6 +97,9 @@ class GameWindow(WindowBase):
                 on_change=self._on_slider_change,
             ),
         }
+
+        if mode == "Poker":
+            self.widgets.update(poker_widgets)
 
         self.controller = controller
         self.state_update = False
@@ -122,7 +136,8 @@ class GameWindow(WindowBase):
         self._after_pbet_change()
 
     def _update_slider(self):
-        self.widgets["Bet_slider"].set_value(self.possible_bet)
+        if self.mode == "Poker":
+            self.widgets["Bet_slider"].set_value(self.possible_bet)
 
     def _on_deal(self):
         if self.state["running"]:
@@ -196,10 +211,10 @@ class GameWindow(WindowBase):
             centre(
                 self.assets.width // 2,
                 self.assets.height // 2
-                - (
-                    self.assets.sizes["card_w"] * self.card_zoom
-                    + 8 * self.assets.height_scale
-                ),
+                - (self.assets.sizes["card_h"] + 0 * self.assets.height_scale)
+                * self.card_zoom
+                / 2
+                - 20 * self.assets.height_scale,
                 pot_surf.get_width(),
                 pot_surf.get_height(),
             )[0],
@@ -208,7 +223,11 @@ class GameWindow(WindowBase):
         self.draw_chips(
             self.chip_buff,
             self.chips,
-            offset=(0, -self.assets.sizes["card_w"] * self.card_zoom),
+            offset=(
+                0,
+                -(self.assets.sizes["card_h"]) * self.card_zoom / 2
+                - 10 * self.assets.height_scale,
+            ),
         )
 
     def draw_chips(
@@ -218,9 +237,8 @@ class GameWindow(WindowBase):
         seat_i: int = -1,
         offset: tuple[int, int] = (0, 0),
     ):
-        """Draws the chips for a player depending on seat_i 
+        """Draws the chips for a player depending on seat_i
         or the pot if no seat_i provided"""
-
 
         chips_coords = (
             self.assets.dealer_chips_coords
@@ -233,11 +251,13 @@ class GameWindow(WindowBase):
             p = -1
 
         for i, chip in enumerate(chips[:30]):
+
+            # Change the stack
             if i % 10 == 0:
                 p += 1
 
             cx, cy = chips_coords[p]
-            cx += chip_buffer[i] + offset[0]
+            cx += chip_buffer[i] * self.assets.min_size_scale + offset[0]
             cy += offset[1] - (0.35 * self.assets.sizes["chip_h"]) * (i % 10)
             c_image = self.assets.images["chips"][chip]
             self.screen.blit(c_image, (cx, cy))
@@ -260,18 +280,32 @@ class GameWindow(WindowBase):
             p.resize()
 
     def _build_player_views(self):
-        """Creates PlayerView objects for each seat."""
-        self.state = self.controller.get_state()
-        self.player_views = [
-            PlayerView(p["seat"], p, self.assets, self) for p in self.state["players"]
-        ]
+        """Creates PlayerView objects for each seat"""
+        # self.state = self.controller.get_state()
+        # self.player_views = [
+        #     PlayerView(p["seat"], p, self.assets, self) for p in self.state["players"]
+        # ]
+
+        self.player_views = []
+        players = list(deepcopy(self.state["players"]))
+        for p in players:
+            self.player_views.append(PlayerView(p["seat"], p, self.assets, self))
+
+            print(self.player_views, p, '\n')
+        print(self.player_views, '\n', self.state["players"], len(self.state["players"]))
+
         self.user_view = self.player_views[self.state["user_i"]]
 
     def _update_buttons(self):
+        """Updates button names and their actions"""
         for btn_name, action in zip(("Check", "Bet"), self.user_state["poss_actions"]):
             self.widgets[btn_name].set_text(action)
 
         bb = self.state["bb"]
+
+        if self.mode != "Poker":
+            return 
+        
         for btn_name, action in zip(
             ("Set_Bet1", "Set_Bet2", "Set_Bet3"),
             [(str(bb * 3), "x0.5"), (str(bb * 6), "x1"), (str(bb * 12), "ALL")],
@@ -283,31 +317,59 @@ class GameWindow(WindowBase):
         )
 
     def update_state(self, state):
-        """Stores the new game state
-            Does not update UI"""
+        """Stores the new game state.
+        Does not update UI"""
         self.state_update = True
         self.state = state
         # no changes made straight away for thread safety
 
     def _apply_state(self):
-        """Updates GUI with game state."""
 
-        self.user_state = self.state["players"][self.state["user_i"]]
+        """Updates GUI with game state."""
+        state = self.state
+        self.user_state = state["players"][state["user_i"]]
         self._update_buttons()
 
-        if self.state["running"] == False:
+        if state["running"] == False:
             self.chip_buff = get_chip_buff()
 
-        if self.state["new_round"]:
-            self.chips = get_chips(self.state["bb"], self.state["pot"])
+        if state["new_round"]:
+            self.chips = get_chips(state["bb"], state["pot"])
 
-        if self.state["new_player"] or len(self.player_views) != len(
-            self.state["players"]
+            print("new round", self.chips, state["bb"], state["pot"])
+
+        if state["new_player"] or len(self.player_views) != len(
+            state["players"]
         ):
             self._build_player_views()
             return
 
-        for player, p_data in zip(self.player_views, self.state["players"]):
+        for player, p_data in zip(self.player_views, state["players"]):
             player.update_state(
-                p_data, self.state["bb"], new_round=self.state["new_round"]
+                p_data, state["bb"], new_round=state["new_round"]
             )
+    # def _apply_state(self):
+
+    #     """Updates GUI with game state."""
+        
+    #     self.user_state = self.state["players"][self.state["user_i"]]
+    #     self._update_buttons()
+
+    #     if self.state["running"] == False:
+    #         self.chip_buff = get_chip_buff()
+
+    #     if self.state["new_round"]:
+    #         self.chips = get_chips(self.state["bb"], self.state["pot"])
+
+    #         print("new round", self.chips, self.state["bb"], self.state["pot"])
+
+    #     if self.state["new_player"] or len(self.player_views) != len(
+    #         self.state["players"]
+    #     ):
+    #         self._build_player_views()
+    #         return
+
+    #     for player, p_data in zip(self.player_views, self.state["players"]):
+    #         player.update_state(
+    #             p_data, self.state["bb"], new_round=self.state["new_round"]
+    #         )

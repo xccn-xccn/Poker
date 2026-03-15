@@ -7,6 +7,7 @@ GUI should only call these methods:
 from abc import ABC
 from copy import deepcopy
 from core.poker import Table, Human, Bot, start
+from core.kuhn import KuhnTable, KuhnBot
 from typing import Callable
 import socketio
 import threading
@@ -51,7 +52,7 @@ class ControllerBase(ABC):
         self.update_state()
 
 
-#Could add an additional class
+# Could add an additional class
 class OfflineController(ControllerBase):
     def __init__(self, testing: int = False, on_state_change: None | Callable = None):
         super().__init__(on_state_change)
@@ -84,7 +85,6 @@ class OfflineController(ControllerBase):
         t.start()
 
     def perform_action(self, action: int, amount: int = 0):
-        # TODO
         """True/False if round end, None if move was invalid"""
         if (
             not self.table.running
@@ -140,7 +140,9 @@ class OfflineController(ControllerBase):
                 if round_end is None:
                     cont = False
 
-                if not (self.testing and len(self.testing) >= 2 and self.testing[1] in "02"):
+                if not (
+                    self.testing and len(self.testing) >= 2 and self.testing[1] in "02"
+                ):
                     elapsed = time.time() - start_time
                     sleep_time = max(0, 0.5 if full_pause else 0.1 - elapsed)
 
@@ -148,7 +150,8 @@ class OfflineController(ControllerBase):
                         sleep_time /= 2
 
                     time.sleep(sleep_time)
-                self.update_state(round_end=bool(round_end or old_end))
+                # self.update_state(round_end=bool(round_end or old_end))
+                self.update_state(round_end=bool(old_end))
 
         finally:
             self.auto_thread_running = False
@@ -178,7 +181,7 @@ class OfflineController(ControllerBase):
         ]
 
     def _get_profile_picture(self, i) -> str:
-        return ["nature", "bot", "calvin", "daniel_n", "elliot", "teddy"][i]
+        return ["jerry", "bot", "calvin2", "dog", "elliot", "teddy2"][i]
 
     def _get_action(self, player):
         action = player.action
@@ -192,7 +195,7 @@ class OfflineController(ControllerBase):
         else:
             word = (
                 "All In"
-                if player.chips == 0
+                if player.all_in 
                 else "Bet" if self.table.bet_count < 2 else "Raise"
             )
             return f"{word} {player.round_invested}"
@@ -220,7 +223,8 @@ class OfflineController(ControllerBase):
                 if p is not None
             ],
             "community": self.table.community,
-            "pot": self.table.get_pot() if self.table.running else 0,
+            # "pot": self.table.get_pot() if self.table.running else 0,
+            "pot": self.table.get_pot(),
             "running": self.table.running,
             "round": self.table.r,
             "new_round": round_end,
@@ -235,8 +239,141 @@ class OfflineController(ControllerBase):
         return deepcopy(self.state)
 
 
+class KuhnController(ControllerBase):
+
+    def __init__(self, on_state_change=None):
+
+        super().__init__(on_state_change)
+
+        self.table = KuhnTable(13)
+        self.bot = KuhnBot()
+        self.auto_thread_running = False
+
+        self.user_i = 0
+        self.bot_i = 1
+
+    def start_hand(self):
+
+        self.table.start_hand()
+        self.update_state(round_end=True)
+
+        if not self.auto_thread_running:
+            self.start_systems_thread()
+
+    def perform_action(self, action: int, amount: int = 0):
+        action -= 2
+        if (
+            not self.table.running
+            or self.table.current_player != self.user_i
+            or self.auto_thread_running
+        ):
+            return
+
+        end = self.table.single_move(action)
+
+        if end is None:
+            print("Invalid user action")
+            return
+
+        self.update_state(round_end=bool(end))
+        self.start_systems_thread()
+
+        return end
+
+    def start_systems_thread(self):
+
+        t = threading.Thread(target=self._process_system_actions)
+        t.daemon = True
+        self.auto_thread_running = True
+        t.start()
+
+    def _process_system_actions(self):
+
+        try:
+            while self.table.running:
+
+                if self.table.current_player == self.bot_i:
+
+                    time.sleep(0.5)
+
+                    action = self.bot.get_action(self.table, self.bot_i)
+                    end = self.table.single_move(action)
+
+                    self.update_state(round_end=bool(end))
+                    if end:
+                        break
+
+                else:
+                    break
+
+        finally:
+            self.auto_thread_running = False
+
+    def _get_cards(self, i):
+
+        player = self.table.players[i]
+
+        if not player.card:
+            return []
+
+        if not self.table.running or i == self.user_i:
+            return [player.card + "H"]
+
+        return ["card_back"]
+
+    def _get_action(self, i: int) -> str:
+        """Returns the player's last action"""
+        if not self.table.history:
+            return ""
+
+        last_player = (self.table.current_player - 1) % 2
+        history_i = -2 if last_player != i else -1
+
+        if len(self.table.history) < -history_i:
+            return ""
+
+        action = self.table.history[history_i]
+
+        return "Pass" if action == 0 else "Bet"
+
+    def set_state(self, round_end=False):
+        self.state = {
+            "players": [
+                {
+                    "chips": p.chips,
+                    "folded": False,
+                    "hole_cards": self._get_cards(i),
+                    "action": self._get_action(i),
+                    "round_invested": p.round_invested,
+                    "seat": i,
+                    "position_name": "",
+                    "poss_actions": ["Pass", "Bet"],
+                    "profile_picture": "jerry" if i == self.user_i else "bot",
+                }
+                for i, p in enumerate(self.table.players)
+            ],
+            "community": [],
+            "pot": self.table.pot,
+            "running": self.table.running,
+            "round": 0,
+            "new_round": round_end,
+            "user_i": self.user_i,
+            "new_player": False,
+            "bb": 1,
+        }
+
+    def update_state(self, round_end=False):
+        """Updates state and calls the traceback (emits) self.on_state_change"""
+        self.set_state(round_end)
+
+        print(self.state)
+        self.on_state_change(deepcopy(self.state))
+
+
 class OnlineController(ControllerBase):
-    def __init__(self, is_host=False, host_ip=None, on_state_change: None | Callable = None):
+    def __init__(
+        self, is_host=False, host_ip=None, on_state_change: None | Callable = None
+    ):
         super().__init__(on_state_change=on_state_change)
 
         self.sio = socketio.Client()
@@ -267,7 +404,7 @@ class OnlineController(ControllerBase):
                 self.state = data
 
             if self.on_state_change:
-                self.on_state_change(data)
+                self.on_state_change(deepcopy(data))
 
             print(f"got state {data}")
 
@@ -278,8 +415,6 @@ class OnlineController(ControllerBase):
     def _connect(self):
         """Tries to connect to the server."""
         self.sio.connect(self.server_url)
-        
-            
 
     def start_hand(self):
         print("Requesting new hand...")
