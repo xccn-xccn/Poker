@@ -35,7 +35,7 @@ fn make_new(n: usize) -> Kuhn {
 
 impl Kuhn {
     fn train(&mut self, iterations: usize) -> HashMap<String, Node> {
-        for _ in 1..iterations {
+        for _ in 0..iterations {
             //0 - n non-inclusive where n is the number of cards in the deck
             for (c1, c2) in (0..self.deck_size).permutations(2).map(|v| (v[0], v[1])) {
                 self.reset();
