@@ -197,7 +197,7 @@ class GameRoom:
         return state
 
     def set_full(self):
-        self.full = self.table.players.count(None) == 0
+        self.full = self.table.players.count(None) <= 4
 
 
 class ServerManager:

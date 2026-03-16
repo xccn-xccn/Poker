@@ -101,13 +101,14 @@ impl Kuhn {
         let node_strategy = self.get_node(curr_player).strategy;
         for (i, act) in ['p', 'b'].iter().enumerate() {
             self.history.push(*act);
-            let mut new_prob = reach_prob; // array of f64 has copy trait
+            // array of f64 has copy so no loss of ownership
+            let mut new_prob = reach_prob; 
             new_prob[curr_player] *= node_strategy[i];
 
             curr_regrets[i] -= self.cfr(other_player, new_prob);
             //negative because it will get the reward of the other player (cards and cpi switch)
 
-            self.history.pop(); //TODO think to check
+            self.history.pop(); 
         }
 
         let node: &mut Node = self.get_node(curr_player);
@@ -283,7 +284,7 @@ fn main() {
 
     let _ = strategy_file.write_all(b"{");
     let mut strategy: Vec<(String, Node)> = kuhn
-        .train(3000_000)
+        .train(300_000)
         .iter()
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();

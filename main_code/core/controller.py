@@ -391,7 +391,7 @@ class OnlineController(ControllerBase):
             print(f"Connected to server at {self.server_url}")
 
             print("Sending 'join_game' request...")
-            self.sio.emit("join_game", {"chips": 2000})
+            self.sio.emit("join_game", {"chips": 2500})
 
         @self.sio.on("disconnect")
         def on_disconnect():

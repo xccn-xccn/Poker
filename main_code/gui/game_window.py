@@ -291,8 +291,6 @@ class GameWindow(WindowBase):
         for p in players:
             self.player_views.append(PlayerView(p["seat"], p, self.assets, self))
 
-            print(self.player_views, p, '\n')
-        print(self.player_views, '\n', self.state["players"], len(self.state["players"]))
 
         self.user_view = self.player_views[self.state["user_i"]]
 
@@ -336,8 +334,6 @@ class GameWindow(WindowBase):
         if state["new_round"]:
             self.chips = get_chips(state["bb"], state["pot"])
 
-            print("new round", self.chips, state["bb"], state["pot"])
-
         if state["new_player"] or len(self.player_views) != len(
             state["players"]
         ):
@@ -348,28 +344,3 @@ class GameWindow(WindowBase):
             player.update_state(
                 p_data, state["bb"], new_round=state["new_round"]
             )
-    # def _apply_state(self):
-
-    #     """Updates GUI with game state."""
-        
-    #     self.user_state = self.state["players"][self.state["user_i"]]
-    #     self._update_buttons()
-
-    #     if self.state["running"] == False:
-    #         self.chip_buff = get_chip_buff()
-
-    #     if self.state["new_round"]:
-    #         self.chips = get_chips(self.state["bb"], self.state["pot"])
-
-    #         print("new round", self.chips, self.state["bb"], self.state["pot"])
-
-    #     if self.state["new_player"] or len(self.player_views) != len(
-    #         self.state["players"]
-    #     ):
-    #         self._build_player_views()
-    #         return
-
-    #     for player, p_data in zip(self.player_views, self.state["players"]):
-    #         player.update_state(
-    #             p_data, self.state["bb"], new_round=self.state["new_round"]
-    #         )
