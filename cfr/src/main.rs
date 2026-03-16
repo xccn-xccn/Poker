@@ -105,7 +105,7 @@ impl Pokerbot {
         let node_strategy = self.get_node(cpi).strategy;
 
         let actions: Vec<char> = self.get_actions().collect();
-        for (i, act) in actions.enumerate(){
+        for (i, act) in actions.into_iter().enumerate(){
             self.history.push(act);
             let mut n_pr = r_pr; // array of f64 has copy trait
             n_pr[cpi] *= node_strategy[i];

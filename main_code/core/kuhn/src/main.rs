@@ -175,7 +175,7 @@ impl Kuhn {
             }
             best
         } else {
-            // Opponent uses Nash strategy; update reach weight per opp_card per action
+            // opponent uses Nash strategy; update reach weight per opp_card per action
             let mut ev = 0.0;
             for (a_idx, &a) in actions.iter().enumerate() {
                 let mut new_reach = opp_reach.to_vec();
@@ -212,6 +212,7 @@ impl Kuhn {
             br0 += self.best_response(0, 0, br_card, &opp_reach.clone());
 
             self.reset();
+            //subtract because this is taken from player 2's perspective
             br1 -= self.best_response(1, 0, br_card, &opp_reach.clone());
         }
 
@@ -220,7 +221,6 @@ impl Kuhn {
         br1 /= norm;
 
         println!("{br0:.6}, {br1:.6}");
-        // both values are from P0's perspective, so negate br1 to get P1's gain
         (br0 + br1) / 2.0
     }
 }
@@ -284,7 +284,7 @@ fn main() {
 
     let _ = strategy_file.write_all(b"{");
     let mut strategy: Vec<(String, Node)> = kuhn
-        .train(300_000)
+        .train(500_000)
         .iter()
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
