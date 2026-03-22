@@ -8,9 +8,6 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask import Flask, request
 
 
-# TODO
-# Optimize making state
-# Add removing players
 class GameRoom:
     """Represents a single poker table"""
 
@@ -27,12 +24,11 @@ class GameRoom:
         self.emit_state(new=True)
 
     def remove_player(self, sid: int):
-        # TODO test
         player_i = self.sid_seat[sid]
         if (
             self.table.running
             and self.table.players[player_i] == self.table.current_player
-        ):
+        ):  # If it is this player's turn
             self.player_action(sid, {"action": 1, "amount": 0})
 
         self.table.remove_player(player_i)
@@ -42,6 +38,7 @@ class GameRoom:
         self.emit_state()
 
     def start_hand(self):
+        """Checks if a hand can be started and if so starts it"""
         if self.table.running or len([x for x in self.table.players if x]) <= 1:
             return
 
@@ -59,6 +56,7 @@ class GameRoom:
             return self.table.end_move()
 
     def _process_system_actions(self, end=False):
+        """Makes a system action such as a bot move or ending a round"""
 
         cont = True
         while self.table.running and cont:
@@ -78,17 +76,14 @@ class GameRoom:
             eventlet.sleep(1)
 
     def player_action(self, sid: int, data: int):
+        """Applies a single user's action if it is valid"""
+
         if sid not in self.sid_seat:
             raise Exception(sid, self.sid_seat)
 
         user = self.table.players[self.sid_seat[sid]]
         if not self.table.running or user != self.table.current_player:
             return
-
-        if not self.table.can_move():
-            raise Exception(
-                "Current player cannot make a move but this means their move should be skipped"
-            )
 
         end_valid = self.table.single_move((data["action"], data["amount"]))
 
@@ -119,6 +114,7 @@ class GameRoom:
             )
 
     def _get_cards(self, other_player, user_player):
+        """Returns the first players cards if the second player should be able to see them"""
         if other_player.fold or other_player.inactive:
             return []
         if (
@@ -145,6 +141,7 @@ class GameRoom:
         return ["jerry", "bot", "calvin2", "dog", "elliot", "teddy2"][i]
 
     def _get_action(self, player):
+        """Returns the action text for this player"""
         action = player.action
 
         if action == None:
@@ -159,6 +156,7 @@ class GameRoom:
                 if player.all_in
                 else "Bet" if self.table.bet_count < 2 else "Raise"
             )
+
             return f"{word} {player.round_invested}"
 
     def get_specific_state(
@@ -197,7 +195,7 @@ class GameRoom:
         return state
 
     def set_full(self):
-        self.full = self.table.players.count(None) <= 4
+        self.full = self.table.players.count(None) == 0
 
 
 class ServerManager:
@@ -228,6 +226,7 @@ class ServerManager:
         return game_room, room_id
 
     def handle_join_game(self, player_sid: int, data: dict):
+        """Adds the player to a room or creates a new one if none are available"""
         game_room, room_id = self.find_or_create_room()
 
         game_room.add_player(player_sid, data)
@@ -268,11 +267,9 @@ class ServerManager:
             return
 
         room_id = self.sid_to_room[sid]
-
         game_room = self.rooms[room_id]
 
         game_room.player_action(sid, data)
-
         print(f"Room {room_id}: Received action {data} sid {sid}")
 
 

@@ -13,9 +13,6 @@ import socketio
 import threading
 import time
 
-# TODO remove uneeded default state?
-# Slider should reset on succesful actions
-
 
 class ControllerBase(ABC):
     def __init__(self, on_state_change: None | Callable = None):
@@ -52,7 +49,6 @@ class ControllerBase(ABC):
         self.update_state()
 
 
-# Could add an additional class
 class OfflineController(ControllerBase):
     def __init__(self, testing: int = False, on_state_change: None | Callable = None):
         super().__init__(on_state_change)
@@ -62,8 +58,6 @@ class OfflineController(ControllerBase):
         self.create_table()
         self.auto_thread_running = False
 
-        # self.on_state_change: None | function = on_state_change
-
     def create_table(self):
         self.table = start() if callable(start) and self.testing != "human" else Table()
 
@@ -72,6 +66,9 @@ class OfflineController(ControllerBase):
                 self.table.add_new_player()
 
     def start_hand(self):
+        if self.table.running or len(self.table.active_players) == 1:
+            return
+
         self.table.start_hand()
         self.update_state(round_end=True)
 
@@ -150,7 +147,6 @@ class OfflineController(ControllerBase):
                         sleep_time /= 2
 
                     time.sleep(sleep_time)
-                # self.update_state(round_end=bool(round_end or old_end))
                 self.update_state(round_end=bool(old_end))
 
         finally:
@@ -158,6 +154,7 @@ class OfflineController(ControllerBase):
 
     # State related methods
     def _get_cards(self, player):
+        """Returns the cards for a user ensuring they only get the cards they are mean to"""
         if player.fold or player.inactive:
             return []
         if (
@@ -195,7 +192,7 @@ class OfflineController(ControllerBase):
         else:
             word = (
                 "All In"
-                if player.all_in 
+                if player.all_in
                 else "Bet" if self.table.bet_count < 2 else "Raise"
             )
             return f"{word} {player.round_invested}"
@@ -223,7 +220,6 @@ class OfflineController(ControllerBase):
                 if p is not None
             ],
             "community": self.table.community,
-            # "pot": self.table.get_pot() if self.table.running else 0,
             "pot": self.table.get_pot(),
             "running": self.table.running,
             "round": self.table.r,
@@ -390,8 +386,7 @@ class OnlineController(ControllerBase):
         def on_connect():
             print(f"Connected to server at {self.server_url}")
 
-            print("Sending 'join_game' request...")
-            self.sio.emit("join_game", {"chips": 2500})
+            self.sio.call("join_game", {"chips": 2000})
 
         @self.sio.on("disconnect")
         def on_disconnect():
@@ -428,10 +423,6 @@ class OnlineController(ControllerBase):
     def get_state(self):
         with self.lock:
             return self.state
-
-    # def set_state_callback(self, on_state_change):
-    #     print('callback set \n')
-    #     self.on_state_change = on_state_change
 
     def __del__(self):
         """Clean up connection when this is destroyed"""

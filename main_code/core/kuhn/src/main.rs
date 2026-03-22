@@ -1,6 +1,4 @@
 use itertools::Itertools;
-// use rand::distributions::WeightedIndex;
-// use rand::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -10,9 +8,10 @@ use std::time::Instant;
 struct Node {
     regrets: [f64; 2],  //current regrets to create strategy
     strategy: [f64; 2], //current strategy
-    // strategy_p: Vec<f64>,   //strategy normalised
-    strategy_sum: [f64; 2], //sum of the strategies to work out average strategy
-    reach_pr: f64,          //reach probability of this node on the current iteration
+    strategy_sum: [f64; 2], //sum of the strategies to 
+                            // work out average strategy
+    reach_pr: f64,          //reach probability of this node 
+                            //on the current iteration
 }
 
 struct Kuhn {
@@ -36,7 +35,8 @@ fn make_new(n: usize) -> Kuhn {
 impl Kuhn {
     fn train(&mut self, iterations: usize) -> HashMap<String, Node> {
         for _ in 0..iterations {
-            //0 - n non-inclusive where n is the number of cards in the deck
+            //0 - n non-inclusive where n is the number of 
+            //cards in the deck
             for (c1, c2) in (0..self.deck_size).permutations(2).map(|v| (v[0], v[1])) {
                 self.reset();
                 self.cards = [c1, c2];
