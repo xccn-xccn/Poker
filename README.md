@@ -5,6 +5,7 @@
 [Installation](#how-to-install)  
 [Hosting Online Games](#how-to-host-a-game)  
 [Joining Online Games](#how-to-join-an-online-game)
+[About Kuhn Poker](#kuhn-poker)
 
 ## Project Overview
 
@@ -56,9 +57,28 @@ NOTE: You must be on the same LAN as the host device to play
 Alternatively, play an old offline version on the web app (let it load and click ready to start)
 https://xccn-xccn.github.io/Poker/
 
+## Kuhn Poker
+### Rules
 
+In the variation implemented in this project, the deck consists of one of each card from 2-A.
 
+- Each player antes 1 chip
+- Each player gets 1 card
 
+On their turn, player can either pass or bet 1 chip. There is no raising
 
+- If both players pass or both bet, showdown is reached where the player with the highest card wins.  
+- If one player bets while the other passes, the player who bet wins.
 
+#### Possible action sequences
+- P1 passes → P2 passes: showdown.
+- P1 passes → P2 bets → P1 passes: P2 wins.
+- P1 passes → P2 bets → P1 bets: showdown.
+- P1 bets → P2 passes: P1 wins.
+- P1 bets → P2 bets: showdown.
 
+### The Bot (Basic)
+
+The bot uses counterfactual regret minimisation (CFR). CFR simultaneously creates a strategy for both players at once by continuously playing and improving against itself over many training iterations. For every possible decision it could make, it generates a ‘regret’ value that represents what it would have gained had it taken that decision. It then uses this regret value to improve its current strategy. After thousands of iterations, the algorithm will improve its strategy until it reaches a Nash equilibrium – a situation where neither players' strategy can improve any further.
+
+The bot you play against is incredibly accurate and despite the simplicity of the game, implements strategy that you would see in real poker such as bluffing. A perfect strategy against the bot, after 500,000 training iterations, would win 0.0000457 chips per hand on average.
