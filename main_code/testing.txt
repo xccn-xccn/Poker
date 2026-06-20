@@ -1,5 +1,3 @@
-Add the testing code after main.py
-
 t0 0 wait time, auto start round, auto Fold
 t1 0 wait time, auto Fold
 t4 auto start round, auto Fold
