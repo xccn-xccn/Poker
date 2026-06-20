@@ -28,10 +28,25 @@ The final mode (Kuhn Poker) is a simplified 2 player version of poker. The bot i
 1. Download python 3.12+ (earlier versions should work but 3.12 is what I started the project on) 
 2. Clone the Repository or download and extract the zip file
 3. Create a virtual environment by typing `python -m venv venv` into the terminal of the root directory
-4. Activate the virtual environment `source .venv/bin/activate` (Linux) or `./venv/Scripts/activate` (Windows)
+4. Activate the virtual environment `source .venv/bin/activate` (Linux or macOS) or `./venv/Scripts/activate` (Windows)
 5. Download dependencies with `pip install -r ./requirements.txt`
-6. Navigate to the main_code file `cd main_code`
+6. Navigate to the main_code directory `cd main_code`
 7. Run the application! `python main.py`
+
+## How to host a game
+
+1. To find your private ipv4 ip address, in the terminal enter `ifconfig` (Windows), `ip addr show` (Linux) or `ipconfig getifaddr en0` (macOS)
+2. Navigate to the main_code directory `cd main_code`
+3. Start hosting the server `python server.py`
+
+## How to join an online game
+1. Go to the file main_code/main.py
+2. Find line 59 (may change) with the code `def start_game(self, mode="Offline", host_ip=None):` you can do this easily by pressing ctrl f and typing host_ip
+3. Change `None` to the host ip address so that line 59 is now `def start_game(self, mode="Offline", host_ip='171.35.61.2'):` where `171.35.61.2` the ip address of the host device
+4. Run main.py as usual and click Play Online
+
+NOTE: You must be on the same LAN as the host device to play
+   
 
 
 Use the web app to play (let it load and click ready to start)
