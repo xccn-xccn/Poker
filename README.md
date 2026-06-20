@@ -1,4 +1,4 @@
-# Poker Game with Online play, Bots, and Kuhn Poker
+# Poker Application with Online play, Bots, and Kuhn Poker
 
 ## About the project
 
