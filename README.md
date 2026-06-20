@@ -23,6 +23,16 @@ The final mode (Kuhn Poker) is a simplified 2 player version of poker. The bot i
 ### Kuhn Poker
 <img width="3838" height="2107" alt="image" src="https://github.com/user-attachments/assets/47f781ce-d9c4-4837-8a16-9bf3f6a56f96" />
 
+## How to Install
+
+1. Download python 3.12+ (earlier versions should work but 3.12 is what I started the project on) 
+2. Clone the Repository or download and extract the zip file
+3. Create a virtual environment by typing `python -m venv venv` into the terminal of the root directory
+4. Activate the virtual environment `source .venv/bin/activate` (Linux) or `./venv/Scripts/activate` (Windows)
+5. Download dependencies with `pip install -r ./requirements.txt`
+6. Navigate to the main_code file `cd main_code`
+7. Run the application! `python main.py`
+
 
 Use the web app to play (let it load and click ready to start)
 
