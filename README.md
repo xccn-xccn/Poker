@@ -27,8 +27,8 @@ The final mode (Kuhn Poker) is a simplified 2 player version of poker. The bot i
 
 1. Download python 3.12+ (earlier versions should work but 3.12 is what I started the project on) 
 2. Clone the Repository or download and extract the zip file
-3. Create a virtual environment by typing `python -m venv venv` into the terminal of the root directory
-4. Activate the virtual environment `source .venv/bin/activate` (Linux or macOS) or `./venv/Scripts/activate` (Windows)
+3. Create a virtual environment by entering `python -m venv venv` into the terminal of the root (outmost) directory
+4. Activate the virtual environment `source .venv/bin/activate` (Linux or macOS) or `./venv/Scripts/activate` (Windows) on windows if you get an error try entering `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first
 5. Download dependencies with `pip install -r ./requirements.txt`
 6. Navigate to the main_code directory `cd main_code`
 7. Run the application! `python main.py`
@@ -47,7 +47,7 @@ The final mode (Kuhn Poker) is a simplified 2 player version of poker. The bot i
 
 NOTE: You must be on the same LAN as the host device to play
    
-Alternatively, play an old version on the web app (let it load and click ready to start)
+Alternatively, play an old offline version on the web app (let it load and click ready to start)
 https://xccn-xccn.github.io/Poker/
 
 
