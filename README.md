@@ -2,8 +2,8 @@
 
 [Overview](#project-overview)  
 [UI Screenshots](#user-interface-screenshot)  
-[Installation](#how-to-install)
-[Hosting Online Games](#how-to-host-a-game)
+[Installation](#how-to-install)  
+[Hosting Online Games](#how-to-host-a-game)  
 [Joining Online Games](#how-to-join-an-online-game)
 
 ## Project Overview
