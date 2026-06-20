@@ -4,8 +4,8 @@
 [UI Screenshots](#user-interface-screenshot)  
 [Installation](#how-to-install)  
 [Hosting Online Games](#how-to-host-a-game)  
-[Joining Online Games](#how-to-join-an-online-game)
-[About Kuhn Poker](#kuhn-poker)
+[Joining Online Games](#how-to-join-an-online-game)  
+[About Kuhn Poker](#kuhn-poker)  
 
 ## Project Overview
 
