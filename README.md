@@ -22,7 +22,7 @@ The final mode (Kuhn Poker) is a simplified 2 player version of poker. The bot i
 ### Main Menu
 <img width="3838" height="2106" alt="image" src="https://github.com/user-attachments/assets/62bf6c0e-e6d7-4e8c-b86e-685de2128a7e" />
 
-### Offline Mode
+### Texas Hold'em
 <img width="3837" height="2107" alt="image" src="https://github.com/user-attachments/assets/e50d9376-61cb-4344-85e1-784eee6170df" />
 
 <img width="3835" height="2108" alt="image" src="https://github.com/user-attachments/assets/16009d94-043f-4b9a-a794-8dbc2c7278b4" />
