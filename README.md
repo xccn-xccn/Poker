@@ -1,6 +1,10 @@
 # Poker Application with Online play, Bots, and Kuhn Poker
 
-## About the project
+[Overview](#project-overview)  
+[UI Screenshots](#user-interface-screenshot)  
+[Installation](#how-to-install)
+
+## Project Overview
 
 This project allows you to play poker against bots, friends or in a special game mode called Kuhn Poker. Most parts, such as the poker engine, GUI and the multi-player bots, were written in python. The training algorithm for the machine learning bot was written in rust - although rust is not needed to run the application
 
