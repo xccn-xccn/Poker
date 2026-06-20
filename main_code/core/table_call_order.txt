@@ -6,4 +6,3 @@ from within the method and return the result of table.end_move()
 
 table.end_move() returns if the round should end
 If it returns true table.end_round() should be called
-
