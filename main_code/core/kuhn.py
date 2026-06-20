@@ -7,38 +7,29 @@ class KuhnPlayer:
         self.chips = chips
         self.card = None
         self.round_invested = 0
-        # self.action = None
-
-
-import random
 
 
 class KuhnBot(KuhnPlayer):
 
     # Load strategy
-    root = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(root, "kuhn", "strategy.txt")) as t:
+    def __init__(self, chips=100):
+        super().__init__(chips)
+        root = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(root, "kuhn", "strategy.txt")) as t:
 
-        strategy = eval(t.read())
+            self.strategy = eval(t.read())
 
     def get_action(self, table, player_i):
 
         player = table.players[player_i]
-
         strength = table.card_to_strength(player.card)
 
         history = "".join("p" if a == 0 else "b" for a in table.history)
+        key = str(strength) + history
 
-        key = strength + history
+        prob_list = self.strategy[key]
 
-        probs = self.strategy[key]
-
-        r = random.random()
-
-        if r < probs[0]:
-            return 0
-        else:
-            return 1
+        return int(random.random() > prob_list[0])
 
 
 class KuhnTable:
@@ -80,13 +71,13 @@ class KuhnTable:
         return action in (0, 1)
 
     @staticmethod
-    def card_to_strength(card: str) -> str:
+    def card_to_strength(card: str) -> int:
         """Converts a card string to the number used in strategy dictionary"""
 
         if card in "TJQKA":
             card = {"T": 10, "J": 11, "Q": 12, "K": 13, "A": 14}[card]
 
-        return str(int(card) - 2)
+        return int(card) - 2
 
     def single_move(self, action) -> None | bool:
         """Applys an action for the current player
@@ -106,14 +97,11 @@ class KuhnTable:
             player.round_invested += 1
             self.pot += 1
 
-        print(player.round_invested, "invested")
         self.history.append(action)
         self.current_player = 1 - self.current_player
 
         if self._is_terminal():
-            print("terminal")
             self._end_hand()
-            self.running = False
             return True
 
         return False
@@ -121,19 +109,20 @@ class KuhnTable:
     def _is_terminal(self):
         """Returns if the hand has ended"""
 
-        print(self.history[-2:])
         return len(self.history) >= 2 and self.history[-2:] != [0, 1]
 
     def _end_hand(self):
         """Distributes pot to the winner of the hand"""
 
         h = self.history
+        first = self.starting_player
+        second = 1 - first
 
         if h == [1, 0]:
-            winner = 0
+            winner = first
 
         elif h == [0, 1, 0]:
-            winner = 1
+            winner = second
 
         else:
             winner = self._showdown()

@@ -362,7 +362,7 @@ class KuhnController(ControllerBase):
         """Updates state and calls the traceback (emits) self.on_state_change"""
         self.set_state(round_end)
 
-        print(self.state)
+        # print(self.state)
         self.on_state_change(deepcopy(self.state))
 
 
@@ -386,6 +386,7 @@ class OnlineController(ControllerBase):
         def on_connect():
             print(f"Connected to server at {self.server_url}")
 
+            print("Sending 'join_game' request...")
             self.sio.call("join_game", {"chips": 2000})
 
         @self.sio.on("disconnect")

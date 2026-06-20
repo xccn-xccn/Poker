@@ -28,7 +28,7 @@ class GameRoom:
         if (
             self.table.running
             and self.table.players[player_i] == self.table.current_player
-        ):  # If it is this player's turn
+        ): #If it is this player's turn
             self.player_action(sid, {"action": 1, "amount": 0})
 
         self.table.remove_player(player_i)

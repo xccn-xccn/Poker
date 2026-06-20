@@ -105,15 +105,8 @@ def main():
 
 
 if __name__ == "__main__":
-    # l = list(range(1_000_000))
-    # random.shuffle(l)
     start = perf_counter()
 
-    # print(list(map(lambda x: round(x**2, 3), s)))
-
-    # for s in strengths:
-    #     print(list(map(lambda x: round(x**3 * 3, 3), s)))
-    # list(sorted(l))
     main()
 
     print(f"Time taken: {(perf_counter() - start) *1000} miliseconds")

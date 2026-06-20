@@ -1,3 +1,5 @@
+Note this is outdated and was used to initally plan out the structure of the project
+
 poker/
 ├── main.py                 # App entry point, event loop, window switching
 ├── poker.py                # Core poker rules and logic (pure, no I/O)

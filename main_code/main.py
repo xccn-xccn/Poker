@@ -27,7 +27,6 @@ class PokerApp:
     def __init__(self, testing=False):
         pygame.init()
         pygame.display.set_caption("Poker")
-        # self.__clock = pygame.time.Clock()
         self.set_initial_size()
         self.assets = Assets(self.screen, BASE_RESOLUTION)
         self.__controller = None
@@ -89,6 +88,7 @@ class PokerApp:
         self.current_window.resize(new_size)
 
     def check_window_change(self):
+        """Checks if the current window has requested to change window and if so changes the window"""
         new_window = self.current_window.new_window
 
         if new_window:

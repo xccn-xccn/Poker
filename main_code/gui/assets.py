@@ -1,4 +1,3 @@
-import random
 import pygame
 import os
 from gui.utility import centre
@@ -58,7 +57,7 @@ class Assets:
         self.height_scale = Scale(self.height / bh)
         self.min_size_scale = Scale(min(self.width_scale, self.height_scale))
         self.max_size_scale = Scale(
-            min(self.min_size_scale * 1.3, max(self.width_scale, self.height_scale))
+            min(self.min_size_scale * 1.2, max(self.width_scale, self.height_scale))
         )
 
         self._set_sizes_coords()
@@ -100,8 +99,8 @@ class Assets:
         table_h = 423 * self.height_scale
         self.sizes["table_size"] = (table_w, table_h)
 
-        self.sizes["card_w"] = 51 * self.max_size_scale
-        self.sizes["card_h"] = 73 * self.max_size_scale
+        self.sizes["card_w"] = 54 * self.max_size_scale
+        self.sizes["card_h"] = 76 * self.max_size_scale
 
         # x direction buffer between cards
         self.sizes["card_buffer"] = 2 * self.width_scale
@@ -208,7 +207,7 @@ class Assets:
 
         fixed_left, fixed_forward = fixed_vector
 
-        for i, coords in enumerate(self.player_coords):  # TODO
+        for i, coords in enumerate(self.player_coords):  
             left_scale = self.get_left_scale(i)
             forward_scale = self.get_forward_scale(i)
 

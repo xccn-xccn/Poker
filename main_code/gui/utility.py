@@ -9,6 +9,7 @@ def centre(
 
 
 def get_chips(bb: int, bet: int):
+    """Returns the chip colours needed to represent the bet"""
     chip_values = {
         max(bb // 5, 1): "white",
         max(bb // 2, 1): "red",

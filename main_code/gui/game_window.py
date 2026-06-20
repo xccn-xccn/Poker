@@ -58,6 +58,7 @@ class GameWindow(WindowBase):
             ),
         }
 
+        #These aren't drawn for kuhn poker
         poker_widgets = {
             "Fold": Button(
                 "Fold",
@@ -103,6 +104,7 @@ class GameWindow(WindowBase):
 
         self.controller = controller
         self.state_update = False
+
         self.controller.set_state_callback(self.update_state)
         self.chip_buff = get_chip_buff()
         self.chips = []
@@ -148,7 +150,6 @@ class GameWindow(WindowBase):
     def _on_zoom(self):
 
         self.card_zoom = {1.0: 1.5, 1.5: 1.9, 1.9: 1.0}[self.card_zoom]
-        # self.controller.table.add_new_player(10000)
 
     def _on_slider_change(self, value):
         self.possible_bet = value
@@ -281,10 +282,6 @@ class GameWindow(WindowBase):
 
     def _build_player_views(self):
         """Creates PlayerView objects for each seat"""
-        # self.state = self.controller.get_state()
-        # self.player_views = [
-        #     PlayerView(p["seat"], p, self.assets, self) for p in self.state["players"]
-        # ]
 
         self.player_views = []
         players = list(deepcopy(self.state["players"]))

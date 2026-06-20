@@ -5,7 +5,6 @@ from time import perf_counter
 from random import choices
 
 # NOTE functions like get_four will not only select the best quads but all possible quads meaning they cannot be used as kickers (important for 4 card poker)
-# TODO check if bug fixed
 
 
 def get_winner(hands: list[tuple[str]], community: list[str]) -> list[list[list, int]]:
@@ -315,6 +314,29 @@ order = [
     card_value_sort,
 ]
 
+def tests():
+    test_cases = [
+        (
+            [("AH", "2D"), ("3C", "9S")],
+            ["4S", "5H", "QC", "JD", "KD"],
+            [[["AH", "KD", "QC", "JD", "5H"], 0]],
+        ),
+        (
+            [("8C", "KC"), ("2H", "6S")],
+            ["7S", "5H", "6D", "JH", "8S"],
+            [[["KC", "JH", "8C", "8S", "7S"], 0]],
+        ),
+    ]
+
+    for hands, community, expected in test_cases:
+        result = get_winner(hands, community)
+        expected = [[sorted(x[0]), x[1]] for x in expected]
+        result = [[sorted(x[0]), x[1]] for x in result]
+        print(result, expected)
+        assert sorted(result) == sorted(expected)
+
+    print("Success")
+    
 if __name__ == "__main__":
     start = perf_counter()
     # main()
