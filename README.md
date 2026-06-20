@@ -5,7 +5,7 @@
 [Installation](#how-to-install)  
 [Hosting Online Games](#how-to-host-a-game)  
 [Joining Online Games](#how-to-join-an-online-game)  
-[About Kuhn Poker](#kuhn-poker)  
+[About Kuhn Poker](#kuhn-poker-1)  
 
 ## Project Overview
 
