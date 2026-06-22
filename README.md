@@ -35,7 +35,7 @@ The final mode (Kuhn Poker) is a simplified 2 player version of poker. The bot i
 1. Download python 3.12+ (earlier versions should work but 3.12 is what I started the project on) 
 2. Clone the Repository or download and extract the zip file
 3. Create a virtual environment by entering `python -m venv venv` into the terminal of the root (outmost) directory
-4. Activate the virtual environment `source .venv/bin/activate` (Linux or macOS) or `./venv/Scripts/activate` (Windows) on windows if you get an error try entering `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first
+4. Activate the virtual environment `source .venv/bin/activate` (Linux or macOS) or `./venv/Scripts/activate` (Windows). On windows, if you get an error, try entering `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first
 5. Download dependencies with `pip install -r ./requirements.txt`
 6. Navigate to the main_code directory `cd main_code`
 7. Run the application! `python main.py`
